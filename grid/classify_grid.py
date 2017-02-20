@@ -108,33 +108,53 @@ class resdata():
         self.teff = 0.
         self.teffep = 0.
         self.teffem = 0.
+        self.teffpx = 0.
+        self.teffpy = 0.
         self.logg = 0.
         self.loggep = 0.
         self.loggem = 0.
+        self.loggpx = 0.
+        self.loggpy = 0.
         self.feh = 0.
         self.fehep = 0.
         self.fehem = 0.
+        self.fehpx = 0.
+        self.fehpy = 0.
         self.rad = 0.
         self.radep = 0.
         self.radem = 0.
+        self.radpx = 0.
+        self.radpy = 0.
         self.mass = 0.
         self.massep = 0.
         self.massem = 0.
+        self.masspx = 0.
+        self.masspy = 0.
         self.rho = 0.
         self.rhoep = 0.
         self.rhoem = 0.
+        self.rhopx = 0.
+        self.rhopy = 0.
         self.lum = 0.
         self.lumep = 0.
         self.lumem = 0.
+        self.lumpx = 0.
+        self.lumpy = 0.
         self.age = 0.
         self.ageep = 0.
         self.ageem = 0.
+        self.agepx = 0.
+        self.agepy = 0.
         self.avs = 0.
         self.avsep = 0.
         self.avsem = 0.
-	self.dis = 0.
+        self.avspx = 0.
+        self.avspy = 0.
+        self.dis = 0.
         self.disep = 0.
         self.disem = 0.
+        self.dispx = 0.
+        self.dispy = 0.
 
 class extinction():
     def __init__(self):
@@ -189,7 +209,9 @@ def classify(input,model,dustmodel=0,doplot=1):
     jhcole=np.sqrt(input.jmage**2 + input.hmage**2)
     hkcole=np.sqrt(input.hmage**2 + input.kmage**2)
 
-    # determine apparent mag to use for distance estimation. J>g>Vt>V
+    #bcmodel = h5py.File('bcgrid.h5', 'r')
+
+    # determine apparent mag to use for distance estimation. K>J>g>Vt>V
     map=-99.
     if (input.vmag > -99.):
         map=input.vmag
@@ -214,6 +236,12 @@ def classify(input,model,dustmodel=0,doplot=1):
         mape=input.jmage
         model_mabs=model['jmag']
         ext=extfactors.aj
+
+    if (input.kmag > -99.):
+        map=input.kmag
+        mape=input.kmage
+        model_mabs=model['kmag']
+        ext=extfactors.ak
         
     # absolute magnitude
     if (input.plx > -99.):
@@ -263,8 +291,6 @@ def classify(input,model,dustmodel=0,doplot=1):
     if (len(um) < 10):
         return result
 
-    
-
     # add reddening
     if (map > -99.):
 
@@ -288,6 +314,8 @@ def classify(input,model,dustmodel=0,doplot=1):
             mod_mabs=mod['gmag']
 	if (input.jmag > -99.):
             mod_mabs=mod['jmag']
+        if (input.kmag > -99.):
+            mod_mabs=mod['kmag']
         um = np.arange(0,len(mod['teff']),1)
 	
         mod['dis'] = 10**((map-mod_mabs+5.)/5.)
@@ -297,11 +325,11 @@ def classify(input,model,dustmodel=0,doplot=1):
 
     # next, another model down-select based on reddening-dependent quantities
     # only do this if no spec constraints are available
-    #pdb.set_trace()
+    
     if (mabs > -99.):
             um=np.where((mod_mabs > mabs-sig*mabse) & (mod_mabs < mabs+sig*mabse))[0]
-    #else:
-    #        um = np.arange(0,len(mod['teff']),1)
+    else:
+            um = np.arange(0,len(mod['teff']),1)
     
 
     if (input.teff == -99.):
@@ -459,9 +487,9 @@ def classify(input,model,dustmodel=0,doplot=1):
         #pdb.set_trace()
         
         if (map > -99.):
-            names=['teff','logg','feh','rad','mass','rho','lum','age','avs','dis']
-            steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
-            fixes=[0,1,1,0,0,1,1,0,1,0]
+            names=['teff','logg','feh','rad','mass','rho','lum','age','avs']
+            steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
+            fixes=[0,1,1,0,0,1,1,0,1]
 
         if ((input.plx == -99.) & (map > -99)):
             names=['teff','logg','feh','rad','mass','rho','lum','age','avs','dis']
@@ -509,6 +537,8 @@ def classify(input,model,dustmodel=0,doplot=1):
             setattr(result, names[j], res)
             setattr(result, names[j]+'ep', err1)
             setattr(result, names[j]+'em', err2)
+            setattr(result, names[j]+'px', x)
+            setattr(result, names[j]+'py', y)
 
             if doplot:
                     #plotposterior(x,y,res,err1,err2,0.,model,model,names,j,0.,\
@@ -546,9 +576,9 @@ def reddening(model,um,avs,extfactors):
             ('bmag', float), ('vmag', float), ('btmag', float), ('vtmag', float), ('dis', float), \
             ('kmag', float), ('avs', float), ('fdnu', float)])
 
-
     start=0
     end=len(um)
+
     #print start,end
     for i in range(0,len(avs)):
             ix=np.arange(start,end,1)
