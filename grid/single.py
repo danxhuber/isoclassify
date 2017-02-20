@@ -1,4 +1,4 @@
-%matplotlib inline
+#%matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
 from classify_grid import *
@@ -23,10 +23,10 @@ if __name__ == '__main__':
 
     x=obsdata()
     
-    x.addspec([5065.,-99.0,-0.1],[120.,0.0,0.2])
-    x.addseismo([231.,16.5],[10.,0.5])
-    
-    x.addjhk([6.025,5.578,5.496],[0.019,0.038,0.018])
-    x.addplx(8.9536/1e3,0.7/1e3)
-    
+    x.addspec([5801.,-99.0,-0.07],[80.,0.0,0.1])
+    x.addseismo([1240.,63.5],[70.,1.5])
+    x.addjhk([10.369,10.07,10.025],[0.022,0.018,0.019])
+    x.addgriz([11.776,11.354,11.238,11.178],[0.02,0.02,0.02,0.02])
+
+    #x.addplx(2.71/1e3,0.08/1e3)
     paras=classify(input=x,model=model,dustmodel=0.,doplot=1)
