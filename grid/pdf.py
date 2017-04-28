@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import fnmatch
 from scipy.ndimage.filters import gaussian_filter
 import time
+from scipy.interpolate import interp1d
 
 def binpdf(x,y,step,iname,dustmodel):
 	xax = np.arange(np.min(x),np.max(x),step)
@@ -50,21 +51,13 @@ def binpdf(x,y,step,iname,dustmodel):
 	yax = yax/np.sum(yax)
 	return xax,yax
 
+
 def getstat(xax,yax):
-	cprob = np.cumsum(yax)
-	pos = np.argmin(np.abs(cprob-0.5))  
-	med = xax[pos]
-	temp = cprob[pos]
-	ll = temp-temp*0.683
-	ul = temp+(1. - temp)*0.683
-	pos = np.argmin(np.abs(cprob-ll))
-	emed1 = med-xax[pos]
-	pos = np.argmin(np.abs(cprob-ul))
-	emed2 = xax[pos]-med
-	#plt.plot(xax,yax/np.max(yax))
-	#plt.plot([med,med],[0,1])
-	#plt.show()
-	#pdb.set_trace()
+	cdf = np.cumsum(yax)
+        ppf = interp1d(cdf,xax) # percent point function 
+        p16, med, p84 = ppf([0.16,0.50,0.84])
+        emed1  = med - p16
+        emed2  = p84 - med
         return med,emed2,emed1
 	
 def getpdf(x,y,step,fixed,name,dustmodel):
