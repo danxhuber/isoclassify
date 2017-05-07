@@ -327,9 +327,10 @@ def classify(input,model,dustmodel=0,doplot=1):
     # only do this if no spec constraints are available
     
     if (mabs > -99.):
-            um=np.where((mod_mabs > mabs-sig*mabse) & (mod_mabs < mabs+sig*mabse))[0]
-    else:
-            um = np.arange(0,len(mod['teff']),1)
+            ut=np.where((mod_mabs > mabs-sig*mabse) & (mod_mabs < mabs+sig*mabse))[0]
+            um=np.intersect1d(um,ut)
+    #else:
+    #        um = np.arange(0,len(mod['teff']),1)
     
 
     if (input.teff == -99.):
