@@ -104,7 +104,8 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         lat_deg=gal.lat*180./np.pi
 
         avs = 3.1*dustmodel(lon_deg,lat_deg,dsamp/1000.)
-        avs = np.zeros(len(dsamp))+useav
+        # NB the next line means that useav is not actually working yet
+	# avs = np.zeros(len(dsamp))+useav
 	ext=avs*extfactors.ak
 	ext=0. # already in BC
     
