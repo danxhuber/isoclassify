@@ -1,6 +1,6 @@
 # Isochrone Stellar Classification Codes
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.573358.svg)](https://doi.org/10.5281/zenodo.573358)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.573367.svg)](https://doi.org/10.5281/zenodo.573367)
 
 Python codes to perform stellar classifications given any set of input observables.
 
