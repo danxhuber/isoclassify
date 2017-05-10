@@ -176,7 +176,7 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input,model,dustmodel=0,doplot=1):
+def classify(input,model,dustmodel=0,doplot=1,useav=0.):
 
     ## constants
     gsun=27420.010
@@ -299,7 +299,12 @@ def classify(input,model,dustmodel=0,doplot=1):
             #avs = np.linspace(-0.1,1.0,41.)
             avs = np.arange(-0.3,1.0,0.01)
             #avs = np.arange(-0.3,1.0,0.1)
-	    mod = reddening(model,um,avs,extfactors)
+            
+            # user-specified reddening
+            if (useav > -99.):
+                avs = np.zeros(1)+useav
+                
+            mod = reddening(model,um,avs,extfactors)
 
         # otherwise, just redden each model according to the provided map
         else:
@@ -496,6 +501,13 @@ def classify(input,model,dustmodel=0,doplot=1):
             names=['teff','logg','feh','rad','mass','rho','lum','age','avs','dis']
             steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
             fixes=[0,1,1,0,0,1,1,0,1,0]
+            
+        if ((input.plx == -99.) & (map > -99) & (useav > -99.)):
+            names=['teff','logg','feh','rad','mass','rho','lum','age','dis']
+            steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
+            fixes=[0,1,1,0,0,1,1,0,0]
+            
+        
             
     else:
         #names=['teff','logg','feh','rad','mass','rho','lum','age']
