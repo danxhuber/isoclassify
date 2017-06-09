@@ -17,7 +17,7 @@ def plotinit():
 
     fig1.set_tight_layout(True)
     plt.draw()
-    plt.show()
+    #plt.show() Keep from popping windows
     
 
     #plt.subplots_adjust(left=0.08, bottom=0.04, right=0.96, top=0.96, wspace=0.27, \
