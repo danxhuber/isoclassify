@@ -62,7 +62,7 @@ def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
 
     if fnmatch.fnmatch(names[j],'*feh*'):
         xt=np.arange(-2.,1.,0.01)
-        yt=fehprior(xt)2
+        yt=fehprior(xt)
         plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
 
     '''
