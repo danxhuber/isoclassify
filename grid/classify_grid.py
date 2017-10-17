@@ -176,7 +176,7 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input,model,dustmodel=0,doplot=1,useav=0.):
+def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
 
     ## constants
     gsun=27420.010
