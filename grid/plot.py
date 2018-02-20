@@ -12,13 +12,13 @@ def plotinit():
     #plt.subplots_adjust(left=0.08, bottom=0.04, right=0.96, top=0.96, wspace=0.27, \
     #                    hspace=0.6)
 
-    #plt.ion()
-    #plt.show()
+    plt.figure('posteriors')
+    plt.ion()
+    plt.show()
 
-    fig1.set_tight_layout(True)
-    plt.draw()
-    #plt.show() Keep from popping windows
-    
+    #fig1.set_tight_layout(True)
+    #plt.draw()
+    #plt.show()
 
     #plt.subplots_adjust(left=0.08, bottom=0.04, right=0.96, top=0.96, wspace=0.27, \
     #                    hspace=0.6)
@@ -26,7 +26,7 @@ def plotinit():
     #    hspace=0.5)
 
 def plotclear():
-#    raw_input(':')
+    raw_input(':')
 
     plt.clf()
     plt.figure('posteriors')
@@ -34,7 +34,7 @@ def plotclear():
 
 #def plotposterior(x,y,res,err1,err2,avs,model,model_red,names,j,medav,stdav,grcol,ricol,grcole,ricole,Mg,Mge,ix,iy):
 def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
-    fig = plt.figure(figsize=(8,12))
+    #fig = plt.figure(figsize=(8,12))
     plt.subplot(len(names),2,ix)
     plt.plot(x,np.cumsum(y))
     plt.plot([res,res],[0,1],'r')
@@ -72,7 +72,7 @@ def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
         #yt=avprior(xt,data,i,dust,dist)
         plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
     '''
-    fig.set_tight_layout(True)
+    #fig.set_tight_layout(True)
 
 def plothrd(model,input,mabs,mabse,ix,iy):
 

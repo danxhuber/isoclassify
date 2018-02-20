@@ -40,7 +40,7 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     if (bcmodel == 0): 
         bcmodel = h5py.File('bcgrid.h5', 'r')
     if (dustmodel == 0.):
-        dustmodel = mwdust.Combined15()
+        dustmodel = mwdust.Green15()
 
     # object containing output values
     out = resdata()
@@ -104,6 +104,8 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         lat_deg=gal.lat*180./np.pi
 
         avs = 3.1*dustmodel(lon_deg,lat_deg,dsamp/1000.)
+        # NB the next line means that useav is not actually working yet
+	# avs = np.zeros(len(dsamp))+useav
 	ext=avs*extfactors.ak
 	ext=0. # already in BC
     
@@ -374,6 +376,18 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             nit=0
             while (nit < 5):
 
+		if (nit == 0.):
+			out.avs=0.0
+		else:
+			out.avs = 3.1*dustmodel(lon_deg,lat_deg,out.dis/1000.)[0]
+			#print lon_deg,lat_deg,out.dis
+
+                if (useav != 0.):
+                    out.avs=useav
+                if (out.avs < 0.):
+                    out.avs = 0.0
+                ext = out.avs*avtoext
+
                 # bolometric correction interpolated from MESA
                 interp = RegularGridInterpolator((np.array(bcmodel['teffgrid']),\
                     np.array(bcmodel['logggrid']),np.array(bcmodel['fehgrid']),\
@@ -402,18 +416,12 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
                 ddis=abs((olddis-out.dis)/out.dis)
                 #print olddis,out.dis,ddis,ext
                 olddis=out.dis
+		
+		nit=nit+1
+		#print out.dis,out.avs
 
-                out.avs = 3.1*dustmodel(lon_deg,lat_deg,out.dis/1000.)[0]
 
-                if (useav != 0.):
-                    out.avs=useav
-
-                if (out.avs < 0.):
-                    out.avs = 0.0
-
-                #pdb.set_trace()
-                ext = out.avs*avtoext
-                nit=nit+1
+                
 
             #pdb.set_trace()
             print 'Av(mag):',out.avs
@@ -422,6 +430,8 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
             out.disep=out.dise
             out.disem=out.dise
+            
+            out.mabs=Mabs
     
     return out
     
@@ -602,6 +612,8 @@ class resdata():
         self.plxe = 0.
         self.plxep = 0.
         self.plxem = 0.
+        
+        self.mabs = 0.
 
 class extinction():
     def __init__(self):
