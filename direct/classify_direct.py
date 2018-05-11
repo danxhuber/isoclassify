@@ -3,12 +3,10 @@
 # corrections
 
 import numpy as np
-import asfgrid
+# import asfgrid
 import h5py, ephem
 import mwdust
 from scipy.interpolate import RegularGridInterpolator
-import pdb 
-import pidly
 import matplotlib.pyplot as plt
 from astropy.stats import knuth_bin_width as knuth
 
@@ -34,13 +32,6 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     # assumed uncertainty in extinction
     err_ext=0.02
 
-    # load model if they're not passed on
-    if (dnumodel == 0):
-        dnumodel = asfgrid.Seism()  
-    if (bcmodel == 0): 
-        bcmodel = h5py.File('bcgrid.h5', 'r')
-    if (dustmodel == 0.):
-        dustmodel = mwdust.Green15()
 
     # object containing output values
     out = resdata()
@@ -63,7 +54,7 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         ### Monte Carlo starts here
         
         # number of samples
-        nsample=1e5
+        nsample=int(1e5)
 
         # length scale for exp decreasing vol density prior in pc
         L=1350.
@@ -110,6 +101,7 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 	ext=0. # already in BC
     
         if (input.teff == -99.):
+            jkmag = input.jmag - input.kmag
             teff=casagrande(jkmag,0.0)
             teffe=100.
         else:
@@ -143,11 +135,7 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             arr[:,3]=np.zeros(len(avs))+avs
             um=np.where(arr[:,3] < 0.)[0]
             arr[um,3]=0.
-            #pdb.set_trace()
             bc=interp(arr)
-            #pdb.set_trace()
-            
-            #pdb.set_trace()
             
 
         Mvbol = absmag + bc	
@@ -421,9 +409,6 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 		#print out.dis,out.avs
 
 
-                
-
-            #pdb.set_trace()
             print 'Av(mag):',out.avs
             print 'plx(mas):',out.plx*1e3,'+/-',out.plxe*1e3
             print 'dis(pc):',out.dis,'+/-',out.dise
