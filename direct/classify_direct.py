@@ -5,12 +5,13 @@
 import numpy as np
 import asfgrid
 import h5py, ephem
-import mwdust
+#import mwdust # Now using Green et al. (2018) map bayestar17 in the dustmaps package
 from scipy.interpolate import RegularGridInterpolator
 import pdb 
 import pidly
 import matplotlib.pyplot as plt
 from astropy.stats import knuth_bin_width as knuth
+from astropy.coordinates import SkyCoord
 
 def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
@@ -34,13 +35,13 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     # assumed uncertainty in extinction
     err_ext=0.02
 
-    # load model if they're not passed on
-    if (dnumodel == 0):
-        dnumodel = asfgrid.Seism()  
+    # Raise exception if models are not passed on. This is for compatibility with multiprocessing runs:  
     if (bcmodel == 0): 
-        bcmodel = h5py.File('bcgrid.h5', 'r')
+        #bcmodel = h5py.File('bcgrid.h5', 'r')
+	raise ValueError('You did not load the bcmodel. Please do so in your stparas call.')
     if (dustmodel == 0.):
-        dustmodel = mwdust.Green15()
+        #dustmodel = mwdust.Green15()
+	raise ValueError('You did not load the dustmodel. Please do so in your stparas call.')
 
     # object containing output values
     out = resdata()
@@ -53,12 +54,25 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     ########################################################################################
     if ((input.plx > 0.)):
 
-        # only K-band for now
+        # Code now prioritizes K mags, but if no errors exist, it checks for H and then J magnitudes
 	teffgrid=np.array(bcmodel['teffgrid'])
 	avgrid=np.array(bcmodel['avgrid'])
-        interp = RegularGridInterpolator((np.array(bcmodel['teffgrid']),\
-                np.array(bcmodel['logggrid']),np.array(bcmodel['fehgrid']),\
-                np.array(bcmodel['avgrid'])),np.array(bcmodel['bc_k']))
+        if np.isnan(input.kmage) or input.kmage > 8.0:
+            if np.isnan(input.hmage) or input.hmage > 8.0:
+                interp = RegularGridInterpolator((np.array(bcmodel['teffgrid']),np.array(bcmodel['logggrid']),np.array(bcmodel['fehgrid']),np.array(bcmodel['avgrid'])),np.array(bcmodel['bc_j']))
+                map = input.jmag
+                mape = input.jmage
+                print "Using jmag and jmag error for reddening map."
+            else:
+                interp = RegularGridInterpolator((np.array(bcmodel['teffgrid']),np.array(bcmodel['logggrid']),np.array(bcmodel['fehgrid']),np.array(bcmodel['avgrid'])),np.array(bcmodel['bc_h']))
+                map = input.hmag
+                mape = input.hmage
+                print "Using hmag and hmag error for reddening map."
+
+        else:
+            interp = RegularGridInterpolator((np.array(bcmodel['teffgrid']),np.array(bcmodel['logggrid']),np.array(bcmodel['fehgrid']),np.array(bcmodel['avgrid'])),np.array(bcmodel['bc_k']))
+            map = input.kmag
+            mape = input.kmage
 
         ### Monte Carlo starts here
         
@@ -68,29 +82,48 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         # length scale for exp decreasing vol density prior in pc
         L=1350.
 
-        # get a rough maximum distance
+        # get a rough maximum and minimum distance
         tempdis=1./input.plx
         tempdise=input.plxe/input.plx**2
         maxds=tempdis+5.*tempdise
+	minds=tempdis-5.*tempdise
         
-        ds=np.arange(1.,10000,1.)
-        lh = np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./ds)**2)
-        prior=(ds**2/(2.*L**3.))*np.exp(-ds/L)
+        ds=np.arange(1.,1e5,1.) # Set max distance to 100kpc to sample all likely distances.
+        lh = (1./(np.sqrt(2.*np.pi)*input.plxe))*np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./ds)**2)
+        prior=(ds**2/(2.*L**3.))*np.exp(-ds/L) # Using Bailer-Jones prior
         dis = lh*prior
         dis2=dis/np.sum(dis)
         norm=dis2/np.max(dis2)
-        um=np.where((ds > tempdis) & (norm < 0.001))[0]
+	
+        # Deal with negative and positive parallaxes differently:
+        if tempdis > 0:
+            # Determine maxds based on posterior:
+            um=np.where((ds > tempdis) & (norm < 0.001))[0]
+
+            # Determine minds just like maxds:
+            umin=np.where((ds < tempdis) & (norm < 0.001))[0]
+        else:
+            # Determine maxds based on posterior, taking argmax instead of tempdis which is wrong:
+            um=np.where((ds > np.argmax(norm)) & (norm < 0.001))[0]
+
+            # Determine minds just like maxds:
+            umin=np.where((ds < np.argmax(norm)) & (norm < 0.001))[0]
+
         if (len(um) > 0):
             maxds=np.min(ds[um])
         else:
-            maxds=10000.
+            maxds=1e5
+
+        if (len(umin) > 0):
+            minds=np.max(ds[umin])
+        else:
+            minds=1.
 
         print 'using max distance:',maxds
-        ds=np.linspace(1.,maxds,10000)
-        lh = (1./(np.sqrt(2.*np.pi)*input.plxe))*\
-             np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./ds)**2)
-        prior=(ds**2/(2.*L**3.))*np.exp(-ds/L)
-        prior=np.zeros(len(lh))+1.
+	print 'using min distance:',minds
+        ds=np.linspace(minds,maxds,nsample)
+        lh = (1./(np.sqrt(2.*np.pi)*input.plxe))*np.exp( (-1./(2.*input.plxe**2))*(input.plx-(1./ds))**2)
+        prior=(ds**2/(2.*L**3.))*np.exp(-ds/L) # Using Bailer-Jones prior
         dis = lh*prior
         dis2=dis/np.sum(dis)
 
@@ -98,15 +131,21 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         np.random.seed(seed=10)
         dsamp=np.random.choice(ds,p=dis2,size=nsample)
         
-        equ = ephem.Equatorial(input.ra*np.pi/180., input.dec*np.pi/180., epoch=ephem.J2000)
+	coords = SkyCoord(input.ra*units.deg, input.dec*units.deg,distance=dsamp*units.pc, frame='icrs')
+
+        avs = (3.1+0.063)*dustmodel(coords, mode='random_sample') # Took derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK.
+        
+	''' Old code utilizing mwdust. Using above code with updated dustmap
+	equ = ephem.Equatorial(input.ra*np.pi/180., input.dec*np.pi/180., epoch=ephem.J2000)
         gal = ephem.Galactic(equ)
         lon_deg=gal.lon*180./np.pi
         lat_deg=gal.lat*180./np.pi
 
-        avs = 3.1*dustmodel(lon_deg,lat_deg,dsamp/1000.)
+        avs = 3.1*dustmodel(lon_deg,lat_deg,dsamp/1000.)'''
+	
         # NB the next line means that useav is not actually working yet
 	# avs = np.zeros(len(dsamp))+useav
-	ext=avs*extfactors.ak
+	# ext=avs*extfactors.ak # No use, already in BC
 	ext=0. # already in BC
     
         if (input.teff == -99.):
@@ -119,8 +158,8 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         np.random.seed(seed=11)
         teffsamp=teff+np.random.randn(nsample)*teffe
             
-        map=input.kmag
-        mape=input.kmage
+        #map=input.kmag # Defined above for j, h, and k
+        #mape=input.kmage # Defined above for j, h, and k
         np.random.seed(seed=12)
         map_samp=map+np.random.randn(nsample)*mape
         absmag = -5.*np.log10(dsamp)-ext+map_samp+5.
@@ -195,6 +234,10 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         out.feh=input.feh
         out.fehep=input.fehe
         out.fehem=input.fehe
+	out.plx=input.plx
+        out.plxe=input.plxe
+        out.plxem=input.plxe
+        out.plxep=input.plxe
 
         if (plot == 1):
             plt.ion()
@@ -222,6 +265,7 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             plt.subplot(3,2,6)
             plt.hist(avs,bins=100)
             plt.title('Av')
+	    plt.tight_layout() # To prevent plot text from overlapping
 
         #pdb.set_trace()
 
@@ -238,9 +282,14 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
 
     ########################################################################################
-    # case 1: input is spectroscopy + seismology
+    # case 2: input is spectroscopy + seismology
     ########################################################################################
     if ((input.dnu > -99.) & (input.teff > -99.)):
+	
+	# Raise error if asteroseismic model is not passed on. This is for compatibility with multiprocessing runs:
+    	if (dnumodel == 0):
+            #dnumodel = asfgrid.Seism()
+	    raise ValueError('You did not load Seism(). Please do so in your stparas call.')
 
         # seismic logg, density, M and R from scaling relations; this is iterated,
         # since Dnu scaling relation correction depends on M
@@ -366,11 +415,13 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         if (map > -99.):
             print 'using '+str
             print 'using coords: ',input.ra,input.dec
-
-            equ = ephem.Equatorial(input.ra*np.pi/180., input.dec*np.pi/180., epoch=ephem.J2000)
+	    
+	    coords = SkyCoord(input.ra*units.deg, input.dec*units.deg,distance=dsamp*units.pc, frame='icrs')
+            ''' Old code utilizing mwdust. Using above code with updated dustmap
+	    equ = ephem.Equatorial(input.ra*np.pi/180., input.dec*np.pi/180., epoch=ephem.J2000)
             gal = ephem.Galactic(equ)
             lon_deg=gal.lon*180./np.pi
-            lat_deg=gal.lat*180./np.pi
+            lat_deg=gal.lat*180./np.pi'''
 
             # iterated since BC depends on extinction
             nit=0
@@ -379,7 +430,8 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 		if (nit == 0.):
 			out.avs=0.0
 		else:
-			out.avs = 3.1*dustmodel(lon_deg,lat_deg,out.dis/1000.)[0]
+			#out.avs = 3.1*dustmodel(lon_deg,lat_deg,out.dis/1000.)[0]
+			out.avs = (3.1+0.063)*dustmodel(coords, mode='random_sample') # Took derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK.
 			#print lon_deg,lat_deg,out.dis
 
                 if (useav != 0.):
