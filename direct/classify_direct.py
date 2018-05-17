@@ -3,13 +3,10 @@
 # corrections
 
 import numpy as np
-import asfgrid
-import h5py, ephem
-#import mwdust # Now using Green et al. (2018) map bayestar17 in the dustmaps package
-from scipy.interpolate import RegularGridInterpolator
 import pdb 
-import pidly
 import matplotlib.pyplot as plt
+import astropy.units as units
+from scipy.interpolate import RegularGridInterpolator
 from astropy.stats import knuth_bin_width as knuth
 from astropy.coordinates import SkyCoord
 
