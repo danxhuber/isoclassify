@@ -202,7 +202,7 @@ def run_multiprocessing_pipeline(numOfThreads):
     # Initialize and run multiprocessing:
     pool = multiprocessing.Pool(processes=numOfThreads)
     print "Total number of stars:",len(df.index)
-    IDs,finalPars = zip(*pool.map(compute_properties,np.arange(len(df.index))))
+    starIDs,finalPars = zip(*pool.map(compute_properties,np.arange(len(df.index))))
     
     # Return arrays containing all parameters:
     return starIDs, finalPars
