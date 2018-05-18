@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+import os
+import glob
+from argparse import ArgumentParser
+from collections import OrderedDict
+
+import pylab as pl
+import numpy as np
+
+import pandas as pd
+import isoclassify
+
+def main():
+    psr = ArgumentParser()
+    subpsr = psr.add_subparsers(title="subcommands", dest='subcommand')
+    psr2 = subpsr.add_parser('run',help='run isoclassify')
+    psr2.add_argument('method', help='{direct,grid}')
+    psr2.add_argument('id_starname', help='name of star')
+    psr2.add_argument('-o','--outdir',default='./')
+    psr2.add_argument('--csv',help='path to csv file')
+    psr2.set_defaults(func=run)
+
+    psr2 = subpsr.add_parser('batch', description="Create batch jobs")
+    psr2.add_argument('method',help='{direct,grid}')
+    psr2.add_argument('csv', type=str, help='list of parameters')
+    psr2.add_argument( 
+        '-o','--baseoutdir',default='./',help='base path of output directory'
+    )
+    psr2.set_defaults(func=batch)
+    args = psr.parse_args()
+    args.func(args)
+
+def run(args):
+    isoclassify.run(**vars(args))
+
+def batch(args):
+    df = pd.read_csv(args.csv,engine='python')
+    for i, row in df.iterrows():
+        fmt = dict(**row)
+        fmt = dict(fmt,**vars(args))
+        fmt['outdir'] = "{baseoutdir:}/{id_starname:}".format(**fmt)
+        s = ""
+        s+="mkdir -p {outdir:};"
+        s+="isoclassify run {method:} {id_starname:} --outdir {outdir:} "
+        s+="--csv {csv:} "
+        s+="&> {outdir:}/output.log"
+        s = s.format(**fmt)
+        print s 
+
+if __name__=="__main__":
+    main()
+
+
