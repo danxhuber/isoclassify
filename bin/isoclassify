@@ -23,7 +23,9 @@ def main():
     psr2 = subpsr.add_parser('batch', description="Create batch jobs")
     psr2.add_argument('method',help='{direct,grid}')
     psr2.add_argument('csv', type=str, help='list of parameters')
-    psr2.add_argument( '-o','--baseoutdir',help='absolute path to output directory')
+    psr2.add_argument( 
+        '-o','--baseoutdir',default='./',help='base path of output directory'
+    )
     psr2.set_defaults(func=batch)
     args = psr.parse_args()
     args.func(args)

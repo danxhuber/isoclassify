@@ -110,9 +110,7 @@ class PipelineDirect(Pipeline):
 
     def run(self):
         self.print_constraints()
-        bcmodel  = h5py.File(
-            '/Users/petigura/code/isoclassify/direct/bcgrid.h5','r'
-        )
+        bcmodel = '/Users/petigura/code/isoclassify/direct/bcgrid.h5'
         dustmodel = mwdust.Combined15()
 
         x = direct.classify_direct.obsdata()
