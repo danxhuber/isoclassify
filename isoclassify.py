@@ -5,7 +5,6 @@ import glob
 import numpy as np
 from matplotlib import pylab as plt
 import pandas as pd
-import h5py
 import ebf
 import mwdust 
 
@@ -15,7 +14,7 @@ import direct.classify_direct
 DATADIR = os.environ['ISOCLASSIFY_DATADIR']
 
 CONSTRAINTS = [
-    'teff','logg','met','gmag','rmag','imag','zmag','jmag','hmag','kmag',
+    'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
     'parallax'
 ]
 
@@ -58,7 +57,7 @@ class Pipeline(object):
         self.csvfn = os.path.join(self.outdir,'output.csv')
 
     def addspec(self,x):
-        keys = 'teff logg met'.split()
+        keys = 'teff logg feh'.split()
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addspec(val,err)
@@ -102,10 +101,10 @@ class Pipeline(object):
 
 class PipelineDirect(Pipeline):
     outputcols = {
-        'iso_sdis': 'dis',
-        'iso_savs': 'avs',
-        'iso_srad': 'rad',
-        'iso_slum': 'lum',
+        'iso_dis': 'dis',
+        'iso_avs': 'avs',
+        'iso_rad': 'rad',
+        'iso_lum': 'lum',
     }
 
     def run(self):
@@ -126,13 +125,13 @@ class PipelineDirect(Pipeline):
 
 class PipelineGrid(Pipeline):
     outputcols = {
-        'iso_steff': 'teff',
-        'iso_slogg': 'logg',
-        'iso_smet': 'feh',
-        'iso_srad': 'rad',
-        'iso_smass': 'mass',
-        'iso_sage': 'age',
-        'iso_sdis': 'dis'
+        'iso_teff': 'teff',
+        'iso_logg': 'logg',
+        'iso_feh': 'feh',
+        'iso_rad': 'rad',
+        'iso_mass': 'mass',
+        'iso_age': 'age',
+        'iso_dis': 'dis'
         
     }
     def run(self):
