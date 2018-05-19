@@ -1,0 +1,4 @@
+id_starname,teff,teff_err,logg,logg_err,feh,feh_err,parallax,parallax_err,kmag,kmag_err,comments
+sol,5770,70,4.44,0.07,0,0.04,0.1,0.001,3.302,0.01,should return 1 solar radius
+K2-3,3825,70,4.7,1,-0.27,0.09,0.022661,5.53E-05,8.561,0.023,using very loose logg constraints
+K2-24,5625,100,4.29,0.08,0.34,0.04,0.005835,0.000046,9.18,0.021,

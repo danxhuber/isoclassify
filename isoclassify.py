@@ -97,7 +97,23 @@ class Pipeline(object):
             out[outcol+'_err2'] = -getattr(self.paras, incol+'em')
 
         out = pd.Series(out)
+        
+        block1 = []
+        block2 = []
+        block3 = []
+        for col in list(out.index):
+            if col.count('id_starname')==1:
+                block1.append(col)
+                continue
+            if (col.count('iso_')==1) :
+                block3.append(col)
+                continue
+
+            block2.append(col)
+
+        out = out[block1 + block2 + block3]
         out.to_csv(self.csvfn)
+        print "created {}".format(self.csvfn)
 
 class PipelineDirect(Pipeline):
     outputcols = {

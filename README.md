@@ -43,7 +43,7 @@ Bolometric corrections are interpolated in (Teff, logg, FeH, Av) from the MIST g
 
 ## Command line interface
 
-isoclassify includes a command line interface for convenient single star processing, as well as batch processing of many stars.
+isoclassify includes a command line interface (CLI) for convenient single star processing, as well as batch processing of many stars.
 
 ```bash
 isoclassify run <mode> <star name> --csv <csv file> --outdir <output directory>  
@@ -54,23 +54,17 @@ isoclassify run <mode> <star name> --csv <csv file> --outdir <output directory>
 1. `<output directory>` will contain the isoclassify output files
 1. `<csv file>` contains as columns parameters that are passed to isoclassify
 
-example
+We've included `examples/example.csv` with a few stars as an example
 
 ```bash
-isoclassify run direct 97658 --csv data/isoclassify-direct.csv --outdir isoclassify/direct//97658 
+mkdir -p output/sol # make sure output directory exists
+isoclassify run direct sol --csv examples/example.csv --outdir output/sol
 ```
 
-## Parallel processing
-
-First generate a list of batch scripts, then run using GNU parallel
+The CLI also makes parallel processing easy. First generate a list of batch scripts, then run using GNU parallel
 
 ```bash
-isoclassify batch <mode> <csv file> -o <output directory>  
+isoclassify batch direct examples/example.csv -o output > isoclassify.tot
+parallel ::: isoclassify.tot
 ```
 
-example
-
-```bash
-isoclassify batch direct data/isoclassify-direct.csv -o isoclassify/direct/ > isoclassify-direct.tot
-parallel :::: isoclassify-direct.tot
-```
