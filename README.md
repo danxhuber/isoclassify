@@ -39,3 +39,38 @@ Uses bolometric corrections and extinction maps to derive stellar parameters usi
 (2) RA/DEC + Asteroseismology + Spectroscopy -> logg, rho, rad, mass, lum, distance, Av. Uses Dnu scaling relation corrections by Sharma et al. (2016). <br />
 
 Bolometric corrections are interpolated in (Teff, logg, FeH, Av) from the MIST grid, Conroy et al. in prep (http://waps.cfa.harvard.edu/MIST/model_grids.html)
+
+
+## Command line interface
+
+isoclassify includes a command line interface for convenient single star processing, as well as batch processing of many stars.
+
+```bash
+isoclassify run <mode> <star name> --csv <csv file> --outdir <output directory>  
+```
+
+1. `<mode>` direct or grid
+1. `<star name>` tells isoclassify which row of <csv file> to pull the input parameters
+1. `<output directory>` will contain the isoclassify output files
+1. `<csv file>` contains as columns parameters that are passed to isoclassify
+
+example
+
+```bash
+isoclassify run direct 97658 --csv data/isoclassify-direct.csv --outdir isoclassify/direct//97658 
+```
+
+## Parallel processing
+
+First generate a list of batch scripts, then run using GNU parallel
+
+```bash
+isoclassify batch <mode> <csv file> -o <output directory>  
+```
+
+example
+
+```bash
+isoclassify batch direct data/isoclassify-direct.csv -o isoclassify/direct/ > isoclassify-direct.tot
+parallel :::: isoclassify-direct.tot
+```
