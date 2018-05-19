@@ -98,6 +98,7 @@ class Pipeline(object):
 
         out = pd.Series(out)
         
+        # Re-ordering series
         block1 = []
         block2 = []
         block3 = []
@@ -147,8 +148,7 @@ class PipelineGrid(Pipeline):
         'iso_rad': 'rad',
         'iso_mass': 'mass',
         'iso_age': 'age',
-        'iso_dis': 'dis'
-        
+        'iso_dis': 'dis'      
     }
     def run(self):
         self.print_constraints()
