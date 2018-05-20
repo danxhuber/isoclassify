@@ -5,7 +5,6 @@ import glob
 import numpy as np
 from matplotlib import pylab as plt
 import pandas as pd
-import h5py
 import ebf
 import mwdust 
 
@@ -15,7 +14,7 @@ import direct.classify_direct
 DATADIR = os.environ['ISOCLASSIFY_DATADIR']
 
 CONSTRAINTS = [
-    'teff','logg','met','gmag','rmag','imag','zmag','jmag','hmag','kmag',
+    'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
     'parallax'
 ]
 
@@ -58,7 +57,7 @@ class Pipeline(object):
         self.csvfn = os.path.join(self.outdir,'output.csv')
 
     def addspec(self,x):
-        keys = 'teff logg met'.split()
+        keys = 'teff logg feh'.split()
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addspec(val,err)
@@ -98,14 +97,31 @@ class Pipeline(object):
             out[outcol+'_err2'] = -getattr(self.paras, incol+'em')
 
         out = pd.Series(out)
+        
+        # Re-ordering series
+        block1 = []
+        block2 = []
+        block3 = []
+        for col in list(out.index):
+            if col.count('id_starname')==1:
+                block1.append(col)
+                continue
+            if (col.count('iso_')==1) :
+                block3.append(col)
+                continue
+
+            block2.append(col)
+
+        out = out[block1 + block2 + block3]
         out.to_csv(self.csvfn)
+        print "created {}".format(self.csvfn)
 
 class PipelineDirect(Pipeline):
     outputcols = {
-        'iso_sdis': 'dis',
-        'iso_savs': 'avs',
-        'iso_srad': 'rad',
-        'iso_slum': 'lum',
+        'iso_dis': 'dis',
+        'iso_avs': 'avs',
+        'iso_rad': 'rad',
+        'iso_lum': 'lum',
     }
 
     def run(self):
@@ -126,14 +142,13 @@ class PipelineDirect(Pipeline):
 
 class PipelineGrid(Pipeline):
     outputcols = {
-        'iso_steff': 'teff',
-        'iso_slogg': 'logg',
-        'iso_smet': 'feh',
-        'iso_srad': 'rad',
-        'iso_smass': 'mass',
-        'iso_sage': 'age',
-        'iso_sdis': 'dis'
-        
+        'iso_teff': 'teff',
+        'iso_logg': 'logg',
+        'iso_feh': 'feh',
+        'iso_rad': 'rad',
+        'iso_mass': 'mass',
+        'iso_age': 'age',
+        'iso_dis': 'dis'      
     }
     def run(self):
         self.print_constraints()
