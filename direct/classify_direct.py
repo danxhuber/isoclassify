@@ -9,6 +9,7 @@ import ephem
 import mwdust
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
+import pdb
 
 def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
@@ -43,12 +44,12 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     # case 1: input is parallax + colors #
     ######################################
 
-    with h5py.File(bcmodel,'r') as h5:
-        teffgrid = h5['teffgrid'][:]
-        logggrid = h5['logggrid'][:]
-        fehgrid = h5['fehgrid'][:]
-        avgrid = h5['avgrid'][:]
-        bc_k = h5['bc_k'][:]
+    #with h5py.File(bcmodel,'r') as h5:
+    teffgrid = bcmodel['teffgrid'][:]
+    logggrid = bcmodel['logggrid'][:]
+    fehgrid = bcmodel['fehgrid'][:]
+    avgrid = bcmodel['avgrid'][:]
+    bc_k = bcmodel['bc_k'][:]
 
     if ((input.plx > 0.)):
         # load up bolometric correction grid
@@ -64,13 +65,17 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
         # length scale for exp decreasing vol density prior in pc
         L=1350.
+        
+        # maximum distance to sample (in pc)
+        maxdis=50000.
 
         # get a rough maximum distance
         tempdis=1./input.plx
         tempdise=input.plxe/input.plx**2
         maxds=tempdis+5.*tempdise
+        minds=tempdis-5.*tempdise
         
-        ds=np.arange(1.,10000,1.)
+        ds=np.arange(1.,maxdis,1.)
         lh = np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./ds)**2)
         prior=(ds**2/(2.*L**3.))*np.exp(-ds/L)
         dis = lh*prior
@@ -80,14 +85,14 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         if (len(um) > 0):
             maxds=np.min(ds[um])
         else:
-            maxds=10000.
+            maxds=maxdis
 
-        print 'using max distance:',maxds
-        ds=np.linspace(1.,maxds,10000)
+        print 'using max/min distance:',maxds,minds
+        ds=np.linspace(minds,maxds,10000)
         lh = (1./(np.sqrt(2.*np.pi)*input.plxe))*\
              np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./ds)**2)
         prior=(ds**2/(2.*L**3.))*np.exp(-ds/L)
-        prior=np.zeros(len(lh))+1.
+        #prior=np.zeros(len(lh))+1.
         dis = lh*prior
         dis2=dis/np.sum(dis)
 
@@ -102,9 +107,8 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
         avs = 3.1*dustmodel(lon_deg,lat_deg,dsamp/1000.)
         # NB the next line means that useav is not actually working yet
-	# avs = np.zeros(len(dsamp))+useav
-	ext=avs*extfactors.ak
-	ext=0. # already in BC
+        # avs = np.zeros(len(dsamp))+useav
+        ext=avs*extfactors.ak
     
         if (input.teff == -99.):
             jkmag = input.jmag - input.kmag
@@ -116,21 +120,54 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
         np.random.seed(seed=11)
         teffsamp=teff+np.random.randn(nsample)*teffe
+        
+        # hack to avoid crazy Teff samples
+        teffsamp[teffsamp < 1000.]=1000.
             
         map=input.kmag
         mape=input.kmage
         np.random.seed(seed=12)
         map_samp=map+np.random.randn(nsample)*mape
-        absmag = -5.*np.log10(dsamp)-ext+map_samp+5.
-
-        if (input.teff < np.min(teffgrid)):
-            return out
-        if (input.teff > np.max(teffgrid)):
-            return out
-        #if (out.av > np.max(avgrid)):
-        #    return out
-        #if (out.av < np.min(avgrid)):
-        #    return out
+        
+        # NB no extinction correction here yet since it is either:
+        #   - already taken into account in ATLAS BCs below
+        #   - corrected for M dwarfs further below
+        absmag = -5.*np.log10(dsamp)+map_samp+5.
+        
+        # if no logg is provided, take guess from Mk-logg fit to solar-metallicity MIST isochrones
+        # NB these coeffs roughly work for JH too
+        if (input.logg == -99.):
+            fitk=np.poly1d([-0.01234736,  0.36684517,  3.1477089 ])
+            input.logg=fitk(np.median(absmag-ext))
+            print 'no input logg provided, guessing:', input.logg    
+            
+	    # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015 Mks-R relation instead
+	    if ((input.teff < 4100.) & (np.median(absmag-ext) > 4.)):
+		    if (input.feh > -99.): 
+		        rad = 1.9305-0.3466*(absmag-ext)+0.01647*(absmag-ext)**2*(1.+0.04458*input.feh)
+		    else:
+		        rad = 1.9515-0.3520*(absmag-ext)+0.01680*(absmag-ext)**2
+		        
+		    lum = rad**2 * (teffsamp/teffsun)**4
+		    
+		# for everything else, interpolate ATLAS BCs
+	    else:
+	        if (input.teff < np.min(teffgrid)):
+	            return out
+	        if (input.teff > np.max(teffgrid)):
+	            return out
+            if ((input.logg > -99.) & (input.logg < np.min(logggrid))):
+                return out
+            if ((input.logg > -99.) & (input.logg > np.max(logggrid))):
+                return out
+            if ((input.feh > -99.) & (input.feh < np.min(fehgrid))):
+                return out
+            if ((input.feh > -99.) & (input.feh > np.max(fehgrid))):
+                return out
+            fix=np.where(avs > np.max(avgrid))[0]
+            avs[fix]=np.max(avgrid)
+            fix=np.where(avs < np.min(avgrid))[0]
+            avs[fix]=np.min(avgrid)
 
         if ((input.teff > -99.) & (input.logg > -99.) & (input.feh > -99.)):
             #bc = interp(np.array([input.teff,input.logg,input.feh,0.]))[0]
@@ -141,15 +178,15 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             arr[:,3]=np.zeros(len(avs))+avs
             um=np.where(arr[:,3] < 0.)[0]
             arr[um,3]=0.
-            bc=interp(arr)
+            bc=interp(arr)	    
             
-        Mvbol = absmag + bc	
-        lum = 10**((Mvbol-Msun)/(-2.5))
+            Mvbol = absmag + bc
+            lum = 10**((Mvbol-Msun)/(-2.5))
+            t = teffsamp/teffsun
+            rad = (lum*t**(-4.))**0.5
 
-        t = teffsamp/teffsun
-        rad = (lum*t**(-4.))**0.5
 
-
+        #pdb.set_trace()
         out.teff=input.teff
         out.teffe=input.teffe
 
