@@ -18,6 +18,11 @@ pip install ephem
 cd isoclassify
 wget https://www.dropbox.com/s/yjgm8bwpw9cs0ew/mesa.ebf?dl=0 
 
+# Download asfgrid input files for asteroseismic Delta_nu corrections
+cd isoclassify/direct
+wget https://www.dropbox.com/s/26enigp5q03bz5n/grid_interp1.ebf?dl=0
+wget https://www.dropbox.com/s/xrwwhgdgrhwgms7/grid_interp2.ebf?dl=0
+
 # Set environment variables
 export ISOCLASSIFY=${WKDIR}/code/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
 export PYTHONPATH=${PYTHONPATH}:${ISOCLASSIFY}
