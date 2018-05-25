@@ -3,14 +3,12 @@
 # corrections
 
 import numpy as np
-import asfgrid
-import h5py, ephem
+# import asfgrid
+import h5py 
+import ephem
 import mwdust
 from scipy.interpolate import RegularGridInterpolator
-import pdb 
-import pidly
 import matplotlib.pyplot as plt
-from astropy.stats import knuth_bin_width as knuth
 
 def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
@@ -34,13 +32,6 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     # assumed uncertainty in extinction
     err_ext=0.02
 
-    # load model if they're not passed on
-    if (dnumodel == 0):
-        dnumodel = asfgrid.Seism()  
-    if (bcmodel == 0): 
-        bcmodel = h5py.File('bcgrid.h5', 'r')
-    if (dustmodel == 0.):
-        dustmodel = mwdust.Green15()
 
     # object containing output values
     out = resdata()
@@ -48,22 +39,28 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     ## extinction coefficients
     extfactors=extinction()
 
-    ########################################################################################
-    # case 1: input is parallax + colors 
-    ########################################################################################
-    if ((input.plx > 0.)):
+    ######################################
+    # case 1: input is parallax + colors #
+    ######################################
 
+    with h5py.File(bcmodel,'r') as h5:
+        teffgrid = h5['teffgrid'][:]
+        logggrid = h5['logggrid'][:]
+        fehgrid = h5['fehgrid'][:]
+        avgrid = h5['avgrid'][:]
+        bc_k = h5['bc_k'][:]
+
+    if ((input.plx > 0.)):
+        # load up bolometric correction grid
         # only K-band for now
-	teffgrid=np.array(bcmodel['teffgrid'])
-	avgrid=np.array(bcmodel['avgrid'])
-        interp = RegularGridInterpolator((np.array(bcmodel['teffgrid']),\
-                np.array(bcmodel['logggrid']),np.array(bcmodel['fehgrid']),\
-                np.array(bcmodel['avgrid'])),np.array(bcmodel['bc_k']))
+        points = (teffgrid,logggrid,fehgrid,avgrid)
+        values = bc_k
+        interp = RegularGridInterpolator(points,values)
 
         ### Monte Carlo starts here
         
         # number of samples
-        nsample=1e5
+        nsample=int(1e5)
 
         # length scale for exp decreasing vol density prior in pc
         L=1350.
@@ -110,6 +107,7 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 	ext=0. # already in BC
     
         if (input.teff == -99.):
+            jkmag = input.jmag - input.kmag
             teff=casagrande(jkmag,0.0)
             teffe=100.
         else:
@@ -143,20 +141,14 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             arr[:,3]=np.zeros(len(avs))+avs
             um=np.where(arr[:,3] < 0.)[0]
             arr[um,3]=0.
-            #pdb.set_trace()
             bc=interp(arr)
-            #pdb.set_trace()
             
-            #pdb.set_trace()
-            
-
         Mvbol = absmag + bc	
         lum = 10**((Mvbol-Msun)/(-2.5))
 
         t = teffsamp/teffsun
         rad = (lum*t**(-4.))**0.5
 
-        #pdb.set_trace()
 
         out.teff=input.teff
         out.teffe=input.teffe
@@ -179,11 +171,10 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         out.avsep=np.percentile(avs,84.1)-out.avs
         out.avsem=out.avs-np.percentile(avs,15.9)
         
-        #pdb.set_trace()
         
-        out.rad,out.radep,out.radem,radbn=getstat(rad)
-        out.lum,out.lumep,out.lumem,lumbn=getstat(lum)
-        out.dis,out.disep,out.disem,disbn=getstat(dsamp)
+        out.rad,out.radep,out.radem=getstat(rad)
+        out.lum,out.lumep,out.lumem=getstat(lum)
+        out.dis,out.disep,out.disem=getstat(dsamp)
         #out.avs,out.avsep,out.avsem=getstat(avs)
         #pdb.set_trace()
         out.teff=input.teff
@@ -204,11 +195,11 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             plt.title('Teff')
 
             plt.subplot(3,2,2)
-            plt.hist(lum,bins=lumbn)
+            plt.hist(lum,bins=100)
             plt.title('Lum')
 
             plt.subplot(3,2,3)
-            plt.hist(rad,bins=radbn)
+            plt.hist(rad,bins=100)
             plt.title('Rad')
 
             plt.subplot(3,2,4)
@@ -216,14 +207,13 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             plt.title('absmag')
 
             plt.subplot(3,2,5)
-            plt.hist(dsamp,bins=disbn)
+            plt.hist(dsamp,bins=100)
             plt.title('distance')
 
             plt.subplot(3,2,6)
             plt.hist(avs,bins=100)
             plt.title('Av')
 
-        #pdb.set_trace()
 
         print '   '
         print 'teff(K):',out.teff,'+/-',out.teffe
@@ -233,17 +223,14 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         print 'lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem
         
         print '-----'
-        #raw_input(':')
-        #pdb.set_trace()
 
-
-    ########################################################################################
-    # case 1: input is spectroscopy + seismology
-    ########################################################################################
+    ##############################################
+    # case 1: input is spectroscopy + seismology #
+    ##############################################
     if ((input.dnu > -99.) & (input.teff > -99.)):
-
-        # seismic logg, density, M and R from scaling relations; this is iterated,
-        # since Dnu scaling relation correction depends on M
+        # seismic logg, density, M and R from scaling relations; this
+        # is iterated, since Dnu scaling relation correction depends
+        # on M
         dmass=1.
         fdnu=1.
         dnuo=input.dnu
@@ -377,10 +364,10 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             while (nit < 5):
 
 		if (nit == 0.):
-			out.avs=0.0
+                    out.avs=0.0
 		else:
-			out.avs = 3.1*dustmodel(lon_deg,lat_deg,out.dis/1000.)[0]
-			#print lon_deg,lat_deg,out.dis
+                    out.avs = 3.1*dustmodel(lon_deg,lat_deg,out.dis/1000.)[0]
+                    #print lon_deg,lat_deg,out.dis
 
                 if (useav != 0.):
                     out.avs=useav
@@ -389,9 +376,10 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
                 ext = out.avs*avtoext
 
                 # bolometric correction interpolated from MESA
-                interp = RegularGridInterpolator((np.array(bcmodel['teffgrid']),\
-                    np.array(bcmodel['logggrid']),np.array(bcmodel['fehgrid']),\
-                np.array(bcmodel['avgrid'])),np.array(bcmodel[str]))
+
+                points = (teffgrid,logggrid,fehgrid,avgrid)
+                values = bc_k
+                interp = RegularGridInterpolator(points, values)
 
                 #pdb.set_trace()
                 bc = interp(np.array([input.teff,out.logg,input.feh,out.avs]))[0]
@@ -421,9 +409,6 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 		#print out.dis,out.avs
 
 
-                
-
-            #pdb.set_trace()
             print 'Av(mag):',out.avs
             print 'plx(mas):',out.plx*1e3,'+/-',out.plxe*1e3
             print 'dis(pc):',out.dis,'+/-',out.dise
@@ -436,27 +421,10 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     return out
     
 def getstat(indat):
-    bn1,bn2=knuth(indat,return_bins=True)
-    #(yax, xax, patches)=plt.hist(indat,bins=bn2)
-    yax, xax = np.histogram(indat, bins=bn2)
-    yax=yax.astype(float)
-    xax=xax[0:len(xax)-1]+bn1/2.
-    yax=yax/np.sum(yax)
-    cprob = np.cumsum(yax)
-    pos = np.argmax(yax)  
-    med = xax[pos]
-    temp = cprob[pos]
-    ll = temp-temp*0.683
-    ul = temp+(1. - temp)*0.683
-    pos = np.argmin(np.abs(cprob-ll))
-    emed1 = abs(med-xax[pos])
-    pos = np.argmin(np.abs(cprob-ul))
-    emed2 = abs(xax[pos]-med)
-    #pdb.set_trace()
-    
-    #plt.plot([med,med],[0,np.max(yax)])
-
-    return med,emed2,emed1,bn2
+    p16, med, p84 = np.percentile(indat,[16,50,84])
+    emed1  = med - p16
+    emed2  = p84 - med
+    return med,emed2,emed1
     
   
 def casagrande(jk,feh):
