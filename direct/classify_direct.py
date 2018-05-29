@@ -11,7 +11,7 @@ from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 import pdb
 
-def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
+def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,plot=-99,band='k'):
 
     # IAU XXIX Resolution, Mamajek et al. (2015)
     r_sun = 6.957e10   	    
@@ -33,12 +33,13 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     # assumed uncertainty in extinction
     err_ext=0.02
 
-
     # object containing output values
     out = resdata()
 
     ## extinction coefficients
-    extfactors=extinction()
+    #extfactors=extinction()
+    extfactors={"ab":1.3454449, "av":1.0, "abt":1.3454449, "avt":1.0602271, "ag":1.2348743, "ar":0.88343449, "ai":0.68095687, "az":0.48308430, "aj":0.28814896, "ah":0.18152716, "ak":0.11505195, "aga":1.2348743}
+
 
     ######################################
     # case 1: input is parallax + colors #
@@ -49,7 +50,7 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
     logggrid = bcmodel['logggrid'][:]
     fehgrid = bcmodel['fehgrid'][:]
     avgrid = bcmodel['avgrid'][:]
-    bc_k = bcmodel['bc_k'][:]
+    bc_k = bcmodel['bc_'+band][:]
 
     if ((input.plx > 0.)):
         # load up bolometric correction grid
@@ -107,25 +108,37 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
 
         avs = 3.1*dustmodel(lon_deg,lat_deg,dsamp/1000.)
         # NB the next line means that useav is not actually working yet
-        # avs = np.zeros(len(dsamp))+useav
-        ext=avs*extfactors.ak
+        if (useav > -99):
+            avs = np.zeros(len(dsamp))+useav
+        ext=avs*extfactors['a'+band]
+        
+        # assume solar metallicity if no input feh is provided
+        if (input.feh == -99.):
+            feh = 0.0
+        else:
+            feh = input.feh
     
         if (input.teff == -99.):
-            jkmag = input.jmag - input.kmag
-            teff=casagrande(jkmag,0.0)
-            teffe=100.
-        else:
-            teff=input.teff
-            teffe=input.teffe
+            if ((input.jmag > -99.) & (input.kmag > -99.)):
+                jkmag = (input.jmag-np.median(avs*extfactors['aj'])) - (input.kmag-np.median(avs*extfactors['ak']))
+                input.teff=casagrande_jk(jkmag,feh)
+            if ((input.bmag > -99.) & (input.vmag > -99.)):
+                bvmag = (input.bmag-np.median(avs*extfactors['ab'])) - (input.vmag-np.median(avs*extfactors['av']))
+                input.teff=casagrande_bv(bvmag,feh)
+                #pdb.set_trace()
+            input.teffe=100.
+        #else:
+        #    teff=input.teff
+        #    teffe=input.teffe
 
         np.random.seed(seed=11)
-        teffsamp=teff+np.random.randn(nsample)*teffe
+        teffsamp=input.teff+np.random.randn(nsample)*input.teffe
         
         # hack to avoid crazy Teff samples
         teffsamp[teffsamp < 1000.]=1000.
             
-        map=input.kmag
-        mape=input.kmage
+        map=input.mag
+        mape=input.mage
         np.random.seed(seed=12)
         map_samp=map+np.random.randn(nsample)*mape
         
@@ -134,12 +147,23 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
         #   - corrected for M dwarfs further below
         absmag = -5.*np.log10(dsamp)+map_samp+5.
         
-        # if no logg is provided, take guess from Mk-logg fit to solar-metallicity MIST isochrones
-        # NB these coeffs roughly work for JH too
+        #pdb.set_trace()
+        
+        # if no logg is provided, take guess from absolute mag-logg fit to solar-metallicity MIST isochrones
+        # NB these coeffs are dodgy in Mv, but pretty good in Mk
         if (input.logg == -99.):
-            fitk=np.poly1d([-0.01234736,  0.36684517,  3.1477089 ])
-            input.logg=fitk(np.median(absmag-ext))
-            print 'no input logg provided, guessing:', input.logg    
+            
+            if (band == 'v'):
+                fitv=np.poly1d([ 0.00255731, -0.07991211,  0.85140418,  1.82465197]) 
+                input.logg=fitv(np.median(absmag-ext))
+                print 'no input logg provided, guessing (using Mv):', input.logg
+            # should really be done filter by filter with a dictionary; TODO 
+            else:            
+                fitk=np.poly1d([-0.01234736,  0.36684517,  3.1477089 ])
+                input.logg=fitk(np.median(absmag-ext))
+                print 'no input logg provided, guessing (using Mk):', input.logg 
+            
+              
             
 	    # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015 Mks-R relation instead
 	    if ((input.teff < 4100.) & (np.median(absmag-ext) > 4.)):
@@ -169,12 +193,12 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             fix=np.where(avs < np.min(avgrid))[0]
             avs[fix]=np.min(avgrid)
 
-        if ((input.teff > -99.) & (input.logg > -99.) & (input.feh > -99.)):
+        if ((input.teff > -99.) & (input.logg > -99.)):
             #bc = interp(np.array([input.teff,input.logg,input.feh,0.]))[0]
             arr=np.zeros((len(avs),4))
             arr[:,0]=np.zeros(len(avs))+input.teff
             arr[:,1]=np.zeros(len(avs))+input.logg
-            arr[:,2]=np.zeros(len(avs))+input.feh
+            arr[:,2]=np.zeros(len(avs))+feh
             arr[:,3]=np.zeros(len(avs))+avs
             um=np.where(arr[:,3] < 0.)[0]
             arr[um,3]=0.
@@ -360,31 +384,31 @@ def stparas(input,dnumodel=0,bcmodel=0,dustmodel=0,dnucor=0,useav=0,plot=0):
             map = input.vmag
             mape = input.vmage
             str = 'bc_v'
-            avtoext=extfactors.av
+            avtoext=extfactors['av']
 
         if (input.vtmag > -99.):
             map = input.vtmag
             mape = input.vtmage
             str = 'bc_vt'
-            avtoext=extfactors.avt
+            avtoext=extfactors['avt']
 
         if (input.jmag > -99.):
             map = input.jmag
             mape = input.jmage
             str = 'bc_j'
-            avtoext=extfactors.aj
+            avtoext=extfactors['aj']
 
         if (input.kmag > -99.):
             map = input.kmag
             mape = input.kmage
             str = 'bc_k'
-            avtoext=extfactors.ak
+            avtoext=extfactors['ak']
 
         if (input.gamag > -99.):
             map = input.gamag
             mape = input.gamage
             str = 'bc_ga'
-            avtoext=extfactors.aga
+            avtoext=extfactors['aga']
 
         # if apparent mag is given, calculate distance
         if (map > -99.):
@@ -464,8 +488,12 @@ def getstat(indat):
     return med,emed2,emed1
     
   
-def casagrande(jk,feh):
+def casagrande_jk(jk,feh):
     teff = 5040./(0.6393 + 0.6104*jk + 0.0920*jk**2 - 0.0330*jk*feh + 0.0291*feh + 0.0020*feh**2)
+    return teff
+    
+def casagrande_bv(bv,feh):
+    teff = 5040./(0.5665 + 0.4809*bv -0.0060*bv**2 - 0.0613*bv*feh - 0.0042*feh - 0.0055*feh**2)
     return teff
 
 class obsdata():
@@ -483,7 +511,10 @@ class obsdata():
         self.logge = -99.
         self.feh = -99.
         self.fehe = -99.
-        
+
+        self.mag = -99.
+        self.mage = -99.
+
         self.bmag = -99.
         self.bmage = -99.
         self.vmag = -99.
@@ -526,6 +557,10 @@ class obsdata():
         self.logge = sigma[1]
         self.feh = value[2]
         self.fehe = sigma[2]
+
+    def addmag(self,value,sigma):
+        self.mag = value[0]
+        self.mage = sigma[0]
                
     def addbv(self,value,sigma):
         self.bmag = value[0]
@@ -621,7 +656,10 @@ class resdata():
         self.mabs = 0.
 
 class extinction():
+    
     def __init__(self):
+    
+        self.ext={"ab":1.3454449, "av":1.0, "abt":1.3454449, "avt":1.0602271, "ag":1.2348743, "ar":0.88343449, "ai":0.68095687, "az":0.48308430, "aj":0.28814896, "ah":0.18152716, "ak":0.11505195, "aga":1.2348743}
         self.ab=1.3454449
         self.av=1.00
 
