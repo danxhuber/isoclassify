@@ -3,12 +3,11 @@
 # corrections
 
 import numpy as np
-# import asfgrid
-import h5py 
-import ephem
+import pdb
+import astropy.units as units
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
-import pdb
+from astropy.coordinates import SkyCoord
 
 def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,plot=-99,band='k'):
 
@@ -49,13 +48,13 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
     logggrid = bcmodel['logggrid'][:]
     fehgrid = bcmodel['fehgrid'][:]
     avgrid = bcmodel['avgrid'][:]
-    bc_k = bcmodel['bc_'+band][:]
+    bc_band = bcmodel['bc_'+band][:]
 
     if ((input.plx > 0.)):
         # load up bolometric correction grid
         # only K-band for now
         points = (teffgrid,logggrid,fehgrid,avgrid)
-        values = bc_k
+        values = bc_band
         interp = RegularGridInterpolator(points,values)
 
         ### Monte Carlo starts here
@@ -457,7 +456,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 # bolometric correction interpolated from MESA
 
                 points = (teffgrid,logggrid,fehgrid,avgrid)
-                values = bc_k
+                values = bc_band
                 interp = RegularGridInterpolator(points, values)
 
                 #pdb.set_trace()
