@@ -118,8 +118,8 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         np.random.seed(seed=10)
         dsamp=np.random.choice(ds,p=dis2,size=nsample)
         
-        coords = SkyCoord(input.ra*units.deg, input.dec*units.deg,distance=dsamp*units.pc, frame='icrs')
-        avs = (3.1+0.063)*dustmodel(coords, mode='random_sample') # Took derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK
+        # Take derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK = 0.063 and interpolate dustmodel dataframe to determine values of reddening.
+        avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
         
         # NB the next line means that useav is not actually working yet
         if (useav > -99):
@@ -225,8 +225,6 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
 
 
         #pdb.set_trace()
-        out.teff=input.teff
-        out.teffe=input.teffe
 
         '''
         out.lum=np.median(lum)
@@ -240,25 +238,27 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         out.dis=np.median(dsamp)
         out.disep=np.percentile(dsamp,84.1)-out.dis
         out.disem=out.dis-np.percentile(dsamp,15.9)
-        '''
-
+        
         out.avs=np.median(avs)
         out.avsep=np.percentile(avs,84.1)-out.avs
         out.avsem=out.avs-np.percentile(avs,15.9)
-        
+        '''
         
         out.rad,out.radep,out.radem=getstat(rad)
         out.lum,out.lumep,out.lumem=getstat(lum)
         out.dis,out.disep,out.disem=getstat(dsamp)
-        #out.avs,out.avsep,out.avsem=getstat(avs)
+        out.avs,out.avsep,out.avsem=getstat(avs)
         #pdb.set_trace()
         out.teff=input.teff
+        out.teffe=input.teffe
         out.teffep=input.teffe
         out.teffem=input.teffe
         out.logg=input.logg
+        out.logge=input.logge
         out.loggep=input.logge
         out.loggem=input.logge
         out.feh=input.feh
+        out.fehe = input.fehe
         out.fehep=input.fehe
         out.fehem=input.fehe
         out.plx=input.plx
@@ -301,6 +301,8 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         print 'lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem
         
         print '-----'
+        if (plot == 1):
+            raw_input(':')
 
     ##############################################
     # case 2: input is spectroscopy + seismology #
@@ -432,11 +434,6 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             print 'using '+str
             print 'using coords: ',input.ra,input.dec
 
-            equ = ephem.Equatorial(input.ra*np.pi/180., input.dec*np.pi/180., epoch=ephem.J2000)
-            gal = ephem.Galactic(equ)
-            lon_deg=gal.lon*180./np.pi
-            lat_deg=gal.lat*180./np.pi
-
             # iterated since BC depends on extinction
             nit=0
             while (nit < 5):
@@ -444,8 +441,8 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 if (nit == 0.):
                     out.avs=0.0
                 else:
-                    out.avs = 3.1*dustmodel(lon_deg,lat_deg,out.dis/1000.)[0]
-                    #print lon_deg,lat_deg,out.dis
+                    # Take derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK = 0.063 and interpolate dustmodel dataframe to determine values of reddening.
+                    out.avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))[0]
 
                 if (useav != 0.):
                     out.avs=useav
