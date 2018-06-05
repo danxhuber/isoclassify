@@ -35,6 +35,7 @@ def run(args):
 
 def batch(args):
     df = pd.read_csv(args.csv,engine='python')
+    print "#!/bin/sh"
     for i, row in df.iterrows():
         fmt = dict(**row)
         fmt = dict(fmt,**vars(args))
