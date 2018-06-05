@@ -73,6 +73,6 @@ The CLI also makes parallel processing easy. First generate a list of batch scri
 ```bash
 isoclassify batch direct examples/example.csv -o output > isoclassify.tot
 chmod +x isoclassify.tot
-parallel ::: isoclassify.tot
+parallel < isoclassify.tot
 ```
 
