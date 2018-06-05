@@ -162,7 +162,7 @@ class PipelineDirect(Pipeline):
         self.addcoords(x)
         self.addmag(x)
         self.paras = direct.classify_direct.stparas(
-            input=x,bcmodel=bcmodel,dustmodel=dustmodel,band='k',plot=0
+            input=x,bcmodel=bcmodel,dustmodel=dustmodel,band='k',plot=1
         )
 
 

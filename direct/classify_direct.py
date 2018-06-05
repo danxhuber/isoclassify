@@ -264,7 +264,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         out.plx=input.plx
         out.plxe=input.plxe
 
-        if (plot == 1): # For interactive plotting
+        if (plot == 'i'): # For interactive plotting
             plt.ion()
             plt.clf()
             plt.subplot(3,2,1)
@@ -293,7 +293,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             plt.tight_layout()
             raw_input(':')
         
-        if (plot == 0): # For non-interactive plotting. Any other number for no plotting at all.
+        if (plot == 1): # For non-interactive plotting. Any other number for no plotting at all.
             plt.clf()
             plt.subplot(3,2,1)
             plt.hist(teffsamp,bins=100)
