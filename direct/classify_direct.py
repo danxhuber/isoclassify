@@ -264,7 +264,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         out.plx=input.plx
         out.plxe=input.plxe
 
-        if (plot == 1):
+        if (plot == 1): # For interactive plotting
             plt.ion()
             plt.clf()
             plt.subplot(3,2,1)
@@ -290,7 +290,34 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             plt.subplot(3,2,6)
             plt.hist(avs,bins=100)
             plt.title('Av')
-            plt.tight_layout() # To prevent overlap in plots
+            plt.tight_layout()
+            raw_input(':')
+        
+        if (plot == 0): # For non-interactive plotting. Any other number for no plotting at all.
+            plt.clf()
+            plt.subplot(3,2,1)
+            plt.hist(teffsamp,bins=100)
+            plt.title('Teff')
+
+            plt.subplot(3,2,2)
+            plt.hist(lum,bins=100)
+            plt.title('Lum')
+
+            plt.subplot(3,2,3)
+            plt.hist(rad,bins=100)
+            plt.title('Rad')
+
+            plt.subplot(3,2,4)
+            plt.hist(absmag,bins=100)
+            plt.title('absmag')
+
+            plt.subplot(3,2,5)
+            plt.hist(dsamp,bins=100)
+            plt.title('distance')
+
+            plt.subplot(3,2,6)
+            plt.hist(avs,bins=100)
+            plt.title('Av')
 
 
         print '   '
@@ -301,8 +328,6 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         print 'lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem
         
         print '-----'
-        if (plot == 1):
-            raw_input(':')
 
     ##############################################
     # case 2: input is spectroscopy + seismology #
