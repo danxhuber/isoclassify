@@ -3,13 +3,11 @@
 # corrections
 
 import numpy as np
-# import asfgrid
-import h5py 
-import ephem
-import mwdust
+import pdb
+import astropy.units as units
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
-import pdb
+from astropy.coordinates import SkyCoord
 
 def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,plot=-99,band='k'):
 
@@ -50,13 +48,13 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
     logggrid = bcmodel['logggrid'][:]
     fehgrid = bcmodel['fehgrid'][:]
     avgrid = bcmodel['avgrid'][:]
-    bc_k = bcmodel['bc_'+band][:]
+    bc_band = bcmodel['bc_'+band][:]
 
     if ((input.plx > 0.)):
         # load up bolometric correction grid
         # only K-band for now
         points = (teffgrid,logggrid,fehgrid,avgrid)
-        values = bc_k
+        values = bc_band
         interp = RegularGridInterpolator(points,values)
 
         ### Monte Carlo starts here
@@ -68,32 +66,51 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         L=1350.
         
         # maximum distance to sample (in pc)
-        maxdis=50000.
+        maxdis=1e5
 
-        # get a rough maximum distance
+        # get a rough maximum and minimum distance
         tempdis=1./input.plx
         tempdise=input.plxe/input.plx**2
         maxds=tempdis+5.*tempdise
         minds=tempdis-5.*tempdise
         
         ds=np.arange(1.,maxdis,1.)
-        lh = np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./ds)**2)
+        lh = (1./(np.sqrt(2.*np.pi)*input.plxe))*np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./ds)**2)
         prior=(ds**2/(2.*L**3.))*np.exp(-ds/L)
         dis = lh*prior
         dis2=dis/np.sum(dis)
         norm=dis2/np.max(dis2)
-        um=np.where((ds > tempdis) & (norm < 0.001))[0]
+        
+        # Deal with negative and positive parallaxes differently:
+        if tempdis > 0:
+            # Determine maxds based on posterior:
+            um=np.where((ds > tempdis) & (norm < 0.001))[0]
+
+            # Determine minds just like maxds:
+            umin=np.where((ds < tempdis) & (norm < 0.001))[0]
+        else:
+            # Determine maxds based on posterior, taking argmax instead of tempdis which is wrong:
+            um=np.where((ds > np.argmax(norm)) & (norm < 0.001))[0]
+
+            # Determine minds just like maxds:
+            umin=np.where((ds < np.argmax(norm)) & (norm < 0.001))[0]
+
         if (len(um) > 0):
             maxds=np.min(ds[um])
         else:
-            maxds=maxdis
+            maxds=1e5
 
-        print 'using max/min distance:',maxds,minds
-        ds=np.linspace(minds,maxds,10000)
-        lh = (1./(np.sqrt(2.*np.pi)*input.plxe))*\
-             np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./ds)**2)
+        if (len(umin) > 0):
+            minds=np.max(ds[umin])
+        else:
+            minds=1.
+
+        print 'using max distance:',maxds
+        print 'using min distance:',minds
+        
+        ds=np.linspace(minds,maxds,nsample)
+        lh = (1./(np.sqrt(2.*np.pi)*input.plxe))*np.exp( (-1./(2.*input.plxe**2))*(input.plx-(1./ds))**2)
         prior=(ds**2/(2.*L**3.))*np.exp(-ds/L)
-        #prior=np.zeros(len(lh))+1.
         dis = lh*prior
         dis2=dis/np.sum(dis)
 
@@ -101,12 +118,9 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         np.random.seed(seed=10)
         dsamp=np.random.choice(ds,p=dis2,size=nsample)
         
-        equ = ephem.Equatorial(input.ra*np.pi/180., input.dec*np.pi/180., epoch=ephem.J2000)
-        gal = ephem.Galactic(equ)
-        lon_deg=gal.lon*180./np.pi
-        lat_deg=gal.lat*180./np.pi
-
-        avs = 3.1*dustmodel(lon_deg,lat_deg,dsamp/1000.)
+        # Take derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK = 0.063 and interpolate dustmodel dataframe to determine values of reddening.
+        avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
+        
         # NB the next line means that useav is not actually working yet
         if (useav > -99):
             avs = np.zeros(len(dsamp))+useav
@@ -211,8 +225,6 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
 
 
         #pdb.set_trace()
-        out.teff=input.teff
-        out.teffe=input.teffe
 
         '''
         out.lum=np.median(lum)
@@ -226,30 +238,62 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         out.dis=np.median(dsamp)
         out.disep=np.percentile(dsamp,84.1)-out.dis
         out.disem=out.dis-np.percentile(dsamp,15.9)
-        '''
-
+        
         out.avs=np.median(avs)
         out.avsep=np.percentile(avs,84.1)-out.avs
         out.avsem=out.avs-np.percentile(avs,15.9)
-        
+        '''
         
         out.rad,out.radep,out.radem=getstat(rad)
         out.lum,out.lumep,out.lumem=getstat(lum)
         out.dis,out.disep,out.disem=getstat(dsamp)
-        #out.avs,out.avsep,out.avsem=getstat(avs)
+        out.avs,out.avsep,out.avsem=getstat(avs)
         #pdb.set_trace()
         out.teff=input.teff
+        out.teffe=input.teffe
         out.teffep=input.teffe
         out.teffem=input.teffe
         out.logg=input.logg
+        out.logge=input.logge
         out.loggep=input.logge
         out.loggem=input.logge
         out.feh=input.feh
+        out.fehe = input.fehe
         out.fehep=input.fehe
         out.fehem=input.fehe
+        out.plx=input.plx
+        out.plxe=input.plxe
 
-        if (plot == 1):
+        if (plot == 'i'): # For interactive plotting
             plt.ion()
+            plt.clf()
+            plt.subplot(3,2,1)
+            plt.hist(teffsamp,bins=100)
+            plt.title('Teff')
+
+            plt.subplot(3,2,2)
+            plt.hist(lum,bins=100)
+            plt.title('Lum')
+
+            plt.subplot(3,2,3)
+            plt.hist(rad,bins=100)
+            plt.title('Rad')
+
+            plt.subplot(3,2,4)
+            plt.hist(absmag,bins=100)
+            plt.title('absmag')
+
+            plt.subplot(3,2,5)
+            plt.hist(dsamp,bins=100)
+            plt.title('distance')
+
+            plt.subplot(3,2,6)
+            plt.hist(avs,bins=100)
+            plt.title('Av')
+            plt.tight_layout()
+            raw_input(':')
+        
+        if (plot == 1): # For non-interactive plotting. Any other number for no plotting at all.
             plt.clf()
             plt.subplot(3,2,1)
             plt.hist(teffsamp,bins=100)
@@ -286,7 +330,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         print '-----'
 
     ##############################################
-    # case 1: input is spectroscopy + seismology #
+    # case 2: input is spectroscopy + seismology #
     ##############################################
     if ((input.dnu > -99.) & (input.teff > -99.)):
         # seismic logg, density, M and R from scaling relations; this
@@ -415,20 +459,15 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             print 'using '+str
             print 'using coords: ',input.ra,input.dec
 
-            equ = ephem.Equatorial(input.ra*np.pi/180., input.dec*np.pi/180., epoch=ephem.J2000)
-            gal = ephem.Galactic(equ)
-            lon_deg=gal.lon*180./np.pi
-            lat_deg=gal.lat*180./np.pi
-
             # iterated since BC depends on extinction
             nit=0
             while (nit < 5):
 
-		if (nit == 0.):
+                if (nit == 0.):
                     out.avs=0.0
-		else:
-                    out.avs = 3.1*dustmodel(lon_deg,lat_deg,out.dis/1000.)[0]
-                    #print lon_deg,lat_deg,out.dis
+                else:
+                    # Take derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK = 0.063 and interpolate dustmodel dataframe to determine values of reddening.
+                    out.avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))[0]
 
                 if (useav != 0.):
                     out.avs=useav
@@ -439,7 +478,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 # bolometric correction interpolated from MESA
 
                 points = (teffgrid,logggrid,fehgrid,avgrid)
-                values = bc_k
+                values = bc_band
                 interp = RegularGridInterpolator(points, values)
 
                 #pdb.set_trace()
@@ -452,7 +491,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 Mabs = Mvbol - bc
                 Mabse = np.sqrt( Mvbole**2 + err_bc**2)
 
-		ext=0. # ext already applied in BC
+                ext=0. # ext already applied in BC
                 logplx = (Mabs-5.-map+ext)/5.
                 logplxe = np.sqrt( (Mabse/5.)**2. + (mape/5.)**2. + (err_ext/5.)**2. )
 
@@ -466,8 +505,8 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 #print olddis,out.dis,ddis,ext
                 olddis=out.dis
 		
-		nit=nit+1
-		#print out.dis,out.avs
+                nit=nit+1
+                #print out.dis,out.avs
 
 
             print 'Av(mag):',out.avs

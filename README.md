@@ -13,6 +13,7 @@ git clone https://github.com/danxhuber/isoclassify
 # Download dependencies
 pip install ebfpy 
 pip install ephem
+pip install dustmaps
 
 # Download MESA models into isoclassify directory
 cd isoclassify
@@ -26,6 +27,7 @@ wget https://www.dropbox.com/s/xrwwhgdgrhwgms7/grid_interp2.ebf?dl=0
 # Set environment variables
 export ISOCLASSIFY=${WKDIR}/code/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
 export PYTHONPATH=${PYTHONPATH}:${ISOCLASSIFY}
+export PATH=${WKDIR}/code/isoclassify/bin:$PATH # This adds isoclassify executable to your path
 ```
 
 ## Grid Modeling:
@@ -66,10 +68,11 @@ mkdir -p output/sol # make sure output directory exists
 isoclassify run direct sol --csv examples/example.csv --outdir output/sol
 ```
 
-The CLI also makes parallel processing easy. First generate a list of batch scripts, then run using GNU parallel
+The CLI also makes parallel processing easy. First generate a list of batch scripts (isoclassify.tot), make isoclassify.tot an executable, then run using GNU parallel
 
 ```bash
 isoclassify batch direct examples/example.csv -o output > isoclassify.tot
-parallel ::: isoclassify.tot
+chmod +x isoclassify.tot
+parallel < isoclassify.tot
 ```
 
