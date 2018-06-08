@@ -179,21 +179,21 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             
               
             
-	    # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015 Mks-R relation instead
-	    if ((input.teff < 4100.) & (np.median(absmag-ext) > 4.)):
-		    if (input.feh > -99.): 
-		        rad = 1.9305-0.3466*(absmag-ext)+0.01647*(absmag-ext)**2*(1.+0.04458*input.feh)
-		    else:
-		        rad = 1.9515-0.3520*(absmag-ext)+0.01680*(absmag-ext)**2
+        # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015 Mks-R relation instead
+        if ((input.teff < 4100.) & (np.median(absmag-ext) > 4.)):
+            if (input.feh > -99.):
+                rad = 1.9305-0.3466*(absmag-ext)+0.01647*(absmag-ext)**2*(1.+0.04458*input.feh)
+            else:
+                rad = 1.9515-0.3520*(absmag-ext)+0.01680*(absmag-ext)**2
 		        
-		    lum = rad**2 * (teffsamp/teffsun)**4
+            lum = rad**2 * (teffsamp/teffsun)**4
 		    
-		# for everything else, interpolate ATLAS BCs
-	    else:
-	        if (input.teff < np.min(teffgrid)):
-	            return out
-	        if (input.teff > np.max(teffgrid)):
-	            return out
+        # for everything else, interpolate ATLAS BCs
+        else:
+            if (input.teff < np.min(teffgrid)):
+                return out
+            if (input.teff > np.max(teffgrid)):
+                return out
             if ((input.logg > -99.) & (input.logg < np.min(logggrid))):
                 return out
             if ((input.logg > -99.) & (input.logg > np.max(logggrid))):
@@ -217,7 +217,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 um=np.where(arr[:,3] < 0.)[0]
                 arr[um,3]=0.
                 bc=interp(arr)	    
-            
+
                 Mvbol = absmag + bc
                 lum = 10**((Mvbol-Msun)/(-2.5))
                 t = teffsamp/teffsun
