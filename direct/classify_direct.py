@@ -217,7 +217,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 um=np.where(arr[:,3] < 0.)[0]
                 arr[um,3]=0.
                 bc=interp(arr)	    
-                
+
                 Mvbol = absmag + bc
                 lum = 10**((Mvbol-Msun)/(-2.5))
                 t = teffsamp/teffsun
