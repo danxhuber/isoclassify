@@ -207,21 +207,21 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             fix=np.where(avs < np.min(avgrid))[0]
             avs[fix]=np.min(avgrid)
 
-        if ((input.teff > -99.) & (input.logg > -99.)):
-            #bc = interp(np.array([input.teff,input.logg,input.feh,0.]))[0]
-            arr=np.zeros((len(avs),4))
-            arr[:,0]=np.zeros(len(avs))+input.teff
-            arr[:,1]=np.zeros(len(avs))+input.logg
-            arr[:,2]=np.zeros(len(avs))+feh
-            arr[:,3]=np.zeros(len(avs))+avs
-            um=np.where(arr[:,3] < 0.)[0]
-            arr[um,3]=0.
-            bc=interp(arr)	    
+            if ((input.teff > -99.) & (input.logg > -99.)):
+                #bc = interp(np.array([input.teff,input.logg,input.feh,0.]))[0]
+                arr=np.zeros((len(avs),4))
+                arr[:,0]=np.zeros(len(avs))+input.teff
+                arr[:,1]=np.zeros(len(avs))+input.logg
+                arr[:,2]=np.zeros(len(avs))+feh
+                arr[:,3]=np.zeros(len(avs))+avs
+                um=np.where(arr[:,3] < 0.)[0]
+                arr[um,3]=0.
+                bc=interp(arr)	    
             
-            Mvbol = absmag + bc
-            lum = 10**((Mvbol-Msun)/(-2.5))
-            t = teffsamp/teffsun
-            rad = (lum*t**(-4.))**0.5
+                Mvbol = absmag + bc
+                lum = 10**((Mvbol-Msun)/(-2.5))
+                t = teffsamp/teffsun
+                rad = (lum*t**(-4.))**0.5
 
 
         #pdb.set_trace()
