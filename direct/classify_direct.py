@@ -38,6 +38,10 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
     #extfactors=extinction()
     extfactors={"ab":1.3454449, "av":1.0, "abt":1.3454449, "avt":1.0602271, "ag":1.2348743, "ar":0.88343449, "ai":0.68095687, "az":0.48308430, "aj":0.28814896, "ah":0.18152716, "ak":0.11505195, "aga":1.2348743}
 
+    if (len(band) == 4):
+        bd=band[0:1]
+    else:
+        bd=band[0:2]
 
     ######################################
     # case 1: input is parallax + colors #
@@ -48,7 +52,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
     logggrid = bcmodel['logggrid'][:]
     fehgrid = bcmodel['fehgrid'][:]
     avgrid = bcmodel['avgrid'][:]
-    bc_band = bcmodel['bc_'+band[0:2]][:]
+    bc_band = bcmodel['bc_'+bd][:]
 
     if ((input.plx > 0.)):
         # load up bolometric correction grid
@@ -124,7 +128,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         # NB the next line means that useav is not actually working yet
         if (useav > -99):
             avs = np.zeros(len(dsamp))+useav
-        ext=avs*extfactors['a'+band[0:2]]
+        ext=avs*extfactors['a'+bd]
         
         # assume solar metallicity if no input feh is provided
         if (input.feh == -99.):
