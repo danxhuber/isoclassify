@@ -15,11 +15,11 @@ from dustmaps.bayestar import BayestarWebQuery
 import grid.classify_grid 
 import direct.classify_direct 
 
-DATADIR = os.environ['ISOCLASSIFY_DATADIR']
+DATADIR = os.environ['ISOCLASSIFY']
 
 CONSTRAINTS = [
     'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
-    'parallax'
+    'parallax', 'bmag','vmag', 'btmag','vtmag'
 ]
 
 def run(**kw):
@@ -73,6 +73,7 @@ class Pipeline(object):
         self.const = const
         self.const['ra'] = star['ra']
         self.const['dec'] = star['dec']
+        self.const['band'] = star['band']
         self.pdffn = os.path.join(self.outdir,'output.pdf')
         self.csvfn = os.path.join(self.outdir,'output.csv')
 
@@ -93,6 +94,18 @@ class Pipeline(object):
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addgriz(val,err)
+        
+    def addbvt(self,x):
+        keys = 'btmag vtmag'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addbvt(val,err)
+        
+    def addbv(self,x):
+        keys = 'bmag vmag'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addbv(val,err)
 
     def addplx(self,x):
         x.addplx(self.const['parallax'], self.const['parallax_err'])
@@ -101,12 +114,13 @@ class Pipeline(object):
         x.addcoords(self.const['ra'],self.const['dec'])
     
     def addmag(self,x):
-        x.addmag([self.const['kmag']],[self.const['kmag_err']])
+        x.addmag([self.const[self.const['band']]],[self.const[self.const['band']+'_err']])
 
     def print_constraints(self):
         print "id_starname {}".format(self.id_starname)
         for key in CONSTRAINTS:
             print key, self.const[key], self.const[key+'_err']
+        print "absmag constraint:", self.const['band']
     
     def savefig(self):
         fig = plt.gcf()
@@ -152,17 +166,19 @@ class PipelineDirect(Pipeline):
     
     def run(self):
         self.print_constraints()
-        bcmodel = h5py.File('/Users/taberger/Astronomy/Thesis/Codebase/isoclassify/direct/bcgrid.h5','r',driver='core',backing_store=False)
+        bcmodel = h5py.File(DATADIR+'/direct/bcgrid.h5','r',driver='core',backing_store=False)
         dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
 
         x = direct.classify_direct.obsdata()
         self.addspec(x)
         self.addjhk(x)
+        self.addbv(x)
+        self.addbvt(x)
         self.addplx(x)
         self.addcoords(x)
         self.addmag(x)
         self.paras = direct.classify_direct.stparas(
-            input=x,bcmodel=bcmodel,dustmodel=dustmodel,band='k',plot=1
+            input=x,bcmodel=bcmodel,dustmodel=dustmodel,band=self.const['band'],plot=1
         )
 
 
@@ -193,6 +209,8 @@ class PipelineGrid(Pipeline):
         self.addspec(x)
         self.addjhk(x)
         self.addgriz(x)
+        self.addbv(x)
+        self.addbvt(x)
         self.addplx(x)
         self.paras = grid.classify_grid.classify(
             input=x, model=model, dustmodel=0, doplot=0, useav=0

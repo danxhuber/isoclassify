@@ -48,7 +48,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
     logggrid = bcmodel['logggrid'][:]
     fehgrid = bcmodel['fehgrid'][:]
     avgrid = bcmodel['avgrid'][:]
-    bc_band = bcmodel['bc_'+band][:]
+    bc_band = bcmodel['bc_'+band[0:2]][:]
 
     if ((input.plx > 0.)):
         # load up bolometric correction grid
@@ -124,7 +124,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         # NB the next line means that useav is not actually working yet
         if (useav > -99):
             avs = np.zeros(len(dsamp))+useav
-        ext=avs*extfactors['a'+band]
+        ext=avs*extfactors['a'+band[0:2]]
         
         # assume solar metallicity if no input feh is provided
         if (input.feh == -99.):
@@ -139,6 +139,9 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             if ((input.bmag > -99.) & (input.vmag > -99.)):
                 bvmag = (input.bmag-np.median(avs*extfactors['ab'])) - (input.vmag-np.median(avs*extfactors['av']))
                 input.teff=casagrande_bv(bvmag,feh)
+            if ((input.btmag > -99.) & (input.vtmag > -99.)):
+                bvtmag = (input.btmag-np.median(avs*extfactors['abt'])) - (input.vtmag-np.median(avs*extfactors['avt']))
+                input.teff=casagrande_bvt(bvtmag,feh)
                 #pdb.set_trace()
             input.teffe=100.
         #else:
@@ -167,10 +170,11 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         # NB these coeffs are dodgy in Mv, but pretty good in Mk
         if (input.logg == -99.):
             
-            if (band == 'v'):
+            if ((band == 'vmag') | (band == 'vtmag')):
                 fitv=np.poly1d([ 0.00255731, -0.07991211,  0.85140418,  1.82465197]) 
                 input.logg=fitv(np.median(absmag-ext))
                 print 'no input logg provided, guessing (using Mv):', input.logg
+                #pdb.set_trace()
             # should really be done filter by filter with a dictionary; TODO 
             else:            
                 fitk=np.poly1d([-0.01234736,  0.36684517,  3.1477089 ])
@@ -534,6 +538,11 @@ def casagrande_jk(jk,feh):
 def casagrande_bv(bv,feh):
     teff = 5040./(0.5665 + 0.4809*bv -0.0060*bv**2 - 0.0613*bv*feh - 0.0042*feh - 0.0055*feh**2)
     return teff
+
+def casagrande_bvt(bvt,feh):
+    teff = 5040./(0.5839 + 0.4000*bvt -0.0067*bvt**2 - 0.0282*bvt*feh - 0.00346*feh - 0.0087*feh**2)
+    return teff
+
 
 class obsdata():
     def __init__(self):
