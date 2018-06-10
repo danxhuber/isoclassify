@@ -1,21 +1,25 @@
 import os 
 import copy
 import glob
+import pdb
+import h5py
 
 import numpy as np
 from matplotlib import pylab as plt
 import pandas as pd
 import ebf
-import mwdust 
+import astropy.units as units
+from astropy.coordinates import SkyCoord
+from dustmaps.bayestar import BayestarWebQuery
 
 import grid.classify_grid 
 import direct.classify_direct 
 
-DATADIR = os.environ['ISOCLASSIFY_DATADIR']
+DATADIR = os.environ['ISOCLASSIFY']
 
 CONSTRAINTS = [
     'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
-    'parallax'
+    'parallax', 'bmag','vmag', 'btmag','vtmag'
 ]
 
 COORDS = ['ra','dec']
@@ -34,6 +38,20 @@ def run(**kw):
 
 def load_mist():
     return model
+
+def query_dustmodel_coords(ra,dec):
+    reddenMap = BayestarWebQuery(version='bayestar2017')
+    sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='icrs')
+    reddenContainer = reddenMap(sightLines,mode='random_sample')
+    del reddenMap # To clear reddenMap from memory
+    distanceSamples = np.array([0.06309573,0.07943284,0.1,0.12589255,0.15848933,0.19952627,0.25118864,0.31622776,0.3981072,0.50118726,0.6309574,0.7943282 ,1.,1.2589258,1.5848933,1.9952621,2.511887,3.1622777,3.981073,5.011873,6.3095727,7.943284,10.,12.589258,15.848933,19.952621,25.11887,31.622776,39.81073,50.11873,63.095726])*1000. # In pc, from bayestar2017 map distance samples
+    
+    dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
+    
+    for index in xrange(len(reddenContainer)):
+        dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
+
+    return dustModelDF
 
 class Pipeline(object):
     def __init__(self, **kw):
@@ -62,7 +80,10 @@ class Pipeline(object):
 
 
         self.const = const
-        self.pngfn = os.path.join(self.outdir,'output.png')
+        self.const['ra'] = star['ra']
+        self.const['dec'] = star['dec']
+        self.const['band'] = star['band']
+        self.pdffn = os.path.join(self.outdir,'output.pdf')
         self.csvfn = os.path.join(self.outdir,'output.csv')
 
     def addspec(self,x):
@@ -82,9 +103,27 @@ class Pipeline(object):
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addgriz(val,err)
+        
+    def addbvt(self,x):
+        keys = 'btmag vtmag'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addbvt(val,err)
+        
+    def addbv(self,x):
+        keys = 'bmag vmag'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addbv(val,err)
 
     def addplx(self,x):
         x.addplx(self.const['parallax'], self.const['parallax_err'])
+    
+    def addcoords(self,x):
+        x.addcoords(self.const['ra'],self.const['dec'])
+    
+    def addmag(self,x):
+        x.addmag([self.const[self.const['band']]],[self.const[self.const['band']+'_err']])
 
     def addcoords(self,x):
         x.addcoords(self.const['ra'], self.const['dec'])
@@ -93,13 +132,15 @@ class Pipeline(object):
         print "id_starname {}".format(self.id_starname)
         for key in CONSTRAINTS:
             print key, self.const[key], self.const[key+'_err']
+        print "absmag constraint:", self.const['band']
+
         for key in COORDS:
             print key, self.const[key]
-    
+            
     def savefig(self):
         fig = plt.gcf()
         fig.set_tight_layout(True)
-        plt.savefig(self.pngfn)
+        plt.savefig(self.pdffn)
 
     def to_csv(self):
         out = {}
@@ -132,25 +173,27 @@ class Pipeline(object):
 
 class PipelineDirect(Pipeline):
     outputcols = {
-        'iso_dis':'dis',
-        'iso_avs':'avs',
-        'iso_rad':'rad',
-        'iso_lum':'lum',
+        'dir_dis': 'dis',
+        'dir_avs': 'avs',
+        'dir_rad': 'rad',
+        'dir_lum': 'lum',
     }
-
+    
     def run(self):
         self.print_constraints()
-        bcmodel = '/Users/petigura/code/isoclassify/direct/bcgrid.h5'
-        dustmodel = mwdust.Combined15()
+        bcmodel = h5py.File(DATADIR+'/direct/bcgrid.h5','r',driver='core',backing_store=False)
+        dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
 
         x = direct.classify_direct.obsdata()
         self.addspec(x)
         self.addjhk(x)
-        self.addgriz(x)
+        self.addbv(x)
+        self.addbvt(x)
         self.addplx(x)
         self.addcoords(x)
+        self.addmag(x)
         self.paras = direct.classify_direct.stparas(
-            input=x, bcmodel=bcmodel, dustmodel=dustmodel, useav=1, plot=1
+            input=x,bcmodel=bcmodel,dustmodel=dustmodel,band=self.const['band'],plot=1
         )
 
 class PipelineGrid(Pipeline):
@@ -179,6 +222,8 @@ class PipelineGrid(Pipeline):
         self.addspec(x)
         self.addjhk(x)
         self.addgriz(x)
+        self.addbv(x)
+        self.addbvt(x)
         self.addplx(x)
         self.paras = grid.classify_grid.classify(
             input=x, model=model, dustmodel=0, doplot=0, useav=0

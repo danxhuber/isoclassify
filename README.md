@@ -13,14 +13,21 @@ git clone https://github.com/danxhuber/isoclassify
 # Download dependencies
 pip install ebfpy 
 pip install ephem
+pip install dustmaps
 
 # Download MESA models into isoclassify directory
 cd isoclassify
 wget https://www.dropbox.com/s/yjgm8bwpw9cs0ew/mesa.ebf?dl=0 
 
+# Download asfgrid input files for asteroseismic Delta_nu corrections
+cd isoclassify/direct
+wget https://www.dropbox.com/s/26enigp5q03bz5n/grid_interp1.ebf?dl=0
+wget https://www.dropbox.com/s/xrwwhgdgrhwgms7/grid_interp2.ebf?dl=0
+
 # Set environment variables
 export ISOCLASSIFY=${WKDIR}/code/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
 export PYTHONPATH=${PYTHONPATH}:${ISOCLASSIFY}
+export PATH=${WKDIR}/code/isoclassify/bin:$PATH # This adds isoclassify executable to your path
 ```
 
 ## Grid Modeling:
@@ -71,6 +78,6 @@ isoclassify batch direct examples/example.csv -o output > isoclassify.tot
 parallel :::: isoclassify.tot
 
 # Combine outputs into one CSV file
-bin/isoclassify scrape-output 'output/*/output.csv' output.csv
+bin/isoclassify scrape-output 'output/*/output.csv' output.csv=
 ```
 
