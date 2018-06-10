@@ -61,10 +61,16 @@ mkdir -p output/sol # make sure output directory exists
 isoclassify run direct sol --csv examples/example.csv --outdir output/sol
 ```
 
-The CLI also makes parallel processing easy. First generate a list of batch scripts, then run using GNU parallel
+The CLI also makes parallel processing easy.
 
 ```bash
-isoclassify batch direct examples/example.csv -o output > isoclassify.tot
-parallel ::: isoclassify.tot
+# generate batch scripts
+isoclassify batch direct examples/example.csv -o output > isoclassify.tot 
+
+# Run with GNU parallel
+parallel :::: isoclassify.tot
+
+# Combine outputs into one CSV file
+bin/isoclassify scrape-output 'output/*/output.csv' output.csv
 ```
 
