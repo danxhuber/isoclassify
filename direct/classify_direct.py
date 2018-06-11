@@ -253,6 +253,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         '''
         
         out.rad,out.radep,out.radem=getstat(rad)
+        out.mabs,out.mabsep,out.mabsem=getstat(absmag-ext)
         out.lum,out.lumep,out.lumem=getstat(lum)
         out.dis,out.disep,out.disem=getstat(dsamp)
         out.avs,out.avsep,out.avsem=getstat(avs)
@@ -334,6 +335,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         print 'av(mag):',out.avs,'+',out.avsep,'-',out.avsem
         print 'rad(rsun):',out.rad,'+',out.radep,'-',out.radem
         print 'lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem
+        print 'mabs(',band,'):',out.mabs,'+',out.mabsep,'-',out.mabsem
         
         print '-----'
 
@@ -706,6 +708,9 @@ class resdata():
         self.plxem = 0.
         
         self.mabs = 0.
+        self.mabse = 0.
+        self.mabsep = 0.
+        self.mabsem = 0.
 
 class extinction():
     

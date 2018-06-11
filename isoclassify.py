@@ -177,6 +177,8 @@ class PipelineDirect(Pipeline):
         'dir_avs': 'avs',
         'dir_rad': 'rad',
         'dir_lum': 'lum',
+        'dir_teff': 'teff',
+        'dir_mabs': 'mabs',
     }
     
     def run(self):
