@@ -22,6 +22,8 @@ CONSTRAINTS = [
     'parallax', 'bmag','vmag', 'btmag','vtmag'
 ]
 
+COORDS = ['ra','dec']
+
 def run(**kw):
     if kw['method']=='direct':
         pipe = PipelineDirect(**kw)    
@@ -70,6 +72,13 @@ class Pipeline(object):
                 const[key] = -99
                 const[key+'_err'] = 0
 
+        for key in COORDS:
+            if key in star:
+                const[key] = star[key]
+            else:
+                const[key] = -99
+
+
         self.const = const
         self.const['ra'] = star['ra']
         self.const['dec'] = star['dec']
@@ -116,12 +125,18 @@ class Pipeline(object):
     def addmag(self,x):
         x.addmag([self.const[self.const['band']]],[self.const[self.const['band']+'_err']])
 
+    def addcoords(self,x):
+        x.addcoords(self.const['ra'], self.const['dec'])
+
     def print_constraints(self):
         print "id_starname {}".format(self.id_starname)
         for key in CONSTRAINTS:
             print key, self.const[key], self.const[key+'_err']
         print "absmag constraint:", self.const['band']
-    
+
+        for key in COORDS:
+            print key, self.const[key]
+            
     def savefig(self):
         fig = plt.gcf()
         fig.set_tight_layout(True)
@@ -181,17 +196,15 @@ class PipelineDirect(Pipeline):
             input=x,bcmodel=bcmodel,dustmodel=dustmodel,band=self.const['band'],plot=1
         )
 
-
-
 class PipelineGrid(Pipeline):
     outputcols = {
-        'iso_teff': 'teff',
-        'iso_logg': 'logg',
-        'iso_feh': 'feh',
-        'iso_rad': 'rad',
-        'iso_mass': 'mass',
-        'iso_age': 'age',
-        'iso_dis': 'dis'      
+        'iso_teff':'teff',
+        'iso_logg':'logg',
+        'iso_feh':'feh',
+        'iso_rad':'rad',
+        'iso_mass':'mass',
+        'iso_age':'age',
+        'iso_dis':'dis'      
     }
     def run(self):
         self.print_constraints()
@@ -215,7 +228,6 @@ class PipelineGrid(Pipeline):
         self.paras = grid.classify_grid.classify(
             input=x, model=model, dustmodel=0, doplot=0, useav=0
         )
-        
 
 def _csv_reader(f):
     row = pd.read_csv(f,header=None,squeeze=True, index_col=0)

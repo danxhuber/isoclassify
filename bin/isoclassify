@@ -11,23 +11,29 @@ import pandas as pd
 import isoclassify
 
 def main():
-    psr = ArgumentParser()
-    subpsr = psr.add_subparsers(title="subcommands", dest='subcommand')
-    psr2 = subpsr.add_parser('run',help='run isoclassify')
-    psr2.add_argument('method', help='{direct,grid}')
-    psr2.add_argument('id_starname', help='name of star')
-    psr2.add_argument('-o','--outdir',default='./')
-    psr2.add_argument('--csv',help='path to csv file')
-    psr2.set_defaults(func=run)
+    p = ArgumentParser()
+    subp = p.add_subparsers(title="subcommands", dest='subcommand')
 
-    psr2 = subpsr.add_parser('batch', description="Create batch jobs")
-    psr2.add_argument('method',help='{direct,grid}')
-    psr2.add_argument('csv', type=str, help='list of parameters')
-    psr2.add_argument( 
+    p2 = subp.add_parser('run',help='run isoclassify')
+    p2.add_argument('method', help='{direct,grid}')
+    p2.add_argument('id_starname', help='name of star')
+    p2.add_argument('-o','--outdir',default='./')
+    p2.add_argument('--csv',help='path to csv file')
+    p2.set_defaults(func=run)
+
+    p2 = subp.add_parser('batch', description="Create batch jobs")
+    p2.add_argument('method',help='{direct,grid}')
+    p2.add_argument('csv', type=str, help='list of parameters')
+    p2.add_argument( 
         '-o','--baseoutdir',default='./',help='base path of output directory'
     )
-    psr2.set_defaults(func=batch)
-    args = psr.parse_args()
+    p2.set_defaults(func=batch)
+
+    p2 = subp.add_parser('scrape-output', description="Combine batch outputs")
+    p2.add_argument('baseoutdir', type=str,help='base path of output directory')
+    p2.add_argument('csvfn', help='Name of combined csv file')
+    p2.set_defaults(func=scrape_output)
+    args = p.parse_args()
     args.func(args)
 
 def run(args):
@@ -48,6 +54,11 @@ def batch(args):
         s = s.format(**fmt)
         print s 
 
+def scrape_output(args):
+    path = args.baseoutdir
+    df = isoclassify.scrape_csv(path)
+    df.to_csv(args.csvfn)
+    
 if __name__=="__main__":
     main()
 
