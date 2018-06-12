@@ -184,15 +184,16 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 fitk=np.poly1d([-0.01234736,  0.36684517,  3.1477089 ])
                 input.logg=fitk(np.median(absmag-ext))
                 print 'no input logg provided, guessing (using Mk):', input.logg 
-            
-              
-            
+                        
         # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015 Mks-R relation instead
-        if ((input.teff < 4100.) & (np.median(absmag-ext) > 4.)):
+        if ((input.teff < 4100.) & (np.median(absmag-ext) > 0.)):
             if (input.feh > -99.):
                 rad = 1.9305-0.3466*(absmag-ext)+0.01647*(absmag-ext)**2*(1.+0.04458*input.feh)
             else:
                 rad = 1.9515-0.3520*(absmag-ext)+0.01680*(absmag-ext)**2
+            
+            # add 2.5% scatter in Mks-R relation 
+            rad2 = rad + np.random.randn(len(rad))*np.median(rad)*0.025
 		        
             lum = rad**2 * (teffsamp/teffsun)**4
 		    
