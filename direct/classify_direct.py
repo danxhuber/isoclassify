@@ -192,8 +192,8 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             else:
                 rad = 1.9515-0.3520*(absmag-ext)+0.01680*(absmag-ext)**2
             
-            # add 2.5% scatter in Mks-R relation 
-            rad2 = rad + np.random.randn(len(rad))*np.median(rad)*0.025
+            # add 3% scatter in Mks-R relation 
+            rad2 = rad + np.random.randn(len(rad))*np.median(rad)*0.03
 		        
             lum = rad**2 * (teffsamp/teffsun)**4
 		    
