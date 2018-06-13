@@ -4,11 +4,15 @@ import numpy as np
 import scipy.interpolate
 import pdb
 import asfgrid
+import h5py
+import mwdust
+
 from astropy.io import ascii
 from classify_direct import *
 
 
-dnumodel = asfgrid.Seism()  
+
+#dnumodel = asfgrid.Seism()  
 bcmodel = h5py.File('bcgrid.h5', 'r')
 dustmodel = mwdust.Combined15()
 

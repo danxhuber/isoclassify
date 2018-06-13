@@ -8,6 +8,7 @@ import numpy as np
 #import mwdust
 import time
 import copy
+import pandas as pd
 
 class obsdata():
     def __init__(self):
@@ -295,7 +296,7 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
     if (map > -99.):
 
         # if no reddening map is provided, add Av as a new variable and fit for it
-        if (dustmodel == 0):
+        if (isinstance(dustmodel,pd.DataFrame) == False):
             #avs = np.linspace(-0.1,1.0,41.)
             avs = np.arange(-0.3,1.0,0.01)
             #avs = np.arange(-0.3,1.0,0.1)
@@ -485,7 +486,7 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
     prob = prob/np.sum(prob)
     #pdb.set_trace()
     
-    if (dustmodel == 0):
+    if (isinstance(dustmodel,pd.DataFrame) == False):
 
         names=['teff','logg','feh','rad','mass','rho','lum','age']
         steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
@@ -642,7 +643,7 @@ def reddening_map(model,model_mabs,map,ext,dustmodel,um,input,extfactors):
 
     # iterate distance and map a few times
     for i in range(0,1):
-        ext_v = 3.1*dustmodel(lon_deg,lat_deg,dis/1000.)
+        ext_v = (3.1)*np.interp(x=dis/1000.,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
         ext_band = ext_v*ext	
         dis=10**((map-ext_band-model_mabs[um]+5)/5.)
   

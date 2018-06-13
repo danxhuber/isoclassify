@@ -8,6 +8,7 @@ import astropy.units as units
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 from astropy.coordinates import SkyCoord
+import pandas as pd
 
 def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,plot=-99,band='k'):
 
@@ -123,7 +124,10 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         dsamp=np.random.choice(ds,p=dis2,size=nsample)
         
         # Take derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK = 0.063 and interpolate dustmodel dataframe to determine values of reddening.
-        avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
+        if (isinstance(dustmodel,pd.DataFrame) == False):
+            avs = np.zeros(len(dsamp))
+        else:
+            avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
         
         # NB the next line means that useav is not actually working yet
         if (useav > -99):
@@ -188,12 +192,12 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015 Mks-R relation instead
         if ((input.teff < 4100.) & (np.median(absmag-ext) > 0.)):
             if (input.feh > -99.):
-                rad = 1.9305-0.3466*(absmag-ext)+0.01647*(absmag-ext)**2*(1.+0.04458*input.feh)
+                rad = (1.9305-0.3466*(absmag-ext)+0.01647*(absmag-ext)**2)*(1.+0.04458*input.feh)
             else:
                 rad = 1.9515-0.3520*(absmag-ext)+0.01680*(absmag-ext)**2
             
             # add 3% scatter in Mks-R relation 
-            rad2 = rad + np.random.randn(len(rad))*np.median(rad)*0.03
+            rad = rad + np.random.randn(len(rad))*np.median(rad)*0.03
 		        
             lum = rad**2 * (teffsamp/teffsun)**4
 		    

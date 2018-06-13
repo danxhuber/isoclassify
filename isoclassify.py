@@ -73,7 +73,9 @@ class Pipeline(object):
         self.id_starname = kw['id_starname']
         self.outdir = kw['outdir']
         if kw.has_key('dust'):
-            self.dust = kw['dust']        
+            self.dust = kw['dust']
+        else:
+            self.dust = 'none'        
         if kw.has_key('csv'):
             df = pd.read_csv(kw['csv'])
             assert len(df.id_starname.drop_duplicates())==len(df)
@@ -206,8 +208,10 @@ class PipelineDirect(Pipeline):
         
         if self.dust == 'allsky':
             dustmodel = query_dustmodel_coords_allsky(self.const['ra'],self.const['dec'])
-        else:
+        if self.dust == 'green18':
             dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
+        if self.dust == 'none':
+            dustmodel = 0
 
         x = direct.classify_direct.obsdata()
         self.addspec(x)
@@ -242,8 +246,16 @@ class PipelineGrid(Pipeline):
         model['avs']=np.zeros(len(model['teff']))
         model['dis']=np.zeros(len(model['teff']))
 
+        if self.dust == 'allsky':
+            dustmodel = query_dustmodel_coords_allsky(self.const['ra'],self.const['dec'])
+        if self.dust == 'green18':
+            dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
+        if self.dust == 'none':
+            dustmodel = 0
+            
         # Instantiate model
         x = grid.classify_grid.obsdata()
+        self.addcoords(x)
         self.addspec(x)
         self.addjhk(x)
         self.addgriz(x)
@@ -251,7 +263,7 @@ class PipelineGrid(Pipeline):
         self.addbvt(x)
         self.addplx(x)
         self.paras = grid.classify_grid.classify(
-            input=x, model=model, dustmodel=0, doplot=0, useav=0
+            input=x, model=model, dustmodel=dustmodel, doplot=0, useav=0
         )
 
 def _csv_reader(f):

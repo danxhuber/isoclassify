@@ -5,6 +5,7 @@ import fnmatch
 from scipy.ndimage.filters import gaussian_filter
 import time
 from scipy.interpolate import interp1d
+import pandas as pd
 
 def binpdf(x,y,step,iname,dustmodel):
 	xax = np.arange(np.min(x),np.max(x),step)
@@ -20,7 +21,7 @@ def binpdf(x,y,step,iname,dustmodel):
                 step=0.05
 
 	
-        if ( (dustmodel == 0) & (fnmatch.fnmatch(iname,'*avs*'))):
+        if ( (isinstance(dustmodel,pd.DataFrame) == False) & (fnmatch.fnmatch(iname,'*avs*'))):
                 grid=np.unique(x)
                 spacing=grid[1]-grid[0]
                 xax = np.arange(grid[0]-spacing/4.,grid[len(grid)-1]+spacing/4.,spacing)
@@ -54,6 +55,12 @@ def binpdf(x,y,step,iname,dustmodel):
 
 def getstat(xax,yax):
 	cdf = np.cumsum(yax)
+	# bad hack, needs to be better
+	if (np.min(cdf) > 0.16):
+	    cdf[np.argmin(cdf)]=0.16
+	if (np.max(cdf) < 0.84):
+	    cdf[np.argmax(cdf)]=0.84
+	#pdb.set_trace()
         ppf = interp1d(cdf,xax) # percent point function 
         p16, med, p84 = ppf([0.16,0.50,0.84])
         emed1  = med - p16
@@ -70,7 +77,7 @@ def getpdf(x,y,step,fixed,name,dustmodel):
 	xax,yax = binpdf(x=x,y=y,step=steps,iname=name,dustmodel=dustmodel)
 	med,emed1,emed2 = getstat(xax,yax)
 
-        if ( (dustmodel == 0) & (fnmatch.fnmatch(name,'*avs*'))):
+        if ( (isinstance(dustmodel,pd.DataFrame) == False) & (fnmatch.fnmatch(name,'*avs*'))):
                 return xax,yax,med,emed1,emed2
         if fnmatch.fnmatch(name,'*feh*'):
                 return xax,yax,med,emed1,emed2
