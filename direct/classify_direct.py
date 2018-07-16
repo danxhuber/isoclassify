@@ -8,6 +8,7 @@ import astropy.units as units
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 from astropy.coordinates import SkyCoord
+import pandas as pd
 
 def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,plot=-99,band='k'):
 
@@ -123,7 +124,10 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         dsamp=np.random.choice(ds,p=dis2,size=nsample)
         
         # Take derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK = 0.063 and interpolate dustmodel dataframe to determine values of reddening.
-        avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
+        if (isinstance(dustmodel,pd.DataFrame) == False):
+            avs = np.zeros(len(dsamp))
+        else:
+            avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
         
         # NB the next line means that useav is not actually working yet
         if (useav > -99):
@@ -184,15 +188,16 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
                 fitk=np.poly1d([-0.01234736,  0.36684517,  3.1477089 ])
                 input.logg=fitk(np.median(absmag-ext))
                 print 'no input logg provided, guessing (using Mk):', input.logg 
-            
-              
-            
+                        
         # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015 Mks-R relation instead
-        if ((input.teff < 4100.) & (np.median(absmag-ext) > 4.)):
+        if ((input.teff < 4100.) & (np.median(absmag-ext) > 0.)):
             if (input.feh > -99.):
-                rad = 1.9305-0.3466*(absmag-ext)+0.01647*(absmag-ext)**2*(1.+0.04458*input.feh)
+                rad = (1.9305-0.3466*(absmag-ext)+0.01647*(absmag-ext)**2)*(1.+0.04458*input.feh)
             else:
                 rad = 1.9515-0.3520*(absmag-ext)+0.01680*(absmag-ext)**2
+            
+            # add 3% scatter in Mks-R relation 
+            rad = rad + np.random.randn(len(rad))*np.median(rad)*0.03
 		        
             lum = rad**2 * (teffsamp/teffsun)**4
 		    
@@ -253,6 +258,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         '''
         
         out.rad,out.radep,out.radem=getstat(rad)
+        out.mabs,out.mabsep,out.mabsem=getstat(absmag-ext)
         out.lum,out.lumep,out.lumem=getstat(lum)
         out.dis,out.disep,out.disem=getstat(dsamp)
         out.avs,out.avsep,out.avsem=getstat(avs)
@@ -334,6 +340,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         print 'av(mag):',out.avs,'+',out.avsep,'-',out.avsem
         print 'rad(rsun):',out.rad,'+',out.radep,'-',out.radem
         print 'lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem
+        print 'mabs(',band,'):',out.mabs,'+',out.mabsep,'-',out.mabsem
         
         print '-----'
 
@@ -706,6 +713,9 @@ class resdata():
         self.plxem = 0.
         
         self.mabs = 0.
+        self.mabse = 0.
+        self.mabsep = 0.
+        self.mabsem = 0.
 
 class extinction():
     

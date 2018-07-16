@@ -11,6 +11,7 @@ import ebf
 import astropy.units as units
 from astropy.coordinates import SkyCoord
 from dustmaps.bayestar import BayestarWebQuery
+import mwdust
 
 import grid.classify_grid 
 import direct.classify_direct 
@@ -47,6 +48,20 @@ def query_dustmodel_coords(ra,dec):
     distanceSamples = np.array([0.06309573,0.07943284,0.1,0.12589255,0.15848933,0.19952627,0.25118864,0.31622776,0.3981072,0.50118726,0.6309574,0.7943282 ,1.,1.2589258,1.5848933,1.9952621,2.511887,3.1622777,3.981073,5.011873,6.3095727,7.943284,10.,12.589258,15.848933,19.952621,25.11887,31.622776,39.81073,50.11873,63.095726])*1000. # In pc, from bayestar2017 map distance samples
     
     dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
+
+    for index in xrange(len(reddenContainer)):
+        dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
+
+    return dustModelDF
+    
+def query_dustmodel_coords_allsky(ra,dec):
+    reddenMap = mwdust.Combined15()
+    sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='galactic')
+    distanceSamples = np.array([0.06309573,0.07943284,0.1,0.12589255,0.15848933,0.19952627,0.25118864,0.31622776,0.3981072,0.50118726,0.6309574,0.7943282 ,1.,1.2589258,1.5848933,1.9952621,2.511887,3.1622777,3.981073,5.011873,6.3095727,7.943284,10.,12.589258,15.848933,19.952621,25.11887,31.622776,39.81073,50.11873,63.095726])*1000. # In pc, from bayestar2017 map distance samples
+    reddenContainer=reddenMap(sightLines.l.value,sightLines.b.value,distanceSamples/1000.)
+    del reddenMap # To clear reddenMap from memory
+    
+    dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
     
     for index in xrange(len(reddenContainer)):
         dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
@@ -56,7 +71,11 @@ def query_dustmodel_coords(ra,dec):
 class Pipeline(object):
     def __init__(self, **kw):
         self.id_starname = kw['id_starname']
-        self.outdir = kw['outdir']        
+        self.outdir = kw['outdir']
+        if kw.has_key('dust'):
+            self.dust = kw['dust']
+        else:
+            self.dust = 'none'        
         if kw.has_key('csv'):
             df = pd.read_csv(kw['csv'])
             assert len(df.id_starname.drop_duplicates())==len(df)
@@ -130,9 +149,11 @@ class Pipeline(object):
 
     def print_constraints(self):
         print "id_starname {}".format(self.id_starname)
+        print "dust:", self.dust
+        print "absmag constraint:", self.const['band']
         for key in CONSTRAINTS:
             print key, self.const[key], self.const[key+'_err']
-        print "absmag constraint:", self.const['band']
+        
 
         for key in COORDS:
             print key, self.const[key]
@@ -177,12 +198,20 @@ class PipelineDirect(Pipeline):
         'dir_avs': 'avs',
         'dir_rad': 'rad',
         'dir_lum': 'lum',
+        'dir_teff': 'teff',
+        'dir_mabs': 'mabs',
     }
     
     def run(self):
         self.print_constraints()
         bcmodel = h5py.File(DATADIR+'/direct/bcgrid.h5','r',driver='core',backing_store=False)
-        dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
+        
+        if self.dust == 'allsky':
+            dustmodel = query_dustmodel_coords_allsky(self.const['ra'],self.const['dec'])
+        if self.dust == 'green18':
+            dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
+        if self.dust == 'none':
+            dustmodel = 0
 
         x = direct.classify_direct.obsdata()
         self.addspec(x)
@@ -217,8 +246,16 @@ class PipelineGrid(Pipeline):
         model['avs']=np.zeros(len(model['teff']))
         model['dis']=np.zeros(len(model['teff']))
 
+        if self.dust == 'allsky':
+            dustmodel = query_dustmodel_coords_allsky(self.const['ra'],self.const['dec'])
+        if self.dust == 'green18':
+            dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
+        if self.dust == 'none':
+            dustmodel = 0
+            
         # Instantiate model
         x = grid.classify_grid.obsdata()
+        self.addcoords(x)
         self.addspec(x)
         self.addjhk(x)
         self.addgriz(x)
@@ -226,7 +263,7 @@ class PipelineGrid(Pipeline):
         self.addbvt(x)
         self.addplx(x)
         self.paras = grid.classify_grid.classify(
-            input=x, model=model, dustmodel=0, doplot=0, useav=0
+            input=x, model=model, dustmodel=dustmodel, doplot=0, useav=0
         )
 
 def _csv_reader(f):
