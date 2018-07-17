@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from astropy.coordinates import SkyCoord
 import pandas as pd
 
-def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,plot=-99,band='k'):
+def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,plot=-99,band='k',ext=-99):
 
     # IAU XXIX Resolution, Mamajek et al. (2015)
     r_sun = 6.957e10   	    
@@ -36,8 +36,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
     out = resdata()
 
     ## extinction coefficients
-    #extfactors=extinction()
-    extfactors={"ab":1.3454449, "av":1.0, "abt":1.3454449, "avt":1.0602271, "ag":1.2348743, "ar":0.88343449, "ai":0.68095687, "az":0.48308430, "aj":0.28814896, "ah":0.18152716, "ak":0.11505195, "aga":1.2348743}
+    extfactors=ext
 
     if (len(band) == 4):
         bd=band[0:1]
@@ -123,16 +122,19 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
         np.random.seed(seed=10)
         dsamp=np.random.choice(ds,p=dis2,size=nsample)
         
-        # Take derived additive b value from Fulton et al. (2018) from Nishiyama et al. (2008) AH/AK = 0.063 and interpolate dustmodel dataframe to determine values of reddening.
+        # interpolate dustmodel dataframe to determine values of reddening.
         if (isinstance(dustmodel,pd.DataFrame) == False):
-            avs = np.zeros(len(dsamp))
+            ebvs = np.zeros(len(dsamp))
+            avs=ebvs
         else:
-            avs = (3.1+0.063)*np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
+            ebvs=np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
+            avs = extfactors['av']*ebvs
         
+        pdb.set_trace()    
         # NB the next line means that useav is not actually working yet
         if (useav > -99):
-            avs = np.zeros(len(dsamp))+useav
-        ext=avs*extfactors['a'+bd]
+            ebvs = np.zeros(len(dsamp))+useav
+        ext=extfactors['a'+bd]*ebvs
         
         # assume solar metallicity if no input feh is provided
         if (input.feh == -99.):
@@ -142,13 +144,13 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
     
         if (input.teff == -99.):
             if ((input.jmag > -99.) & (input.kmag > -99.)):
-                jkmag = (input.jmag-np.median(avs*extfactors['aj'])) - (input.kmag-np.median(avs*extfactors['ak']))
+                jkmag = (input.jmag-np.median(ebvs*extfactors['aj'])) - (input.kmag-np.median(ebvs*extfactors['ak']))
                 input.teff=casagrande_jk(jkmag,feh)
             if ((input.bmag > -99.) & (input.vmag > -99.)):
-                bvmag = (input.bmag-np.median(avs*extfactors['ab'])) - (input.vmag-np.median(avs*extfactors['av']))
+                bvmag = (input.bmag-np.median(ebvs*extfactors['ab'])) - (input.vmag-np.median(ebvs*extfactors['av']))
                 input.teff=casagrande_bv(bvmag,feh)
             if ((input.btmag > -99.) & (input.vtmag > -99.)):
-                bvtmag = (input.btmag-np.median(avs*extfactors['abt'])) - (input.vtmag-np.median(avs*extfactors['avt']))
+                bvtmag = (input.btmag-np.median(ebvs*extfactors['abt'])) - (input.vtmag-np.median(ebvs*extfactors['avt']))
                 input.teff=casagrande_bvt(bvtmag,feh)
                 #pdb.set_trace()
             input.teffe=100.
@@ -717,11 +719,23 @@ class resdata():
         self.mabsep = 0.
         self.mabsem = 0.
 
-class extinction():
-    
+def extinction(law):
+    if (law == 'cardelli'):
+        return {"ab":4.1708789, "av":3.1071930, "abt":4.3358221, "avt":3.2867038, "ag":3.8281101, "ar":2.7386468, "ai":2.1109662, "az":1.4975613, "aj":0.89326176, "ah":0.56273418, "ak":0.35666104, "aga":2.4623915}
+        
+    if (law == 'schlafly11'):
+        return {"ab":3.626, "av":2.742, "abt":4.5309214, "avt":3.1026801, "ag":3.303, "ar":2.285, "ai":1.698, "az":1.263, "aj":0.77510388, "ah":0.50818384, "ak":0.33957048, "aga":1.9139634}
+
+    if (law == 'schlafly16'):
+        return {"ab":3.6060565, "av":2.9197679, "abt":3.7204173, "avt":3.0353634, "ag":3.384, "ar":2.483, "ai":1.838, "az":1.414, "aj":0.650, "ah":0.327, "ak":0.161, "aga":2.2203186}
+
+    '''
+    class extinction():
+
     def __init__(self):
-    
+
         self.ext={"ab":1.3454449, "av":1.0, "abt":1.3454449, "avt":1.0602271, "ag":1.2348743, "ar":0.88343449, "ai":0.68095687, "az":0.48308430, "aj":0.28814896, "ah":0.18152716, "ak":0.11505195, "aga":1.2348743}
+          
         self.ab=1.3454449
         self.av=1.00
 
@@ -738,6 +752,7 @@ class extinction():
         self.ak=0.11505195
 
         self.aga=1.2348743
+    '''
   
     
 

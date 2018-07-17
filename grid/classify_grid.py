@@ -177,7 +177,7 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
+def classify(input,model,dustmodel=0,doplot=1,useav=-99.,ext=-99.):
 
     ## constants
     gsun=27420.010
@@ -189,7 +189,7 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
     bcerr=0.03
 
     ## extinction coefficients
-    extfactors=extinction()
+    extfactors=ext
     
     ## class containing output results
     result = resdata()
@@ -217,32 +217,32 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
     if (input.vmag > -99.):
         map=input.vmag
         mape=input.vmage
-        ext=extfactors.av
+        band='v'
         model_mabs=model['vmag']
 
     if (input.vtmag > -99.):
         map=input.vtmag
         mape=input.vtmage
         model_mabs=model['vtmag']
-	ext=extfactors.avt
+        band='vt'
 
     if (input.gmag > -99.):
         map=input.gmag
         mape=input.gmage
         model_mabs=model['gmag']   
-        ext=extfactors.ag
+        band='g'
 	
     if (input.jmag > -99.):
         map=input.jmag
         mape=input.jmage
         model_mabs=model['jmag']
-        ext=extfactors.aj
+        band='j'
 
     if (input.kmag > -99.):
         map=input.kmag
         mape=input.kmage
         model_mabs=model['kmag']
-        ext=extfactors.ak
+        band='k'
         
     # absolute magnitude
     if (input.plx > -99.):
@@ -295,6 +295,7 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
     # add reddening
     if (map > -99.):
 
+        
         # if no reddening map is provided, add Av as a new variable and fit for it
         if (isinstance(dustmodel,pd.DataFrame) == False):
             #avs = np.linspace(-0.1,1.0,41.)
@@ -302,28 +303,30 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
             #avs = np.arange(-0.3,1.0,0.1)
             
             # user-specified reddening
-            if (useav > -99.):
-                avs = np.zeros(1)+useav
+            #if (useav > -99.):
+            #    avs = np.zeros(1)+useav
                 
             mod = reddening(model,um,avs,extfactors)
+            #pdb.set_trace()
 
         # otherwise, just redden each model according to the provided map
         else:
-	    mod=reddening_map(model,model_mabs,map,ext,dustmodel,um,input,extfactors)
-        
+            #pdb.set_trace()
+            mod=reddening_map(model,model_mabs,map,dustmodel,um,input,extfactors,band)
+
         # photometry to use for distance
         if (input.vmag > -99.):
             mod_mabs=mod['vmag']
         if (input.vtmag > -99.):
             mod_mabs=mod['vtmag']
-	if (input.gmag > -99.):
+        if (input.gmag > -99.):
             mod_mabs=mod['gmag']
-	if (input.jmag > -99.):
+        if (input.jmag > -99.):
             mod_mabs=mod['jmag']
         if (input.kmag > -99.):
             mod_mabs=mod['kmag']
         um = np.arange(0,len(mod['teff']),1)
-	
+
         mod['dis'] = 10**((map-mod_mabs+5.)/5.)
         print 'number of models incl reddening:',len(um)
     else:
@@ -503,10 +506,12 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.):
             steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
             fixes=[0,1,1,0,0,1,1,0,1,0]
             
-        if ((input.plx == -99.) & (map > -99) & (useav > -99.)):
-            names=['teff','logg','feh','rad','mass','rho','lum','age','dis']
-            steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
-            fixes=[0,1,1,0,0,1,1,0,0]
+        #if ((input.plx == -99.) & (map > -99) & (useav > -99.)):
+        #    names=['teff','logg','feh','rad','mass','rho','lum','age','dis']
+        #    steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
+        #    fixes=[0,1,1,0,0,1,1,0,0]
+            
+        #pdb.set_trace()
             
         
             
@@ -599,17 +604,17 @@ def reddening(model,um,avs,extfactors):
 
             # NB: in reality, the model mags should also be Av-dependent; hopefully a 
             # small effect!
-            model3['bmag'][ix]=model2['bmag']+avs[i]*extfactors.ab
-            model3['vmag'][ix]=model2['vmag']+avs[i]*extfactors.av
-            model3['gmag'][ix]=model2['gmag']+avs[i]*extfactors.ag
-            model3['rmag'][ix]=model2['rmag']+avs[i]*extfactors.ar
-            model3['imag'][ix]=model2['imag']+avs[i]*extfactors.ai
-            model3['zmag'][ix]=model2['zmag']+avs[i]*extfactors.az
-            model3['jmag'][ix]=model2['jmag']+avs[i]*extfactors.aj
-            model3['hmag'][ix]=model2['hmag']+avs[i]*extfactors.ah
-            model3['kmag'][ix]=model2['kmag']+avs[i]*extfactors.ak
-            model3['btmag'][ix]=model2['btmag']+avs[i]*extfactors.abt
-            model3['vtmag'][ix]=model2['vtmag']+avs[i]*extfactors.avt
+            model3['bmag'][ix]=model2['bmag']+avs[i]*extfactors['ab']/extfactors['av']
+            model3['vmag'][ix]=model2['vmag']+avs[i]*extfactors['av']/extfactors['av']
+            model3['gmag'][ix]=model2['gmag']+avs[i]*extfactors['ag']/extfactors['av']
+            model3['rmag'][ix]=model2['rmag']+avs[i]*extfactors['ar']/extfactors['av']
+            model3['imag'][ix]=model2['imag']+avs[i]*extfactors['ai']/extfactors['av']
+            model3['zmag'][ix]=model2['zmag']+avs[i]*extfactors['az']/extfactors['av']
+            model3['jmag'][ix]=model2['jmag']+avs[i]*extfactors['aj']/extfactors['av']
+            model3['hmag'][ix]=model2['hmag']+avs[i]*extfactors['ah']/extfactors['av']
+            model3['kmag'][ix]=model2['kmag']+avs[i]*extfactors['ak']/extfactors['av']
+            model3['btmag'][ix]=model2['btmag']+avs[i]*extfactors['abt']/extfactors['av']
+            model3['vtmag'][ix]=model2['vtmag']+avs[i]*extfactors['avt']/extfactors['av']
 
             model3['teff'][ix]=model2['teff']
             model3['logg'][ix]=model2['logg']
@@ -631,8 +636,13 @@ def reddening(model,um,avs,extfactors):
 
 
 # redden model given a reddening map
-def reddening_map(model,model_mabs,map,ext,dustmodel,um,input,extfactors):
+def reddening_map(model,model_mabs,map,dustmodel,um,input,extfactors,band):
 
+    if (len(band) == 4):
+        bd=band[0:1]
+    else:
+        bd=band[0:2]
+        
     equ = ephem.Equatorial(input.ra*np.pi/180., input.dec*np.pi/180., epoch=ephem.J2000)
     gal = ephem.Galactic(equ)
     lon_deg=gal.lon*180./np.pi
@@ -643,29 +653,30 @@ def reddening_map(model,model_mabs,map,ext,dustmodel,um,input,extfactors):
 
     # iterate distance and map a few times
     for i in range(0,1):
-        ext_v = (3.1)*np.interp(x=dis/1000.,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
-        ext_band = ext_v*ext	
+        ebvs = np.interp(x=dis,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
+        ext_band = extfactors['a'+bd]*ebvs	
         dis=10**((map-ext_band-model_mabs[um]+5)/5.)
+        #pdb.set_trace()
   
     
     # if no models have been pre-selected (i.e. input is photometry+parallax only), 
     # redden all models
     if (len(um) == len(model['teff'])):
 	    model3 = copy.deepcopy(model)
-	    model3['bmag']=model['bmag']+ext_v*extfactors.ab
-	    model3['vmag']=model['vmag']+ext_v*extfactors.av
-	    model3['gmag']=model['gmag']+ext_v*extfactors.ag
-	    model3['rmag']=model['rmag']+ext_v*extfactors.ar
-	    model3['imag']=model['imag']+ext_v*extfactors.ai
-	    model3['zmag']=model['zmag']+ext_v*extfactors.az
+	    model3['bmag']=model['bmag']+extfactors['ab']*ebvs
+	    model3['vmag']=model['vmag']+extfactors['av']*ebvs
+	    model3['gmag']=model['gmag']+extfactors['ag']*ebvs
+	    model3['rmag']=model['rmag']+extfactors['ar']*ebvs
+	    model3['imag']=model['imag']+extfactors['ai']*ebvs
+	    model3['zmag']=model['zmag']+extfactors['az']*ebvs
 	    #model3['d51mag']=model['d51mag']+ext_v*ab
-	    model3['jmag']=model['jmag']+ext_v*extfactors.aj
-	    model3['hmag']=model['hmag']+ext_v*extfactors.ah
-	    model3['kmag']=model['kmag']+ext_v*extfactors.ak
-	    model3['btmag']=model['btmag']+ext_v*extfactors.abt
-	    model3['vtmag']=model['vtmag']+ext_v*extfactors.avt
+	    model3['jmag']=model['jmag']+extfactors['aj']*ebvs
+	    model3['hmag']=model['hmag']+extfactors['ah']*ebvs
+	    model3['kmag']=model['kmag']+extfactors['ak']*ebvs
+	    model3['btmag']=model['btmag']+extfactors['abt']*ebvs
+	    model3['vtmag']=model['vtmag']+extfactors['avt']*ebvs
 	    model3['dis']=dis
-	    model3['avs']=ext_v
+	    model3['avs']=extfactors['av']*ebvs	
 	    #pdb.set_trace()
 	 
     # if models have been pre-selected, extract and only redden those
@@ -680,20 +691,20 @@ def reddening_map(model,model_mabs,map,ext,dustmodel,um,input,extfactors):
         	    ('bmag', float), ('vmag', float), ('btmag', float), ('vtmag', float), ('dis', float), \
         	    ('kmag', float), ('avs', float), ('fdnu', float)])
 
-	    model3['bmag']=model2['bmag']+ext_v*extfactors.ab
-	    model3['vmag']=model2['vmag']+ext_v*extfactors.av
-	    model3['gmag']=model2['gmag']+ext_v*extfactors.ag
-	    model3['rmag']=model2['rmag']+ext_v*extfactors.ar
-	    model3['imag']=model2['imag']+ext_v*extfactors.ai
-	    model3['zmag']=model2['zmag']+ext_v*extfactors.az
+	    model3['bmag']=model2['bmag']+extfactors['ab']*ebvs
+	    model3['vmag']=model2['vmag']+extfactors['av']*ebvs
+	    model3['gmag']=model2['gmag']+extfactors['ag']*ebvs
+	    model3['rmag']=model2['rmag']+extfactors['ar']*ebvs
+	    model3['imag']=model2['imag']+extfactors['ai']*ebvs
+	    model3['zmag']=model2['zmag']+extfactors['az']*ebvs
 	    #model3['d51mag']=model2['d51mag']+ext_v*ab
-	    model3['jmag']=model2['jmag']+ext_v*extfactors.aj
-	    model3['hmag']=model2['hmag']+ext_v*extfactors.ah
-	    model3['kmag']=model2['kmag']+ext_v*extfactors.ak
-	    model3['btmag']=model2['btmag']+ext_v*extfactors.abt
-	    model3['vtmag']=model2['vtmag']+ext_v*extfactors.avt
+	    model3['jmag']=model2['jmag']+extfactors['aj']*ebvs
+	    model3['hmag']=model2['hmag']+extfactors['ah']*ebvs
+	    model3['kmag']=model2['kmag']+extfactors['ak']*ebvs
+	    model3['btmag']=model2['btmag']+extfactors['abt']*ebvs
+	    model3['vtmag']=model2['vtmag']+extfactors['avt']*ebvs
 	    model3['dis']=dis
-	    model3['avs']=ext_v
+	    model3['avs']=extfactors['av']*ebvs	
 
 	    model3['teff']=model2['teff']
 	    model3['logg']=model2['logg']
