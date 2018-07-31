@@ -130,7 +130,7 @@ def stparas(input,dnumodel=-99,bcmodel=-99,dustmodel=-99,dnucor=-99,useav=-99,pl
             ebvs=np.interp(x=dsamp,xp=np.concatenate(([0.0],np.array(dustmodel.columns[2:].str[3:],dtype='float'))),fp=np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:]))))
             avs = extfactors['av']*ebvs
         
-        pdb.set_trace()    
+        #pdb.set_trace()    
         # NB the next line means that useav is not actually working yet
         if (useav > -99):
             ebvs = np.zeros(len(dsamp))+useav
