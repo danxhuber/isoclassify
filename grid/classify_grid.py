@@ -578,7 +578,7 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.0,ext=-99.0):
 
     ix = 1
     iy = 2
-    npar=len(names)
+    npar = len(names)
    
     for j in range(0,npar):
         if fnmatch.fnmatch(names[j],'*lum*'):
@@ -589,7 +589,7 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.0,ext=-99.0):
         else:
             if (len(np.unique(mod[names[j]][um])) > 1):
                 x, y, res, err1, err2 = getpdf(
-                    mod[names[j]][um], prob, name=names[j], step=steps[j], 
+                    mod[names[j]][um], prob, name=names[j], step=steps[j],
                     fixed=fixes[j],dustmodel=dustmodel
                 )
             else:
@@ -604,10 +604,10 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.0,ext=-99.0):
         setattr(result, names[j]+'px', x)
         setattr(result, names[j]+'py', y)
 
-    if doplot:
-        plotposterior(x,y,res,err1,err2,names,j,ix,iy)
-        ix = ix+2
-        iy = iy+2
+        if doplot:
+            plotposterior(x, y, res, err1, err2, names, j, ix, iy)
+            ix = ix+2
+            iy = iy+2
 
     if doplot:
         plothrd(model,input,mabs,mabse,ix,iy)
@@ -721,7 +721,7 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
         model3['avs']=extfactors['av']*ebvs	
         keys = 'teff logg feh rad mass rho age dfeh dmass dage fdnu'.split()
         for key in keys:
-            model3[key][ix] = model2[key]
+            model3[key] = model2[key]
 
     return model3
 
@@ -780,7 +780,7 @@ def readinput(input):
     out = (
         ra, dec, bmag, bmage, vmag, vmage, gmag, gmage, rmag, rmage, 
         imag, image, zmag, zmage, jmag, jmage, hmag, hmage, kmag, kmage, 
-        plx, plxe,teff,teffe,logg,logge,feh,fehe
+        plx, plxe, teff, teffe, logg, logge, feh, fehe
     )
 
     return out

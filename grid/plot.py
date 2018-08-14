@@ -1,29 +1,17 @@
-import pdb
 import numpy as np
 import matplotlib.pyplot as plt
-import fnmatch
+
 import random
 from priors import *
+import fnmatch
 
 def plotinit():
     fig1 = plt.figure('posteriors',figsize=(8,12))
-    fig2=plt.figure('hrd',figsize=(8,12))
-
-    #plt.subplots_adjust(left=0.08, bottom=0.04, right=0.96, top=0.96, wspace=0.27, \
-    #                    hspace=0.6)
+    fig2 = plt.figure('hrd',figsize=(8,12))
 
     plt.figure('posteriors')
     plt.ion()
     plt.show()
-
-    #fig1.set_tight_layout(True)
-    #plt.draw()
-    #plt.show()
-
-    #plt.subplots_adjust(left=0.08, bottom=0.04, right=0.96, top=0.96, wspace=0.27, \
-    #                    hspace=0.6)
-    #plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.97, wspace=0.3, \
-    #    hspace=0.5)
 
 def plotclear():
     raw_input(':')
@@ -32,7 +20,6 @@ def plotclear():
     plt.figure('posteriors')
     plt.clf()
 
-#def plotposterior(x,y,res,err1,err2,avs,model,model_red,names,j,medav,stdav,grcol,ricol,grcole,ricole,Mg,Mge,ix,iy):
 def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
     #fig = plt.figure(figsize=(8,12))
     plt.subplot(len(names),2,ix)
@@ -65,19 +52,10 @@ def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
         yt=fehprior(xt)
         plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
 
-    '''
-    if fnmatch.fnmatch(names[j],'*avs*'):
-        xt=np.arange(np.min(avs),np.max(avs),0.001)
-        yt=gaussian(xt,1.,medav,stdav,0.)
-        #yt=avprior(xt,data,i,dust,dist)
-        plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
-    '''
-    #fig.set_tight_layout(True)
-
 def plothrd(model,input,mabs,mabse,ix,iy):
-
-    plt.subplots_adjust(left=0.08, bottom=0.05, right=0.96, top=0.96, wspace=0.31, \
-                        hspace=0.26)
+    plt.subplots_adjust(
+        left=0.08, bottom=0.05, right=0.96, top=0.96, wspace=0.31, hspace=0.26
+    )
 
     plt.figure('hrd')
     plt.subplot(2,3,1)
@@ -149,7 +127,6 @@ def plothrd(model,input,mabs,mabse,ix,iy):
     plt.ylabel('J-H')
     plt.xlim([-0.1,0.5])
     plt.ylim([-0.3,1.3])
-    
     
     ### 2MASS color-color
     plt.subplot(2,3,4)
@@ -245,34 +222,6 @@ def plothrd(model,input,mabs,mabse,ix,iy):
 
         plt.errorbar([input.teff], [input.numax], xerr=input.teffe, yerr=input.numaxe, \
                  color='green',elinewidth=5)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def plothrdold(model,grcol,ricol,grcole,ricole,Mg,Mge,ix,iy):
 
