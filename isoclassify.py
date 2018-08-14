@@ -227,13 +227,16 @@ class PipelineDirect(Pipeline):
 
 class PipelineGrid(Pipeline):
     outputcols = {
-        'iso_teff':'teff',
-        'iso_logg':'logg',
-        'iso_feh':'feh',
-        'iso_rad':'rad',
-        'iso_mass':'mass',
         'iso_age':'age',
-        'iso_dis':'dis'      
+        'iso_avs':'avs',
+        'iso_dis':'dis',
+        'iso_feh':'feh',
+        'iso_mass':'mass',
+        'iso_rad':'rad',
+        'iso_lum':'lum',
+        'iso_logg':'logg',
+        'iso_rho': 'rho',
+        'iso_teff':'teff',
     }
     def run(self):
         self.print_constraints()
