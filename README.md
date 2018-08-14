@@ -78,6 +78,6 @@ isoclassify batch direct examples/example.csv -o output > isoclassify.tot
 parallel :::: isoclassify.tot
 
 # Combine outputs into one CSV file
-bin/isoclassify scrape-output 'output/*/output.csv' output.csv=
+bin/isoclassify scrape-output 'output/*/output.csv' output.csv
 ```
 
