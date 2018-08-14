@@ -20,7 +20,7 @@ DATADIR = os.environ['ISOCLASSIFY']
 
 CONSTRAINTS = [
     'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
-    'parallax', 'bmag','vmag', 'btmag','vtmag'
+    'parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu'
 ]
 
 COORDS = ['ra','dec']
@@ -51,7 +51,7 @@ def query_dustmodel_coords(ra,dec):
 
     for index in xrange(len(reddenContainer)):
         dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
-
+        
     return dustModelDF
     
 def query_dustmodel_coords_allsky(ra,dec):
@@ -70,6 +70,7 @@ def query_dustmodel_coords_allsky(ra,dec):
 
 class Pipeline(object):
     def __init__(self, **kw):
+        
         self.id_starname = kw['id_starname']
         self.outdir = kw['outdir']
         if kw.has_key('dust'):
@@ -81,7 +82,7 @@ class Pipeline(object):
             assert len(df.id_starname.drop_duplicates())==len(df)
             df.index = df.id_starname
             star = df.ix[self.id_starname]
-
+        #pdb.set_trace()
         const = {}
         for key in CONSTRAINTS:
             if key in star:
@@ -129,6 +130,13 @@ class Pipeline(object):
         err = [self.const[key+'_err'] for key in keys]
         x.addbvt(val,err)
         
+    def addseismo(self,x):
+        keys = 'numax dnu'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addseismo(val,err)
+    
+        
     def addbv(self,x):
         keys = 'bmag vmag'.split()
         val = [self.const[key] for key in keys]
@@ -150,7 +158,7 @@ class Pipeline(object):
     def print_constraints(self):
         print "id_starname {}".format(self.id_starname)
         print "dust:", self.dust
-        print "absmag constraint:", self.const['band']
+        #print "absmag constraint:", self.const['band']
         for key in CONSTRAINTS:
             print key, self.const[key], self.const[key+'_err']
         
@@ -208,12 +216,16 @@ class PipelineDirect(Pipeline):
         
         if self.dust == 'allsky':
             dustmodel = query_dustmodel_coords_allsky(self.const['ra'],self.const['dec'])
+            ext = extinction('cardelli')
         if self.dust == 'green18':
             dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
+            ext = extinction('schlafly16')
         if self.dust == 'none':
             dustmodel = 0
+            ext = extinction('cardelli')
 
         x = direct.classify_direct.obsdata()
+        #pdb.set_trace()
         self.addspec(x)
         self.addjhk(x)
         self.addbv(x)
@@ -222,7 +234,7 @@ class PipelineDirect(Pipeline):
         self.addcoords(x)
         self.addmag(x)
         self.paras = direct.classify_direct.stparas(
-            input=x,bcmodel=bcmodel,dustmodel=dustmodel,band=self.const['band'],plot=1
+            input=x,bcmodel=bcmodel,dustmodel=dustmodel,band=self.const['band'],ext=ext,plot=1
         )
 
 class PipelineGrid(Pipeline):
@@ -251,10 +263,13 @@ class PipelineGrid(Pipeline):
 
         if self.dust == 'allsky':
             dustmodel = query_dustmodel_coords_allsky(self.const['ra'],self.const['dec'])
+            ext = extinction('cardelli')
         if self.dust == 'green18':
             dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
+            ext = extinction('schlafly16')
         if self.dust == 'none':
             dustmodel = 0
+            ext = extinction('cardelli')
             
         # Instantiate model
         x = grid.classify_grid.obsdata()
@@ -264,9 +279,10 @@ class PipelineGrid(Pipeline):
         self.addgriz(x)
         self.addbv(x)
         self.addbvt(x)
+        self.addseismo(x)
         self.addplx(x)
         self.paras = grid.classify_grid.classify(
-            input=x, model=model, dustmodel=dustmodel, doplot=0, useav=0
+            input=x, model=model, dustmodel=dustmodel,ext=ext, doplot=1, useav=0
         )
 
 def _csv_reader(f):
@@ -294,3 +310,22 @@ def scrape_csv(path):
     df = pd.DataFrame(df)
     df = df.reset_index()
     return df
+ 
+# R_lambda values to convert E(B-V) given by dustmaps to extinction in a given passband. 
+# The two main caveats with this are:
+# - strictly speaking only cardelli is consistent with the BC tables used in the MIST grid, 
+# but using wrong R_lambda's for the newer Green et al. dustmaps is (probably) worse. 
+# - some values were interpolated to passbands that aren't included in the Schlafly/Green tables.  
+def extinction(law):
+
+    if (law == 'cardelli'):
+        return {"ab":4.1708789, "av":3.1071930, "abt":4.3358221, "avt":3.2867038, "ag":3.8281101, "ar":2.7386468, "ai":2.1109662, "az":1.4975613, "aj":0.89326176, "ah":0.56273418, "ak":0.35666104, "aga":2.4623915}
+        
+    if (law == 'schlafly11'):
+        return {"ab":3.626, "av":2.742, "abt":4.5309214, "avt":3.1026801, "ag":3.303, "ar":2.285, "ai":1.698, "az":1.263, "aj":0.77510388, "ah":0.50818384, "ak":0.33957048, "aga":1.9139634}
+
+    if (law == 'schlafly16'):
+        # see http://argonaut.skymaps.info/usage under "Gray Component". this is a lower limit.
+        grayoffset=0.063
+        return {"ab":3.6060565+grayoffset, "av":2.9197679+grayoffset, "abt":3.7204173+grayoffset, "avt":3.0353634+grayoffset, "ag":3.384+grayoffset, "ar":2.483+grayoffset, "ai":1.838+grayoffset, "az":1.414+grayoffset, "aj":0.650+grayoffset, "ah":0.327+grayoffset, "ak":0.161+grayoffset, "aga":2.2203186+grayoffset}
+

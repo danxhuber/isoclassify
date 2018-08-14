@@ -175,6 +175,8 @@ def plothrd(model,input,mabs,mabse,ix,iy):
     mag1='bmag'
     mag2='vmag'
     absmag='vmag'
+    col=0.
+    cole=0.
     
     if (input.vmag > 0):
         mag1='bmag'
