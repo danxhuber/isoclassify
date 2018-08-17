@@ -8,18 +8,8 @@ import fnmatch
 def plotinit():
     fig1 = plt.figure('posteriors',figsize=(8,12))
     fig2 = plt.figure('hrd',figsize=(8,12))
-
     plt.figure('posteriors')
-    plt.ion()
-    plt.show()
-
-def plotclear():
-    raw_input(':')
-
-    plt.clf()
-    plt.figure('posteriors')
-    plt.clf()
-
+ 
 def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
     #fig = plt.figure(figsize=(8,12))
     plt.subplot(len(names),2,ix)

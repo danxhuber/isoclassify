@@ -34,11 +34,14 @@ def run(**kw):
         assert False, "method {} not supported ".format(kw['method'])
 
     pipe.run()
-    pipe.savefig()
-    pipe.to_csv()
+    if pipe.plot=='show':
+        plt.ion()
+        plt.show()
+        raw_input('[press return to continue]:')
+    elif pipe.plot.count('save')==1:
+        pipe.savefig()
 
-def load_mist():
-    return model
+    pipe.to_csv()
 
 def query_dustmodel_coords(ra,dec):
     reddenMap = BayestarWebQuery(version='bayestar2017')
@@ -73,7 +76,12 @@ class Pipeline(object):
         assert kw.has_key('csv'), "must pass csv as keyword"
         assert kw.has_key('outdir'), "must pass outdir as keyword"
 
-        self.iplot = kw['iplot']        
+        self.plot = kw['plot']
+        if self.plot=='none':
+            self.doplot = 0 
+        else:
+            self.doplot = 1
+
         self.id_starname = kw['id_starname']
         self.outdir = kw['outdir']
 
@@ -169,9 +177,14 @@ class Pipeline(object):
             print key, self.const[key]
             
     def savefig(self):
-        fig = plt.gcf()
-        fig.set_tight_layout(True)
-        plt.savefig(self.pdffn)
+        labels = plt.get_figlabels()
+        _, ext = self.plot.split('-')
+        for label in plt.get_figlabels():
+            fn = os.path.join(self.outdir,'{}.{}'.format(label,ext))
+            fig = plt.figure(label)
+            fig.set_tight_layout(True)
+            plt.savefig(fn)
+            print "created {}".format(fn)
 
     def to_csv(self):
         out = {}
@@ -292,7 +305,8 @@ class PipelineGrid(Pipeline):
         self.addseismo(x)
         self.addplx(x)
         self.paras = grid.classify_grid.classify(
-            input=x, model=model, dustmodel=dustmodel,ext=ext, doplot=1, useav=0
+            input=x, model=model, dustmodel=dustmodel,ext=ext, 
+            doplot=self.doplot, useav=0
         )
 
 def _csv_reader(f):

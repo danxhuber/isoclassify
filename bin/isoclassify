@@ -10,20 +10,30 @@ import numpy as np
 import pandas as pd
 import isoclassify
 
+'''
+        plotmode (int): either {0,1,2}
+           - 'no': Don't create plots (faster)
+           - 'yes': Create plot (use in batch mode)
+           - 'yes-show': Create plot and show it (interactive mode)
+'''
+
+
 def main():
     p = ArgumentParser()
     subp = p.add_subparsers(title="subcommands", dest='subcommand')
 
     p2 = subp.add_parser('run',help='run isoclassify')
-    p2.add_argument('method', help='{direct,grid}')
+    p2.add_argument('method',choices=['direct', 'grid'],help='method')
     p2.add_argument('id_starname', help='name of star')
     p2.add_argument('-o','--outdir',default='./')
     p2.add_argument('--csv', help='path to csv file')
-    p2.add_argument('--iplot', help='generate interactive plots')
+    p2.add_argument(
+        '--plot', choices=['none', 'show', 'save-pdf','save-png'], help='plotting mode'
+    )
     p2.set_defaults(func=run)
 
     p2 = subp.add_parser('batch', description="Create batch jobs")
-    p2.add_argument('method',help='{direct,grid}')
+    p2.add_argument('method',choices=['direct', 'grid'],help='method')
     p2.add_argument('csv', type=str, help='list of parameters')
     p2.add_argument( 
         '-o','--baseoutdir',default='./',help='base path of output directory'

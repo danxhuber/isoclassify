@@ -177,7 +177,17 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input,model,dustmodel=0,doplot=1,useav=-99.0,ext=-99.0):
+def classify(input, model, dustmodel=0, doplot=1, useav=-99.0, ext=-99.0):
+    """
+    Run grid based classifier
+
+    Args:
+        input (object): input object
+        model (dict): dictionary of arrays
+        dustmodel (Optional[DataFrame]): extinction model
+        useav (float):
+        ext (float):
+    """
 
     ## constants
     gsun = 27420.010
@@ -572,7 +582,8 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.0,ext=-99.0):
         steps=[0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, avstep, 0.01]
         fixes=[0, 1, 1, 0, 0, 1, 1, 0, 1, 0]
 
-                           
+
+    # Provision figure
     if doplot:
         plotinit()
 
@@ -604,14 +615,15 @@ def classify(input,model,dustmodel=0,doplot=1,useav=-99.0,ext=-99.0):
         setattr(result, names[j]+'px', x)
         setattr(result, names[j]+'py', y)
 
+        # Plot individual posteriors
         if doplot:
             plotposterior(x, y, res, err1, err2, names, j, ix, iy)
-            ix = ix+2
-            iy = iy+2
-
+            ix += 2
+            iy += 2
+    
+    # Plot HR diagrams
     if doplot:
         plothrd(model,input,mabs,mabse,ix,iy)
-        plotclear()
 
     return result
             
