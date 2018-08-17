@@ -81,3 +81,16 @@ parallel :::: isoclassify.tot
 bin/isoclassify scrape-output 'output/*/output.csv' output.csv
 ```
 
+
+## Testing the codebase .
+
+If you haven't changed the core algorithm then run the following command
+
+```
+isoclassify batch direct examples/example.csv -o output/direct > isoclassify-test-direct.tot 
+isoclassify batch grid examples/example.csv -o output/grid > isoclassify-test-grid.tot 
+cat isoclassify-test-direct.tot isoclassify-test-grid.tot  > isoclassify-test.tot
+parallel :::: isoclassify-test.tot 
+```
+
+and compare the output with a previous version 
