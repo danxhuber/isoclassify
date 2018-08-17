@@ -34,11 +34,11 @@ def run(**kw):
         assert False, "method {} not supported ".format(kw['method'])
 
     pipe.run()
-    if pipe.plot=='show':
+    if pipe.plotmode=='show':
         plt.ion()
         plt.show()
         raw_input('[press return to continue]:')
-    elif pipe.plot.count('save')==1:
+    elif pipe.plotmode.count('save')==1:
         pipe.savefig()
 
     pipe.to_csv()
@@ -76,11 +76,13 @@ class Pipeline(object):
         assert kw.has_key('csv'), "must pass csv as keyword"
         assert kw.has_key('outdir'), "must pass outdir as keyword"
 
-        self.plot = kw['plot']
-        if self.plot=='none':
-            self.doplot = 0 
+        self.plotmode = kw['plot']
+
+        # create plot (both interactive and save modes)
+        if self.plotmode=='none':
+            self.plot = 0 
         else:
-            self.doplot = 1
+            self.plot = 1
 
         self.id_starname = kw['id_starname']
         self.outdir = kw['outdir']
@@ -178,7 +180,7 @@ class Pipeline(object):
             
     def savefig(self):
         labels = plt.get_figlabels()
-        _, ext = self.plot.split('-')
+        _, ext = self.plotmode.split('-')
         for label in plt.get_figlabels():
             fn = os.path.join(self.outdir,'{}.{}'.format(label,ext))
             fig = plt.figure(label)
@@ -306,7 +308,7 @@ class PipelineGrid(Pipeline):
         self.addplx(x)
         self.paras = grid.classify_grid.classify(
             input=x, model=model, dustmodel=dustmodel,ext=ext, 
-            doplot=self.doplot, useav=0
+            plot=self.plot, useav=0
         )
 
 def _csv_reader(f):

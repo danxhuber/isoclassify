@@ -8,7 +8,7 @@ from astropy.io import ascii
 
 from pdf import *  # part of isoclassify package (to do make explicit import) 
 from priors import * # part of isoclassify package (to do make explicit import) 
-from plot import * # part of isoclassify package (to do make explicit import) 
+from .plot import * # part of isoclassify package (to do make explicit import) 
 
 class obsdata():
     def __init__(self):
@@ -177,7 +177,7 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input, model, dustmodel=0, doplot=1, useav=-99.0, ext=-99.0):
+def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     """
     Run grid based classifier
 
@@ -584,7 +584,7 @@ def classify(input, model, dustmodel=0, doplot=1, useav=-99.0, ext=-99.0):
 
 
     # Provision figure
-    if doplot:
+    if plot:
         plotinit()
 
     ix = 1
@@ -616,13 +616,13 @@ def classify(input, model, dustmodel=0, doplot=1, useav=-99.0, ext=-99.0):
         setattr(result, names[j]+'py', y)
 
         # Plot individual posteriors
-        if doplot:
+        if plot:
             plotposterior(x, y, res, err1, err2, names, j, ix, iy)
             ix += 2
             iy += 2
     
     # Plot HR diagrams
-    if doplot:
+    if plot:
         plothrd(model,input,mabs,mabse,ix,iy)
 
     return result
