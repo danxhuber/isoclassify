@@ -315,13 +315,18 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         out.avs,out.avsep,out.avsem = getstat(avs)
 
         #pdb.set_trace()
-        for key in 'teff logg feh'.split():
-            x = getattr(input, key)
-            xe = getattr(input, key+'e')
-            setattr(out, key, x)
-            setattr(out, key+'ep', xe)
-            setattr(out, key+'em', xe)
-
+        out.teff = input.teff
+        out.teffe = input.teffe
+        out.teffep = input.teffe
+        out.teffem = input.teffe
+        out.logg = input.logg
+        out.logge = input.logge
+        out.loggep = input.logge
+        out.loggem = input.logge
+        out.feh = input.feh
+        out.fehe  =  input.fehe
+        out.fehep = input.fehe
+        out.fehem = input.fehe
         out.plx = input.plx
         out.plxe = input.plxe
 
@@ -351,7 +356,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             plt.hist(avs,bins=100)
             plt.title('Av')
             plt.tight_layout()
-        
+
         print '   '
         print 'teff(K):',out.teff,'+/-',out.teffe
         print 'dis(pc):',out.dis,'+',out.disep,'-',out.disem
