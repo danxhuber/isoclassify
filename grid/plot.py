@@ -26,8 +26,6 @@ def plotinit():
     #    hspace=0.5)
 
 def plotclear():
-    raw_input(':')
-
     plt.clf()
     plt.figure('posteriors')
     plt.clf()
