@@ -42,8 +42,10 @@ See grid/example.ipynb for an application.
 ## Direct Method:
 
 Uses bolometric corrections and extinction maps to derive stellar parameters using direct physical relations. Options are: <br />
-(1) RA/DEC + Photometry + (Spectroscopy) + Parallax -> Teff, R, L, distance, Av. Uses Monte-Carlo method to implement exponentially decreasing volume density prior with a length scale of 1.35 kpc (Astraatmadja & Bailer-Jones 2016) <br />
-(2) RA/DEC + Asteroseismology + Spectroscopy -> logg, rho, rad, mass, lum, distance, Av. Uses Dnu scaling relation corrections by Sharma et al. (2016). <br />
+
+1.  RA/DEC + Photometry + (Spectroscopy) + Parallax -> Teff, R, L, distance, Av. Uses Monte-Carlo method to implement exponentially decreasing volume density prior with a length scale of 1.35 kpc (Astraatmadja & Bailer-Jones 2016)
+
+1. RA/DEC + Asteroseismology + Spectroscopy -> logg, rho, rad, mass, lum, distance, Av. Uses Dnu scaling relation corrections by Sharma et al. (2016). 
 
 Bolometric corrections are interpolated in (Teff, logg, FeH, Av) from the MIST grid, Conroy et al. in prep (http://waps.cfa.harvard.edu/MIST/model_grids.html)
 
@@ -53,19 +55,20 @@ Bolometric corrections are interpolated in (Teff, logg, FeH, Av) from the MIST g
 isoclassify includes a command line interface (CLI) for convenient single star processing, as well as batch processing of many stars.
 
 ```bash
-isoclassify run <mode> <star name> --csv <csv file> --outdir <output directory>  
+isoclassify run <mode> <star name> --csv <csv file> --outdir <output directory> --plot <plotmode> 
 ```
 
 1. `<mode>` direct or grid
 1. `<star name>` tells isoclassify which row of <csv file> to pull the input parameters
 1. `<output directory>` will contain the isoclassify output files
 1. `<csv file>` contains as columns parameters that are passed to isoclassify
+1. `<plotmode>` tells isoclassify whether pop interactive plots `show`, save to a png `save-png`, or to not plot at all `none`.
 
 We've included `examples/example.csv` with a few stars as an example
 
 ```bash
 mkdir -p output/sol # make sure output directory exists
-isoclassify run direct sol --csv examples/example.csv --outdir output/sol
+isoclassify run direct sol --csv examples/example.csv --outdir output/sol --plot show
 ```
 
 The CLI also makes parallel processing easy.
@@ -81,10 +84,9 @@ parallel :::: isoclassify.tot
 bin/isoclassify scrape-output 'output/*/output.csv' output.csv
 ```
 
+## Testing the codebase
 
-## Testing the codebase .
-
-If you haven't changed the core algorithm then run the following command
+When making changes, if you haven't changed the core algorithm then run the following command
 
 ```
 isoclassify batch direct examples/example.csv -o output/direct > isoclassify-test-direct.tot 
@@ -93,4 +95,4 @@ cat isoclassify-test-direct.tot isoclassify-test-grid.tot  > isoclassify-test.to
 parallel :::: isoclassify-test.tot 
 ```
 
-and compare the output with a previous version 
+and compare the output with a previous version. Note that there is a non-deterministic random sampler in reddening maps, so the output wont be exactly the same
