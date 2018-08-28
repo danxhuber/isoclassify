@@ -46,7 +46,7 @@ def run(**kw):
 def query_dustmodel_coords(ra,dec):
     reddenMap = BayestarWebQuery(version='bayestar2017')
     sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='icrs')
-    reddenContainer = reddenMap(sightLines,mode='random_sample')
+    reddenContainer = reddenMap(sightLines,mode='best')
     del reddenMap # To clear reddenMap from memory
     distanceSamples = np.array([0.06309573,0.07943284,0.1,0.12589255,0.15848933,0.19952627,0.25118864,0.31622776,0.3981072,0.50118726,0.6309574,0.7943282 ,1.,1.2589258,1.5848933,1.9952621,2.511887,3.1622777,3.981073,5.011873,6.3095727,7.943284,10.,12.589258,15.848933,19.952621,25.11887,31.622776,39.81073,50.11873,63.095726])*1000. # In pc, from bayestar2017 map distance samples
     
