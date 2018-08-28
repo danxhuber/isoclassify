@@ -70,19 +70,20 @@ def query_dustmodel_coords_allsky(ra,dec):
 
 class Pipeline(object):
     def __init__(self, **kw):
+        assert kw.has_key('csv'), "must pass csv as keyword"
+        assert kw.has_key('outdir'), "must pass outdir as keyword"
         
         self.id_starname = kw['id_starname']
         self.outdir = kw['outdir']
-        if kw.has_key('dust'):
-            self.dust = kw['dust']
-        else:
-            self.dust = 'none'        
-        if kw.has_key('csv'):
-            df = pd.read_csv(kw['csv'])
-            assert len(df.id_starname.drop_duplicates())==len(df)
-            df.index = df.id_starname
-            star = df.ix[self.id_starname]
-        #pdb.set_trace()
+
+        # Read in inputs
+        df = pd.read_csv(kw['csv'])
+        assert len(df.id_starname.drop_duplicates())==len(df)
+        df.index = df.id_starname
+        star = df.ix[self.id_starname]
+
+        self.dust = star.dust
+
         const = {}
         for key in CONSTRAINTS:
             if key in star:
@@ -98,7 +99,7 @@ class Pipeline(object):
             else:
                 const[key] = -99
 
-
+        
         self.const = const
         self.const['ra'] = star['ra']
         self.const['dec'] = star['dec']
@@ -239,13 +240,16 @@ class PipelineDirect(Pipeline):
 
 class PipelineGrid(Pipeline):
     outputcols = {
-        'iso_teff':'teff',
-        'iso_logg':'logg',
-        'iso_feh':'feh',
-        'iso_rad':'rad',
-        'iso_mass':'mass',
         'iso_age':'age',
-        'iso_dis':'dis'      
+        'iso_avs':'avs',
+        'iso_dis':'dis',
+        'iso_feh':'feh',
+        'iso_mass':'mass',
+        'iso_rad':'rad',
+        'iso_lum':'lum',
+        'iso_logg':'logg',
+        'iso_rho': 'rho',
+        'iso_teff':'teff',
     }
     def run(self):
         self.print_constraints()

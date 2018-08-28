@@ -19,13 +19,11 @@ def main():
     p2.add_argument('id_starname', help='name of star')
     p2.add_argument('-o','--outdir',default='./')
     p2.add_argument('--csv',help='path to csv file')
-    p2.add_argument('--dust', help='{none,green18,allsky}',default='none')
     p2.set_defaults(func=run)
 
     p2 = subp.add_parser('batch', description="Create batch jobs")
     p2.add_argument('method',help='{direct,grid}')
     p2.add_argument('csv', type=str, help='list of parameters')
-    p2.add_argument('dust', type=str, help='dustmap to use')
     p2.add_argument( 
         '-o','--baseoutdir',default='./',help='base path of output directory'
     )
@@ -52,7 +50,6 @@ def batch(args):
         s+="mkdir -p {outdir:};"
         s+="isoclassify run {method:} {id_starname:} --outdir {outdir:} "
         s+="--csv {csv:} "
-        s+="--dust {dust:} "
         s+="&> {outdir:}/output.log"
         s = s.format(**fmt)
         print s 
