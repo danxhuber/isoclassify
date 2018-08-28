@@ -95,4 +95,4 @@ cat isoclassify-test-direct.tot isoclassify-test-grid.tot  > isoclassify-test.to
 parallel :::: isoclassify-test.tot 
 ```
 
-and compare the output with a previous version. Note that there is a non-deterministic random sampler in reddening maps, so the output wont be exactly the same
+and compare the output with a previous version.
