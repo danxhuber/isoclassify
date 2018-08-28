@@ -34,11 +34,14 @@ def run(**kw):
         assert False, "method {} not supported ".format(kw['method'])
 
     pipe.run()
-    pipe.savefig()
-    pipe.to_csv()
+    if pipe.plotmode=='show':
+        plt.ion()
+        plt.show()
+        raw_input('[press return to continue]:')
+    elif pipe.plotmode.count('save')==1:
+        pipe.savefig()
 
-def load_mist():
-    return model
+    pipe.to_csv()
 
 def query_dustmodel_coords(ra,dec):
     reddenMap = BayestarWebQuery(version='bayestar2017')
@@ -72,7 +75,15 @@ class Pipeline(object):
     def __init__(self, **kw):
         assert kw.has_key('csv'), "must pass csv as keyword"
         assert kw.has_key('outdir'), "must pass outdir as keyword"
-        
+
+        self.plotmode = kw['plot']
+
+        # create plot (both interactive and save modes)
+        if self.plotmode=='none':
+            self.plot = 0 
+        else:
+            self.plot = 1
+
         self.id_starname = kw['id_starname']
         self.outdir = kw['outdir']
 
@@ -98,12 +109,12 @@ class Pipeline(object):
                 const[key] = star[key]
             else:
                 const[key] = -99
-
         
         self.const = const
         self.const['ra'] = star['ra']
         self.const['dec'] = star['dec']
         self.const['band'] = star['band']
+
         self.pdffn = os.path.join(self.outdir,'output.pdf')
         self.csvfn = os.path.join(self.outdir,'output.csv')
 
@@ -137,7 +148,6 @@ class Pipeline(object):
         err = [self.const[key+'_err'] for key in keys]
         x.addseismo(val,err)
     
-        
     def addbv(self,x):
         keys = 'bmag vmag'.split()
         val = [self.const[key] for key in keys]
@@ -151,7 +161,10 @@ class Pipeline(object):
         x.addcoords(self.const['ra'],self.const['dec'])
     
     def addmag(self,x):
-        x.addmag([self.const[self.const['band']]],[self.const[self.const['band']+'_err']])
+        x.addmag(
+            [self.const[self.const['band']]],
+            [self.const[self.const['band']+'_err']]
+        )
 
     def addcoords(self,x):
         x.addcoords(self.const['ra'], self.const['dec'])
@@ -159,18 +172,21 @@ class Pipeline(object):
     def print_constraints(self):
         print "id_starname {}".format(self.id_starname)
         print "dust:", self.dust
-        #print "absmag constraint:", self.const['band']
         for key in CONSTRAINTS:
             print key, self.const[key], self.const[key+'_err']
-        
 
         for key in COORDS:
             print key, self.const[key]
             
     def savefig(self):
-        fig = plt.gcf()
-        fig.set_tight_layout(True)
-        plt.savefig(self.pdffn)
+        labels = plt.get_figlabels()
+        _, ext = self.plotmode.split('-')
+        for label in plt.get_figlabels():
+            fn = os.path.join(self.outdir,'{}.{}'.format(label,ext))
+            fig = plt.figure(label)
+            fig.set_tight_layout(True)
+            plt.savefig(fn)
+            print "created {}".format(fn)
 
     def to_csv(self):
         out = {}
@@ -213,20 +229,27 @@ class PipelineDirect(Pipeline):
     
     def run(self):
         self.print_constraints()
-        bcmodel = h5py.File(DATADIR+'/direct/bcgrid.h5','r',driver='core',backing_store=False)
+        bcmodel = h5py.File(
+            DATADIR+'/direct/bcgrid.h5', 'r', driver='core', backing_store=False
+        )
         
         if self.dust == 'allsky':
-            dustmodel = query_dustmodel_coords_allsky(self.const['ra'],self.const['dec'])
+            dustmodel = query_dustmodel_coords_allsky(
+                self.const['ra'],self.const['dec']
+            )
             ext = extinction('cardelli')
+
         if self.dust == 'green18':
-            dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
+            dustmodel = query_dustmodel_coords(
+                self.const['ra'],self.const['dec']
+            )
             ext = extinction('schlafly16')
+
         if self.dust == 'none':
             dustmodel = 0
             ext = extinction('cardelli')
 
         x = direct.classify_direct.obsdata()
-        #pdb.set_trace()
         self.addspec(x)
         self.addjhk(x)
         self.addbv(x)
@@ -235,7 +258,8 @@ class PipelineDirect(Pipeline):
         self.addcoords(x)
         self.addmag(x)
         self.paras = direct.classify_direct.stparas(
-            input=x,bcmodel=bcmodel,dustmodel=dustmodel,band=self.const['band'],ext=ext,plot=1
+            input=x, bcmodel=bcmodel, dustmodel=dustmodel, 
+            band=self.const['band'], ext=ext, plot=1
         )
 
 class PipelineGrid(Pipeline):
@@ -283,7 +307,8 @@ class PipelineGrid(Pipeline):
         self.addseismo(x)
         self.addplx(x)
         self.paras = grid.classify_grid.classify(
-            input=x, model=model, dustmodel=dustmodel,ext=ext, doplot=1, useav=0
+            input=x, model=model, dustmodel=dustmodel,ext=ext, 
+            plot=self.plot, useav=0
         )
 
 def _csv_reader(f):
@@ -312,21 +337,62 @@ def scrape_csv(path):
     df = df.reset_index()
     return df
  
-# R_lambda values to convert E(B-V) given by dustmaps to extinction in a given passband. 
-# The two main caveats with this are:
-# - strictly speaking only cardelli is consistent with the BC tables used in the MIST grid, 
-# but using wrong R_lambda's for the newer Green et al. dustmaps is (probably) worse. 
-# - some values were interpolated to passbands that aren't included in the Schlafly/Green tables.  
-def extinction(law):
+# R_lambda values to convert E(B-V) given by dustmaps to extinction in
+# a given passband.  The two main caveats with this are: - strictly
+# speaking only cardelli is consistent with the BC tables used in the
+# MIST grid, but using wrong R_lambda's for the newer Green et
+# al. dustmaps is (probably) worse.  - some values were interpolated
+# to passbands that aren't included in the Schlafly/Green tables.
 
+def extinction(law):
     if (law == 'cardelli'):
-        return {"ab":4.1708789, "av":3.1071930, "abt":4.3358221, "avt":3.2867038, "ag":3.8281101, "ar":2.7386468, "ai":2.1109662, "az":1.4975613, "aj":0.89326176, "ah":0.56273418, "ak":0.35666104, "aga":2.4623915}
+        out = {
+            "ab":4.1708789, 
+            "av":3.1071930, 
+            "abt":4.3358221, 
+            "avt":3.2867038, 
+            "ag":3.8281101, 
+            "ar":2.7386468, 
+            "ai":2.1109662, 
+            "az":1.4975613, 
+            "aj":0.89326176, 
+            "ah":0.56273418, 
+            "ak":0.35666104, 
+            "aga":2.4623915
+        }
         
     if (law == 'schlafly11'):
-        return {"ab":3.626, "av":2.742, "abt":4.5309214, "avt":3.1026801, "ag":3.303, "ar":2.285, "ai":1.698, "az":1.263, "aj":0.77510388, "ah":0.50818384, "ak":0.33957048, "aga":1.9139634}
+        out = {
+            "ab":3.626, 
+            "av":2.742, 
+            "abt":4.5309214, 
+            "avt":3.1026801, 
+            "ag":3.303, 
+            "ar":2.285, 
+            "ai":1.698, 
+            "az":1.263, 
+            "aj":0.77510388, 
+            "ah":0.50818384, 
+            "ak":0.33957048, 
+            "aga":1.9139634
+        }
 
     if (law == 'schlafly16'):
         # see http://argonaut.skymaps.info/usage under "Gray Component". this is a lower limit.
         grayoffset=0.063
-        return {"ab":3.6060565+grayoffset, "av":2.9197679+grayoffset, "abt":3.7204173+grayoffset, "avt":3.0353634+grayoffset, "ag":3.384+grayoffset, "ar":2.483+grayoffset, "ai":1.838+grayoffset, "az":1.414+grayoffset, "aj":0.650+grayoffset, "ah":0.327+grayoffset, "ak":0.161+grayoffset, "aga":2.2203186+grayoffset}
+        out = {
+            "ab":3.6060565+grayoffset, 
+            "av":2.9197679+grayoffset, 
+            "abt":3.7204173+grayoffset, 
+            "avt":3.0353634+grayoffset, 
+            "ag":3.384+grayoffset, 
+            "ar":2.483+grayoffset, 
+            "ai":1.838+grayoffset, 
+            "az":1.414+grayoffset, 
+            "aj":0.650+grayoffset, 
+            "ah":0.327+grayoffset, 
+            "ak":0.161+grayoffset, 
+            "aga":2.2203186+grayoffset
+        }
+    return out
 
