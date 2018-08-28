@@ -314,18 +314,6 @@ def plothrdold(model,grcol,ricol,grcole,ricole,Mg,Mge,ix,iy):
     plt.ylabel('Mg')
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 def plothrd2(x,y,res,err1,err2,avs,model,model_red,names,j,medav,stdav,grcol,ricol,grcole,ricole,plx,plxe,ix,iy,model_plx):
 
     plt.figure('hrd')
