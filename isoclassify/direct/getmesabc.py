@@ -16,15 +16,25 @@
 # Out[19]: -0.34045390880000004
 
 import numpy as np
-import h5py
 from scipy.interpolate import RegularGridInterpolator
+import h5py
+from isoclassify import DATADIR
 
 def getbc(teff,logg,feh,av,band):
-        
-        bcmodel = h5py.File('bcgrid.h5', 'r')
 
-	interp = RegularGridInterpolator((np.array(bcmodel['teffgrid']),\
-		np.array(bcmodel['logggrid']),np.array(bcmodel['fehgrid']),\
-            np.array(bcmodel['avgrid'])),np.array(bcmodel[band]))
-	    
-	return interp(np.array([teff,logg,feh,av]))[0]
+    fn = os.path.join(DATADIR, 'bcgrid.h5')
+    bcmodel = h5py.File(fn, 'r')
+
+    teffgrid = np.array(bcmodel['teffgrid'])
+    logggrid = np.array(bcmodel['logggrid'])
+    fehgrid = np.array(bcmodel['fehgrid'])
+    avgrid = np.array(bcmodel['avgrid'])
+    bcgrid = np.array(bcmodel[band]))
+
+    points = (teffgrid,logggrid, fehgrid, avhgrid)
+    values = bcgrid
+    interp = RegularGridInterpolator(points, values) 
+
+    xi = np.array([teff,logg,feh,av])
+    bc = interp(x)[0]
+    return bc

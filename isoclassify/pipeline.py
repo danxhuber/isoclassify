@@ -14,8 +14,7 @@ import mwdust
 
 from isoclassify.direct import classify as classify_direct
 from isoclassify.grid import classify as classify_grid
-
-DATADIR = os.environ['ISOCLASSIFY']
+from isoclassify import DATADIR
 
 CONSTRAINTS = [
     'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
