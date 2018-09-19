@@ -324,7 +324,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         # if no reddening map is provided, add Av as a new variable
         # and fit for it
         if (isinstance(dustmodel,pd.DataFrame) == False):
-            avs = np.arange(-0.3,1.0,0.01)
+            avs = np.arange(0.0,5.0,0.1)
             
             # user-specified reddening
             #if (useav > -99.0):
@@ -624,6 +624,32 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     # Plot HR diagrams
     if plot:
         plothrd(model,input,mabs,mabse,ix,iy)
+        
+    # angular diameter
+    rsun=6.9599e10
+    pc=3.086e18
+    rad2mas=206265000.
+    theta = ((mod['rad']*rsun)/(mod['dis']*pc))*rad2mas*2.        
+        
+    x, y, res, err1, err2 = getpdf(
+            theta[um], prob, name='angdia', step=0.001,
+            fixed=1,dustmodel=dustmodel)
+                
+    print 'angdia', res, err1, err2
+    plt.figure(3)
+    plt.subplot(2,1,1)
+    plt.plot(x,np.cumsum(y))
+    plt.plot([res,res],[0,1],'r')
+    plt.plot([res+err1,res+err1],[0,1],'--r')
+    plt.plot([res-err2,res-err2],[0,1],'--r')
+    plt.subplot(2,1,2)
+    plt.plot(x,y)
+    plt.plot([res,res],[0,1],'r')
+    plt.plot([res+err1,res+err1],[0,1],'--r')
+    plt.plot([res-err2,res-err2],[0,1],'--r')
+    plt.ylim([0,np.max(y)+np.max(y)*0.1])
+    
+    #pdb.set_trace()
 
     return result
             
