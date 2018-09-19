@@ -37,7 +37,7 @@ Derives posterior distributions for stellar parameters (teff, logg, feh, rad, ma
 Required isochrone grid interpolated from MIST models (Choi et al. 2016): <br />
 https://www.dropbox.com/s/yjgm8bwpw9cs0ew/mesa.ebf?dl=0 <br />
 
-See grid/example.ipynb for an application.
+See example/grid.ipynb for an application.
 
 ## Direct Method:
 

@@ -8,8 +8,7 @@ import pylab as pl
 import numpy as np
 
 import pandas as pd
-import isoclassify
-
+import isoclassify.pipeline
 
 def main():
     p = ArgumentParser()
@@ -46,7 +45,7 @@ def main():
     args.func(args)
 
 def run(args):
-    isoclassify.run(**vars(args))
+    isoclassify.pipeline.run(**vars(args))
 
 def batch(args):
     df = pd.read_csv(args.csv,engine='python')
