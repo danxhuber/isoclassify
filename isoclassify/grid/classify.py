@@ -374,53 +374,53 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     if (input.teff == -99.0):
         if ((input.bmag > -99.0) & (input.vmag > -99.0)):
             ut=np.where(
-                (model['bmag'] - model['vmag'] > bvcol - sig*bvcole) 
-                & (model['bmag'] - model['vmag'] < bvcol + sig*bvcole))
+                (mod['bmag'] - mod['vmag'] > bvcol - sig*bvcole) 
+                & (mod['bmag'] - mod['vmag'] < bvcol + sig*bvcole))
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
         if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
             ut=np.where(
-                (model['btmag'] - model['vtmag'] > bvtcol - sig*bvtcole) 
-                & (model['btmag'] - model['vtmag'] < bvtcol + sig*bvtcole))
+                (mod['btmag'] - mod['vtmag'] > bvtcol - sig*bvtcole) 
+                & (mod['btmag'] - mod['vtmag'] < bvtcol + sig*bvtcole))
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
         if ((input.gmag > -99.0) & (input.rmag > -99.0)):
             ut = np.where(
-                (model['gmag'] - model['rmag'] > grcol-sig*grcole) 
-                & (model['gmag'] - model['rmag'] < grcol+sig*grcole))
+                (mod['gmag'] - mod['rmag'] > grcol-sig*grcole) 
+                & (mod['gmag'] - mod['rmag'] < grcol+sig*grcole))
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
         if ((input.rmag > -99.0) & (input.imag > -99.0)):
             ut = np.where(
-                (model['rmag'] - model['imag'] > ricol - sig*ricole) 
-                & (model['rmag'] - model['imag'] < ricol + sig*ricole)
+                (mod['rmag'] - mod['imag'] > ricol - sig*ricole) 
+                & (mod['rmag'] - mod['imag'] < ricol + sig*ricole)
             )
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
         if ((input.imag > -99.0) & (input.zmag > -99.0)):
             ut = np.where(
-                (model['imag'] - model['zmag'] > izcol - sig*izcole) 
-                & (model['imag'] - model['zmag'] < izcol + sig*izcole)
+                (mod['imag'] - mod['zmag'] > izcol - sig*izcole) 
+                & (mod['imag'] - mod['zmag'] < izcol + sig*izcole)
             )
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
         if ((input.jmag > -99.0) & (input.hmag > -99.0)):
             ut = np.where(
-                (model['jmag'] - model['hmag'] > jhcol - sig*jhcole) 
-                & (model['jmag'] - model['hmag'] < jhcol + sig*jhcole)
+                (mod['jmag'] - mod['hmag'] > jhcol - sig*jhcole) 
+                & (mod['jmag'] - mod['hmag'] < jhcol + sig*jhcole)
             )
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
         if ((input.hmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
-                (model['hmag'] - model['kmag'] > hkcol - sig*hkcole) 
-                & (model['hmag'] - model['kmag'] < hkcol + sig*hkcole))
+                (mod['hmag'] - mod['kmag'] > hkcol - sig*hkcole) 
+                & (mod['hmag'] - mod['kmag'] < hkcol + sig*hkcole))
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
