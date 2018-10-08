@@ -305,12 +305,12 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         
     if (input.feh > -99.0):
         ut = np.where(
-            (model['feh'] > input.feh - sig*input.fehe) 
-            & (model['feh'] < input.feh + sig*input.fehe)
+            (model['feh_act'] > input.feh - sig*input.fehe)
+            & (model['feh_act'] < input.feh + sig*input.fehe)
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        print 'feh', len(um)
+        print 'feh_act', len(um)
                
     print 'number of models used within non-phot obsconstraints:', len(um)
 
@@ -486,7 +486,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         lh_logg = np.ones(len(um))
 
     if (input.feh > -99.0):
-        lh_feh = gaussian(input.feh, mod['feh'][um], input.fehe)
+        lh_feh = gaussian(input.feh, mod['feh_act'][um], input.fehe)
 
     else:
         lh_feh = np.ones(len(um))
@@ -524,7 +524,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     if (input.feh > -99.0):
         fprior = np.ones(len(um))
     else:
-        fprior = fehprior(mod['feh'][um])
+        fprior = fehprior(mod['feh_act'][um])
     
     # distance prior
     if (input.plx > -99.0):
@@ -541,13 +541,13 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     prob = fprior*dprior*tprior*tlh
     prob = prob/np.sum(prob)
     if (isinstance(dustmodel,pd.DataFrame) == False):
-        names = ['teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age']
+        names = ['teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age']
         steps = [0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
         fixes = [0, 1, 1, 0, 0, 1, 1, 0, 1]
         
         if (map > -99.0):
             names = [
-                'teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age',
+                'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age',
                 'avs'
             ]
             steps = [0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
@@ -555,7 +555,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
 
         if ((input.plx == -99.0) & (map > -99)):
             names=[
-                'teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age', 
+                'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age',
                 'avs', 'dis'
             ]
             steps=[0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
@@ -576,7 +576,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         #pdb.set_trace()
 
         names = [
-            'teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age', 'avs',
+            'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age', 'avs',
            'dis'
         ]
         steps=[0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, avstep, 0.01]
@@ -635,7 +635,7 @@ def reddening(model,um,avs,extfactors):
     #pdb.set_trace()
 
     keys = [
-        'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh', 'rad', 'mass', 
+        'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh_act', 'rad', 'mass',
         'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag', 
         'bmag', 'vmag', 'btmag','vtmag', 'dis', 'kmag', 'avs', 'fdnu'
     ]
@@ -658,7 +658,7 @@ def reddening(model,um,avs,extfactors):
             av = extfactors['av']
             model3[cmag][ix] = model2[cmag] + avs[i]*extfactors[ac]/av
 
-        keys = 'teff logg feh rad mass rho age dfeh dmass dage fdnu'.split()
+        keys = 'teff logg feh_act rad mass rho age dfeh dmass dage fdnu'.split()
         for key in keys:
             model3[key][ix]=model2[key]
 
@@ -686,6 +686,9 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
 
     # zero-reddening distance
     dis = 10**((map-model_mabs[um]+5)/5.)
+    
+    # This value contains fractional random errors in the reddening map for the Kepler field by comparisons between bayestar15 and bayestar17 maps:
+    redMapFracErr = 0.22092203269207672
 
     # iterate distance and map a few times
     for i in range(0,1):
@@ -694,6 +697,7 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
         )
         fp = np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:])))
         ebvs = np.interp(x=dis, xp=xp, fp = fp)
+        ebvs = ebvs + np.random.randn(len(ebvs))*np.median(ebvs)*redMapFracErr
         ext_band = extfactors['a'+bd]*ebvs	
         dis=10**((map-ext_band-model_mabs[um]+5)/5.)
 
@@ -716,7 +720,7 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
         model2 = dict((k, model[k][um]) for k in model.keys())
         nmodels = len(model2['teff'])
         keys = [
-            'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh', 'rad', 'mass', 
+            'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh_act', 'rad', 'mass',
             'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag', 
             'bmag', 'vmag', 'btmag','vtmag', 'dis', 'kmag', 'avs', 'fdnu'
         ]
@@ -731,7 +735,7 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
 
         model3['dis']=dis
         model3['avs']=extfactors['av']*ebvs	
-        keys = 'teff logg feh rad mass rho age dfeh dmass dage fdnu'.split()
+        keys = 'teff logg feh_act rad mass rho age dfeh dmass dage fdnu'.split()
         for key in keys:
             model3[key] = model2[key]
 
