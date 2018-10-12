@@ -87,7 +87,11 @@ class Pipeline(object):
 
         # Read in inputs
         df = pd.read_csv(kw['csv'])
-        assert len(df.id_starname.drop_duplicates())==len(df)
+        
+        if (len(df.id_starname.drop_duplicates())!=len(df)):
+            print 'dropping duplicates'
+            df=df.drop_duplicates(subset='id_starname')
+            
         df.index = df.id_starname
         star = df.ix[self.id_starname]
 
