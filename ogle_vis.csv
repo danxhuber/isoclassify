@@ -1,0 +1,4 @@
+id_starname,vmag,vmag_err,imag,imag_err,ra,dec,band,dust,comments,numax,numax_err
+ogle,17.74,0.03,14.19,0.2,269.695637,-27.651066,vmag,none,test,1.276,0.127
+ogle_vband,17.74,0.03,-99.,-99.,269.695637,-27.651066,vmag,none,test,1.276,0.127
+ogle_iband,-99.,-99.,14.19,0.2,269.695637,-27.651066,imag,none,test,1.276,0.127
