@@ -219,6 +219,9 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     izcole = np.sqrt(input.image**2 + input.zmage**2)
     jhcole = np.sqrt(input.jmage**2 + input.hmage**2)
     hkcole = np.sqrt(input.hmage**2 + input.kmage**2)
+    
+    vicol = input.vmag - input.imag
+    vicole = np.sqrt(input.vmage**2 + input.image**2)
 
     # determine apparent mag to use for distance estimation. K>J>g>Vt>V
     map = -99.0
@@ -228,12 +231,14 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         band = 'v'
         model_mabs = model['vmag']
 
-    if (input.vtmag > -99.0):
-        map = input.vtmag
-        mape = input.vtmage
-        model_mabs = model['vtmag']
-        band = 'vt'
+    
+    if (input.imag > -99.0):
+        map = input.imag
+        mape = input.image
+        model_mabs = model['imag']
+        band = 'i'
 
+    '''
     if (input.gmag > -99.0):
         map = input.gmag
         mape = input.gmage
@@ -251,6 +256,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         mape = input.kmage
         model_mabs = model['kmag']
         band = 'k'
+    '''
         
     # absolute magnitude
     if (input.plx > -99.0):
@@ -328,9 +334,12 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
             
             # user-specified reddening
             #if (useav > -99.0):
-            #    avs = np.zeros(1) + useav
+            
+            # microlensing
+            avs = np.zeros(1) + 3.28
                 
             mod = reddening(model, um, avs, extfactors)
+            #pdb.set_trace()
 
         # otherwise, just redden each model according to the provided map
         else:
@@ -342,9 +351,10 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         if (input.vmag > -99.0):
             mod_mabs = mod['vmag']
 
-        if (input.vtmag > -99.0):
-            mod_mabs = mod['vtmag']
+        if (input.imag > -99.0):
+            mod_mabs = mod['imag']
 
+        '''
         if (input.gmag > -99.0):
             mod_mabs = mod['gmag']
 
@@ -353,6 +363,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
 
         if (input.kmag > -99.0):
             mod_mabs = mod['kmag']
+        '''
 
         um = np.arange(0,len(mod['teff']),1)
 
@@ -436,6 +447,12 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
 
 
     # likelihoods
+    
+    if ((input.vmag > -99.0) & (input.imag > -99.0)):
+        lh_vi = gaussian(vicol, mod['vmag'][um]-mod['imag'][um], vicole)
+    else:
+        lh_vi = np.ones(len(um))
+    
     if ((input.gmag > -99.0) & (input.rmag > -99.0)):
         lh_gr = gaussian(grcol, mod['gmag'][um]-mod['rmag'][um], grcole)
 
@@ -518,7 +535,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         lh_numax = np.ones(len(um))
 
     tlh = (lh_gr*lh_ri*lh_iz*lh_jh*lh_hk*lh_bv*lh_bvt*lh_teff*lh_logg*lh_feh
-           *lh_mabs*lh_dnu*lh_numax)
+           *lh_mabs*lh_dnu*lh_numax*lh_vi)
+    #pdb.set_trace()
         
     # metallicity prior (only if no FeH input is given)
     if (input.feh > -99.0):
@@ -556,10 +574,10 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         if ((input.plx == -99.0) & (map > -99)):
             names=[
                 'teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age', 
-                'avs', 'dis'
+                'dis'
             ]
-            steps=[0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
-            fixes=[0, 1, 1, 0, 0, 1, 1, 0, 1, 0]
+            steps=[0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+            fixes=[0, 1, 1, 0, 0, 1, 1, 0, 0]
             
         #if ((input.plx == -99.0) & (map > -99) & (useav > -99.0)):
         #    names=['teff','logg','feh','rad','mass','rho','lum','age','dis']
@@ -623,7 +641,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     
     # Plot HR diagrams
     if plot:
-        plothrd(model,input,mabs,mabse,ix,iy)
+        plothrd(mod,input,mabs,mabse,ix,iy)
         
     # angular diameter
     rsun=6.9599e10
@@ -671,6 +689,9 @@ def reddening(model,um,avs,extfactors):
 
     start=0
     end=len(um)
+    
+    # microlensing hack to get specified A_i
+    extfactors['ai']=extfactors['av']*1.9/3.28
 
     #print start,end
     for i in range(0,len(avs)):

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 import random
 from priors import *
-import fnmatch
+import fnmatch, pdb
 
 def plotinit():
     fig1 = plt.figure('posteriors',figsize=(8,12))
@@ -172,6 +172,13 @@ def plothrd(model,input,mabs,mabse,ix,iy):
         absmag='jmag'
         col=input.jmag-input.kmag
         cole=np.sqrt(input.jmage**2+input.kmage**2)
+    
+    # microlensing hack 
+    mag1='vmag'
+    mag2='imag'
+    col=input.vmag-input.imag
+    cole=np.sqrt(input.vmage**2+input.image**2)
+
 
     plt.plot(model[mag1][ran[d]]-model[mag2][ran[d]],\
              model[absmag][ran[d]],'.',color='blue',markersize=1,zorder=-32)
@@ -202,6 +209,7 @@ def plothrd(model,input,mabs,mabse,ix,iy):
                  color='green',elinewidth=5)
 
     else:
+        '''
         mod_numax=3090*(10**model['logg']/27420.)*(model['teff']/5777.)**(-0.5)
         plt.semilogy(model['teff'][ran[d]],mod_numax[ran[d]],\
                  '.',color='blue',markersize=1,zorder=-32)
@@ -212,6 +220,19 @@ def plothrd(model,input,mabs,mabse,ix,iy):
 
         plt.errorbar([input.teff], [input.numax], xerr=input.teffe, yerr=input.numaxe, \
                  color='green',elinewidth=5)
+        '''
+        
+        mod_numax=3090*(10**model['logg']/27420.)*(model['teff']/5777.)**(-0.5)
+        plt.semilogy(model[mag1][ran[d]]-model[mag2][ran[d]],mod_numax[ran[d]],\
+                 '.',color='blue',markersize=1,zorder=-32)
+        #plt.xlim([10000,2000])
+        plt.ylim([100000,0.1])
+        plt.plot(model[mag1][ran[g]]-model[mag2][ran[g]],mod_numax[ran[g]],\
+                 '.',color='red',markersize=1,zorder=-32)
+
+        plt.errorbar([col], [input.numax], xerr=cole, yerr=input.numaxe, \
+                 color='green',elinewidth=5)        
+        #pdb.set_trace()
 
 def plothrdold(model,grcol,ricol,grcole,ricole,Mg,Mge,ix,iy):
 
