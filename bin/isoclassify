@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/anaconda/envs/python3/bin/python3.6
 import os
 import glob
 from argparse import ArgumentParser
@@ -49,7 +49,7 @@ def run(args):
 
 def batch(args):
     df = pd.read_csv(args.csv,engine='python')
-    print "#!/bin/sh"
+    print("#!/bin/sh")
     for i, row in df.iterrows():
         fmt = dict(**row)
         fmt = dict(fmt,**vars(args))
@@ -62,7 +62,7 @@ def batch(args):
         s+="--plot {plot:} "
         s+="&> {outdir:}/output.log"
         s = s.format(**fmt)
-        print s 
+        print(s) 
 
 def scrape_output(args):
     path = args.baseoutdir

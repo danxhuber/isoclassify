@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 from matplotlib import pylab as plt
 import pandas as pd
-import ebf
+#import ebf
 import astropy.units as units
 from astropy.coordinates import SkyCoord
 from dustmaps.bayestar import BayestarWebQuery
@@ -89,7 +89,7 @@ class Pipeline(object):
         df = pd.read_csv(kw['csv'])
         
         if (len(df.id_starname.drop_duplicates())!=len(df)):
-            print 'dropping duplicates'
+            print('dropping duplicates')
             df=df.drop_duplicates(subset='id_starname')
             
         df.index = df.id_starname
@@ -172,13 +172,13 @@ class Pipeline(object):
         x.addcoords(self.const['ra'], self.const['dec'])
 
     def print_constraints(self):
-        print "id_starname {}".format(self.id_starname)
-        print "dust:", self.dust
+        print("id_starname {}".format(self.id_starname))
+        print("dust:", self.dust)
         for key in CONSTRAINTS:
-            print key, self.const[key], self.const[key+'_err']
+            print(key, self.const[key], self.const[key+'_err'])
 
         for key in COORDS:
-            print key, self.const[key]
+            print(key, self.const[key])
             
     def savefig(self):
         labels = plt.get_figlabels()
@@ -188,7 +188,7 @@ class Pipeline(object):
             fig = plt.figure(label)
             fig.set_tight_layout(True)
             plt.savefig(fn)
-            print "created {}".format(fn)
+            print("created {}".format(fn))
 
     def to_csv(self):
         out = {}
@@ -217,7 +217,7 @@ class Pipeline(object):
 
         out = out[block1 + block2 + block3]
         out.to_csv(self.csvfn)
-        print "created {}".format(self.csvfn)
+        print("created {}".format(self.csvfn))
 
 class PipelineDirect(Pipeline):
     outputcols = {
@@ -280,7 +280,11 @@ class PipelineGrid(Pipeline):
     def run(self):
         self.print_constraints()
 
-        model = ebf.read(os.path.join(DATADIR,'mesa.ebf'))
+#        model = ebf.read(os.path.join(DATADIR,'mesa.ebf'))
+        fn = os.path.join(DATADIR,'mesa.h5')
+        model = h5py.File(fn,'r', driver='core', backing_store=False)
+        
+        ebf.read(os.path.join(DATADIR,'mesa.ebf'))
         # prelims to manipulate some model variables (to be automated soon ...)
         model['rho'] = np.log10(model['rho'])
         # next line turns off Dnu scaling relation corrections
@@ -328,11 +332,11 @@ def scrape_csv(path):
 
     for i, f in enumerate(fL):
         if i%100==0:
-            print i
+            print(i)
         try:
             df.append(_csv_reader(f))
         except ValueError:
-            print "{} failed".format(f)
+            print("{} failed".format(f))
 
 
     df = pd.DataFrame(df)
