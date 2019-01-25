@@ -11,6 +11,7 @@ import astropy.units as units
 from astropy.coordinates import SkyCoord
 from dustmaps.bayestar import BayestarWebQuery
 import mwdust
+import pdb
 
 from isoclassify.direct import classify as classify_direct
 from isoclassify.grid import classify as classify_grid
@@ -35,7 +36,7 @@ def run(**kw):
     if pipe.plotmode=='show':
         plt.ion()
         plt.show()
-        raw_input('[press return to continue]:')
+        input('[press return to continue]:')
     elif pipe.plotmode.count('save')==1:
         pipe.savefig()
 
@@ -50,7 +51,7 @@ def query_dustmodel_coords(ra,dec):
     
     dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
 
-    for index in xrange(len(reddenContainer)):
+    for index in range(len(reddenContainer)):
         dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
         
     return dustModelDF
@@ -64,15 +65,17 @@ def query_dustmodel_coords_allsky(ra,dec):
     
     dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
     
-    for index in xrange(len(reddenContainer)):
+    for index in range(len(reddenContainer)):
         dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
 
     return dustModelDF
 
 class Pipeline(object):
     def __init__(self, **kw):
-        assert kw.has_key('csv'), "must pass csv as keyword"
-        assert kw.has_key('outdir'), "must pass outdir as keyword"
+        assert 'csv' in kw, "must pass csv as keyword"
+        assert 'outdir' in kw, "must pass outdir as keyword"
+        #assert kw.has_key('csv'), "must pass csv as keyword"
+        #assert kw.has_key('outdir'), "must pass outdir as keyword"
 
         self.plotmode = kw['plot']
 
@@ -232,6 +235,8 @@ class PipelineDirect(Pipeline):
     def run(self):
         self.print_constraints()
 
+        #pdb.set_trace()
+
         fn = os.path.join(DATADIR,'bcgrid.h5')
         bcmodel = h5py.File(fn,'r', driver='core', backing_store=False)
         
@@ -282,10 +287,38 @@ class PipelineGrid(Pipeline):
 
 #        model = ebf.read(os.path.join(DATADIR,'mesa.ebf'))
         fn = os.path.join(DATADIR,'mesa.h5')
-        model = h5py.File(fn,'r', driver='core', backing_store=False)
+        file = h5py.File(fn,'r+', driver='core', backing_store=False)
+        model = {'age':np.array(file['age']),\
+        'mass':np.array(file['mass']),\
+        'feh':np.array(file['feh']),\
+        'teff':np.array(file['teff']),\
+        'logg':np.array(file['logg']),\
+        'rad':np.array(file['rad']),\
+        'rho':np.array(file['rho']),\
+        'dage':np.array(file['dage']),\
+        'dmass':np.array(file['dmass']),\
+        'dfeh':np.array(file['dfeh']),\
+        'eep':np.array(file['eep']),\
+        'bmag':np.array(file['bmag']),\
+        'vmag':np.array(file['vmag']),\
+        'btmag':np.array(file['btmag']),\
+        'vtmag':np.array(file['vtmag']),\
+        'gmag':np.array(file['gmag']),\
+        'rmag':np.array(file['rmag']),\
+        'imag':np.array(file['imag']),\
+        'zmag':np.array(file['zmag']),\
+        'jmag':np.array(file['jmag']),\
+        'hmag':np.array(file['hmag']),\
+        'kmag':np.array(file['kmag']),\
+        'd51mag':np.array(file['d51mag']),\
+        'gamag':np.array(file['gamag']),\
+        'fdnu':np.array(file['fdnu']),\
+        'avs':np.zeros(len(np.array(file['gamag']))),\
+        'dis':np.zeros(len(np.array(file['gamag'])))}
         
-        ebf.read(os.path.join(DATADIR,'mesa.ebf'))
+        #ebf.read(os.path.join(DATADIR,'mesa.ebf'))
         # prelims to manipulate some model variables (to be automated soon ...)
+        #pdb.set_trace()
         model['rho'] = np.log10(model['rho'])
         # next line turns off Dnu scaling relation corrections
         model['fdnu'][:]=1.

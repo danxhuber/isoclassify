@@ -17,7 +17,7 @@ pip install dustmaps
 
 # Download MESA models into isoclassify directory
 cd isoclassify
-wget https://www.dropbox.com/s/yjgm8bwpw9cs0ew/mesa.ebf?dl=0 
+wget https://www.dropbox.com/s/vrr8hc7qav1fzyb/mesa.h5?dl=0
 wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5?dl=0 
 
 # Download asfgrid input files for asteroseismic Delta_nu corrections (NB: currently not working for direct mode)

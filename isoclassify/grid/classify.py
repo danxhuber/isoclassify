@@ -1,13 +1,13 @@
 import copy
-import time
+import time,pdb
 
 import ephem
 import pandas as pd
 import numpy as np
 from astropy.io import ascii
 
-from pdf import *  # part of isoclassify package (to do make explicit import) 
-from priors import * # part of isoclassify package (to do make explicit import) 
+from .pdf import *  # part of isoclassify package (to do make explicit import) 
+from .priors import * # part of isoclassify package (to do make explicit import) 
 from .plot import * # part of isoclassify package (to do make explicit import) 
 
 class obsdata():
@@ -271,7 +271,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         ut=np.where((model['teff'] > input.teff-sig*input.teffe) & \
         (model['teff'] < input.teff+sig*input.teffe))[0]
         um=np.intersect1d(um,ut)
-        print 'teff',len(um)
+        print('teff',len(um))
 
     if (input.dnu > 0.0):
         model_dnu = dnusun*model['fdnu']*np.sqrt(10**model['rho'])
@@ -281,7 +281,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        print 'dnu', len(um)
+        print('dnu', len(um))
 
     if (input.numax > 0.0):
         model_numax = (numaxsun 
@@ -293,7 +293,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        print 'numax', len(um)
+        print('numax', len(um))
         
     if (input.logg > -99.0):
         ut = np.where(
@@ -310,9 +310,9 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        print 'feh', len(um)
+        print('feh', len(um))
                
-    print 'number of models used within non-phot obsconstraints:', len(um)
+    print('number of models used within non-phot obsconstraints:', len(um))
 
     # bail if there are not enough good models
     if (len(um) < 10):
@@ -357,7 +357,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         um = np.arange(0,len(mod['teff']),1)
 
         mod['dis'] = 10**((map - mod_mabs + 5.0)/5.0)
-        print 'number of models incl reddening:',len(um)
+        print('number of models incl reddening:',len(um))
     else:
         mod = model
 
@@ -424,8 +424,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
-    print 'number of models after phot constraints:',len(um)
-    print '----'
+    print('number of models after phot constraints:',len(um))
+    print('----')
 
     # bail if there are not enough good models
     if (len(um) < 10):
@@ -608,7 +608,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
                 err1 = 0.0
                 err2 = 0.0
 
-        print names[j], res, err1, err2
+        print(names[j], res, err1, err2)
         setattr(result, names[j], res)
         setattr(result, names[j]+'ep', err1)
         setattr(result, names[j]+'em', err2)

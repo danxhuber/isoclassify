@@ -141,8 +141,8 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         else:
             minds = 1.0
 
-        print 'using max distance:', maxds
-        print 'using min distance:', minds
+        print('using max distance:', maxds)
+        print('using min distance:', minds)
         
         ds = np.linspace(minds,maxds,nsample)
 
@@ -228,7 +228,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                     [ 0.00255731, -0.07991211,  0.85140418,  1.82465197]
                 ) 
                 input.logg = fitv(np.median(absmag-ext))
-                print 'no input logg provided, guessing (using Mv):', input.logg
+                print('no input logg provided, guessing (using Mv):', input.logg)
                 #pdb.set_trace()
             # should really be done filter by filter with a dictionary; TODO 
             else:            
@@ -237,7 +237,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 msg = 'no input logg provided, guessing (using Mk): {}'.format(
                     input.logg
                 )
-                print msg
+                print(msg)
                         
         # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015
         # Mks-R relation instead
@@ -357,14 +357,14 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             plt.title('Av')
             plt.tight_layout()
 
-        print '   '
-        print 'teff(K):',out.teff,'+/-',out.teffe
-        print 'dis(pc):',out.dis,'+',out.disep,'-',out.disem
-        print 'av(mag):',out.avs,'+',out.avsep,'-',out.avsem
-        print 'rad(rsun):',out.rad,'+',out.radep,'-',out.radem
-        print 'lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem
-        print 'mabs(',band,'):',out.mabs,'+',out.mabsep,'-',out.mabsem
-        print '-----'
+        print('   ')
+        print('teff(K):',out.teff,'+/-',out.teffe)
+        print('dis(pc):',out.dis,'+',out.disep,'-',out.disem)
+        print('av(mag):',out.avs,'+',out.avsep,'-',out.avsem)
+        print('rad(rsun):',out.rad,'+',out.radep,'-',out.radem)
+        print('lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem)
+        print('mabs(',band,'):',out.mabs,'+',out.mabsep,'-',out.mabsem)
+        print('-----')
 
     ##############################################
     # case 2: input is spectroscopy + seismology #
@@ -431,7 +431,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             oldmass = out.mass
             nit = nit+1
 
-        print fdnu
+        print(fdnu)
 
         #pdb.set_trace()
         out.lum = out.rad**2. * teffn**4.
@@ -439,15 +439,15 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             (2.*out.rade/out.rad)**2.0 + (4.*input.teffe/input.teff)**2. 
         )
 
-        print '   '
-        print 'teff(K):',input.teff,'+/-',input.teffe
-        print 'feh(dex):',input.feh,'+/-',input.fehe
-        print 'logg(dex):',out.logg,'+/-',out.logge
-        print 'rho(cgs):',out.rho,'+/-',out.rhoe
-        print 'rad(rsun):',out.rad,'+/-',out.rade
-        print 'mass(msun):',out.mass,'+/-',out.masse
-        print 'lum(lsun):',out.lum,'+/-',out.lume
-        print '-----'
+        print('   ')
+        print('teff(K):',input.teff,'+/-',input.teffe)
+        print('feh(dex):',input.feh,'+/-',input.fehe)
+        print('logg(dex):',out.logg,'+/-',out.logge)
+        print('rho(cgs):',out.rho,'+/-',out.rhoe)
+        print('rad(rsun):',out.rad,'+/-',out.rade)
+        print('mass(msun):',out.mass,'+/-',out.masse)
+        print('lum(lsun):',out.lum,'+/-',out.lume)
+        print('-----')
 
         out.teff = input.teff
         out.teffep = input.teffe
@@ -505,8 +505,8 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
 
         # if apparent mag is given, calculate distance
         if (map > -99.):
-            print 'using '+str
-            print 'using coords: ',input.ra,input.dec
+            print('using '+str)
+            print('using coords: ',input.ra,input.dec)
 
             # iterated since BC depends on extinction
             nit=0
@@ -565,9 +565,9 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 nit = nit+1
                 #print out.dis,out.avs
 
-            print 'Av(mag):',out.avs
-            print 'plx(mas):',out.plx*1e3,'+/-',out.plxe*1e3
-            print 'dis(pc):',out.dis,'+/-',out.dise
+            print('Av(mag):',out.avs)
+            print('plx(mas):',out.plx*1e3,'+/-',out.plxe*1e3)
+            print('dis(pc):',out.dis,'+/-',out.dise)
 
             out.disep = out.dise
             out.disem = out.dise
