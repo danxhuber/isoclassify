@@ -1,4 +1,3 @@
-ebfpy
 ephem
 dustmaps
 mwdust
