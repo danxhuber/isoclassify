@@ -186,14 +186,28 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 jkmag = ((input.jmag-np.median(ebvs*extfactors['aj'])) 
                          - (input.kmag-np.median(ebvs*extfactors['ak'])))
                 input.teff=casagrande_jk(jkmag,feh)
+                print('using Casagrande J-K for Teff')
             if ((input.bmag > -99.0) & (input.vmag > -99.0)):
                 bvmag = ((input.bmag-np.median(ebvs*extfactors['ab'])) 
                          - (input.vmag-np.median(ebvs*extfactors['av'])))
                 input.teff=casagrande_bv(bvmag,feh)
+                print('using Casagrande B-V for Teff')
             if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
                 bvtmag = ((input.btmag-np.median(ebvs*extfactors['abt'])) 
                           - (input.vtmag-np.median(ebvs*extfactors['avt'])))
                 input.teff = casagrande_bvt(bvtmag, feh)
+                print('using Casagrande Bt-Vt for Teff')
+            if ((input.jmag > -99.0) & (input.vmag > -99.0) & (input.hmag > -99.0)):
+                if (input.vmag-input.jmag > 2.7):
+                    vjmag=((input.vmag-np.median(ebvs*extfactors['av'])) 
+                         - (input.jmag-np.median(ebvs*extfactors['aj'])))
+                    jhmag=((input.jmag-np.median(ebvs*extfactors['aj'])) 
+                         - (input.hmag-np.median(ebvs*extfactors['ah'])))
+                    input.teff = mann_vjh(vjmag, jhmag)
+                    print('using Mann V-J,J-H for Teff')
+                
+                
+                
                 #pdb.set_trace()
             input.teffe = 100.0
         #else:
@@ -281,6 +295,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 um = np.where(arr[:,3] < 0.)[0]
                 arr[um,3] = 0.0
                 bc = interp(arr)	    
+                #print(np.median(bc))
 
                 Mvbol = absmag + bc
                 lum = 10**((Mvbol-Msun)/(-2.5))
@@ -610,6 +625,18 @@ def casagrande_bvt(bvt,feh):
                - 0.0282*bvt*feh 
                - 0.00346*feh 
                - 0.0087*feh**2))
+    return teff
+    
+def mann_vjh(vj,jh):
+    #print(vj,jh)
+    jh=0. # needs further testing
+    teff = (3500. 
+            / (2.769 
+               - 1.421*vj 
+               + 0.4284*vj**2 
+               - 0.06133*vj**3
+               + 0.00331*vj**4
+               + 0.1333*jh+0.05416*jh**2))
     return teff
 
 
