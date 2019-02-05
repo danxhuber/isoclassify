@@ -631,12 +631,11 @@ def mann_vjh(vj,jh):
     #print(vj,jh)
     jh=0. # needs further testing
     teff = (3500. 
-            / (2.769 
-               - 1.421*vj 
-               + 0.4284*vj**2 
-               - 0.06133*vj**3
-               + 0.00331*vj**4
-               + 0.1333*jh+0.05416*jh**2))
+            / (2.840
+               - 1.3453*vj
+               + 0.3906*vj**2
+               - 0.0546*vj**3
+               + 0.002913*vj**4))
     return teff
 
 
