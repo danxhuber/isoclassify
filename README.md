@@ -18,9 +18,9 @@ wget https://www.dropbox.com/s/vrr8hc7qav1fzyb/mesa.h5?dl=0
 wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5?dl=0 
 
 # Set environment variables
-export ISOCLASSIFY=${WKDIR}/code/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
-export PYTHONPATH=${PYTHONPATH}:${ISOCLASSIFY}
-export PATH=${WKDIR}/code/isoclassify/bin:$PATH # This adds isoclassify executable to your path
+export ISOCLASSIFY=yourpath/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
+export PYTHONPATH=yourpath/isoclassify:$PYTHONPATH
+export PATH=yourpath/isoclassify/bin:$PATH # This adds isoclassify executable to your path
 ```
 
 ## Grid Modeling:
