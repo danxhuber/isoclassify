@@ -184,8 +184,6 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         #   - already taken into account in ATLAS BCs below
         #   - corrected for M dwarfs further below
         absmag = -5.0*np.log10(dsamp) + map_samp + 5.
-
-        #pdb.set_trace()
         
         # assume solar metallicity if no input feh is provided
         if (input.feh == -99.0):
@@ -193,23 +191,39 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         else:
             feh = input.feh
     
+        # if no Teff is provided, use color-Teff relations:
+        ### A and earlier: Flower et al. 
+        ### FGK dwarfs: Casagrande et al. 2010
+        ### M dwarfs: Mann et al. 2015
         if (input.teff == -99.0):
-            if ((input.jmag > -99.0) & (input.kmag > -99.0)):
-                jkmag = ((input.jmag-np.median(ebvs*extfactors['aj'])) 
-                         - (input.kmag-np.median(ebvs*extfactors['ak'])))
-                input.teff=casagrande_jk(jkmag,feh)
-                print('using Casagrande J-K for Teff')
+                
             if ((input.bmag > -99.0) & (input.vmag > -99.0)):
                 bvmag = ((input.bmag-np.median(ebvs*extfactors['ab'])) 
                          - (input.vmag-np.median(ebvs*extfactors['av'])))
-                input.teff=casagrande_bv(bvmag,feh)
-                print('using Casagrande B-V for Teff')
+                if ((bvmag >= 0.18) & (bvmag <= 1.29)):
+                    input.teff=casagrande_bv(bvmag,feh)
+                    print('using Casagrande B-V for Teff')
+                if (bvmag < 0.19):
+                    input.teff=torres_bv(bvmag,feh)
+                    print('using Flower/Torres B-V for Teff')
+                    
             if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
                 bvtmag = ((input.btmag-np.median(ebvs*extfactors['abt'])) 
                           - (input.vtmag-np.median(ebvs*extfactors['avt'])))
-                input.teff = casagrande_bvt(bvtmag, feh)
-                print('using Casagrande Bt-Vt for Teff')
-            input.teffe = 100.0
+                if ((bvmag >= 0.19) & (bvmag <= 1.49)):
+                    input.teff = casagrande_bvt(bvtmag, feh)
+                    print('using Casagrande Bt-Vt for Teff')
+                    
+            if ((input.jmag > -99.0) & (input.kmag > -99.0)):
+                jkmag = ((input.jmag-np.median(ebvs*extfactors['aj'])) 
+                         - (input.kmag-np.median(ebvs*extfactors['ak'])))
+                if ((jkmag >= 0.07) & (jkmag <= 0.8)):
+                    input.teff=casagrande_jk(jkmag,feh)
+                    print('using Casagrande J-K for Teff')
+                
+            input.teffe = input.teff*0.02    
+            
+            # M dwarfs
             if ((input.jmag > -99.0) & (input.vmag > -99.0) & (input.hmag > -99.0)):
                 if (input.vmag-input.jmag > 2.7) & (np.median(absmag - ext) > 3.):
                     vjmag=((input.vmag-np.median(ebvs*extfactors['av'])) 
@@ -219,8 +233,22 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                     input.teff = mann_vjh(vjmag, jhmag)
                     input.teffe = np.sqrt(48.**2 + 60.**2)
                     print('using Mann V-J,J-H for Teff')
+                    
+            if ((input.jmag > -99.0) & (input.rmag > -99.0) & (input.hmag > -99.0)):
+                if (input.rmag-input.jmag > 2.0) & (np.median(absmag - ext) > 3.):
+                    vjmag=((input.rmag-np.median(ebvs*extfactors['ar'])) 
+                         - (input.jmag-np.median(ebvs*extfactors['aj'])))
+                    jhmag=((input.jmag-np.median(ebvs*extfactors['aj'])) 
+                         - (input.hmag-np.median(ebvs*extfactors['ah'])))
+                    input.teff = mann_rjh(rjmag, jhmag)
+                    input.teffe = np.sqrt(52.**2 + 60.**2)
+                    print('using Mann r-J,J-H for Teff')
 
-
+        
+        if (input.teff == -99.0):
+            print('no valid Teff provided or calculated, skipping')
+            return out
+        
         np.random.seed(seed=11)
         teffsamp = input.teff + np.random.randn(nsample)*input.teffe
         
@@ -366,32 +394,32 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         out.plxe = input.plxe
 
         if plot==1:
-            fig = plt.figure('posteriors',figsize=(10,8))
-            plt.subplot(4,2,1)
-            plt.hist(teffsamp,bins=100)
-            plt.title('Teff')
+            if (out.mass > 0.):
+                fig = plt.figure('posteriors',figsize=(10,8))
+                plt.subplot(4,2,1)
+                plt.hist(teffsamp,bins=100)
+                plt.title('Teff')
 
-            plt.subplot(4,2,2)
-            plt.hist(lum,bins=100)
-            plt.title('Lum')
+                plt.subplot(4,2,2)
+                plt.hist(lum,bins=100)
+                plt.title('Lum')
 
-            plt.subplot(4,2,3)
-            plt.hist(rad,bins=100)
-            plt.title('Rad')
+                plt.subplot(4,2,3)
+                plt.hist(rad,bins=100)
+                plt.title('Rad')
 
-            plt.subplot(4,2,4)
-            plt.hist(absmag,bins=100)
-            plt.title('absmag')
+                plt.subplot(4,2,4)
+                plt.hist(absmag,bins=100)
+                plt.title('absmag')
 
-            plt.subplot(4,2,5)
-            plt.hist(dsamp,bins=100)
-            plt.title('distance')
+                plt.subplot(4,2,5)
+                plt.hist(dsamp,bins=100)
+                plt.title('distance')
 
-            plt.subplot(4,2,6)
-            plt.hist(avs,bins=100)
-            plt.title('Av')
-
-            if input.teffe == np.sqrt(48.**2 + 60.**2):
+                plt.subplot(4,2,6)
+                plt.hist(avs,bins=100)
+                plt.title('Av')
+            
                 plt.subplot(4,2,7)
                 plt.hist(mass,bins=100)
                 plt.title('Mass')
@@ -399,9 +427,36 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 plt.subplot(4,2,8)
                 plt.hist(rho,bins=100)
                 plt.title('Density')
-            
-            plt.tight_layout()
+    
+                plt.tight_layout()
+            else:
+                fig = plt.figure('posteriors',figsize=(10,6))
+                plt.subplot(3,2,1)
+                plt.hist(teffsamp,bins=100)
+                plt.title('Teff')
 
+                plt.subplot(3,2,2)
+                plt.hist(lum,bins=100)
+                plt.title('Lum')
+
+                plt.subplot(3,2,3)
+                plt.hist(rad,bins=100)
+                plt.title('Rad')
+
+                plt.subplot(3,2,4)
+                plt.hist(absmag,bins=100)
+                plt.title('absmag')
+
+                plt.subplot(3,2,5)
+                plt.hist(dsamp,bins=100)
+                plt.title('distance')
+
+                plt.subplot(3,2,6)
+                plt.hist(avs,bins=100)
+                plt.title('Av')
+        
+                plt.tight_layout()
+            
         print('   ')
         print('teff(K):',out.teff,'+/-',out.teffe)
         print('dis(pc):',out.dis,'+',out.disep,'-',out.disem)
@@ -648,6 +703,10 @@ def casagrande_bv(bv,feh):
                - 0.0055*feh**2))
 
     return teff
+    
+def torres_bv(bv,feh):
+    logteff = 3.979145106714099-0.654992268598245*bv+1.740690042385095*bv**2-4.608815154057166*bv**3+6.792599779944473*bv**4-5.396909891322525*bv**5+2.192970376522490*bv**6-0.359495739295671*bv**7
+    return 10**logteff
 
 def casagrande_bvt(bvt,feh):
     teff = (5040.0 
@@ -668,6 +727,16 @@ def mann_vjh(vj,jh):
                - 0.06133*vj**3
                + 0.003310*vj**4
                + 0.1333*jh+0.05416*jh**2))
+    return teff
+    
+def mann_rjh(rj,jh):
+    teff = (3500. 
+            * (2.151
+               - 1.092*vj
+               + 0.3767*vj**2
+               - 0.06292*vj**3
+               + 0.003950*vj**4
+               + 0.1697*jh+0.03106*jh**2))
     return teff
 
 
