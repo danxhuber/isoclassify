@@ -225,7 +225,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                     print('using MIST J-K for Teff')
                 
             input.teffe = input.teff*0.02    
-            '''
+            
             # M dwarfs
             if ((input.jmag > -99.0) & (input.vmag > -99.0) & (input.hmag > -99.0)):
                 if (input.vmag-input.jmag > 2.7) & (np.median(absmag - ext) > 3.):
@@ -246,7 +246,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                     input.teff = mann_rjh(rjmag, jhmag)
                     input.teffe = np.sqrt(52.**2 + 60.**2)
                     print('using Mann r-J,J-H for Teff')
-            '''
+            
 
         
         if (input.teff == -99.0):
