@@ -220,9 +220,12 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 if ((jkmag >= 0.07) & (jkmag <= 0.8)):
                     input.teff=casagrande_jk(jkmag,feh)
                     print('using Casagrande J-K for Teff')
+                if (jkmag > 0.8):
+                    input.teff=mist_jk(jkmag)
+                    print('using MIST J-K for Teff')
                 
             input.teffe = input.teff*0.02    
-            
+            '''
             # M dwarfs
             if ((input.jmag > -99.0) & (input.vmag > -99.0) & (input.hmag > -99.0)):
                 if (input.vmag-input.jmag > 2.7) & (np.median(absmag - ext) > 3.):
@@ -236,13 +239,14 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                     
             if ((input.jmag > -99.0) & (input.rmag > -99.0) & (input.hmag > -99.0)):
                 if (input.rmag-input.jmag > 2.0) & (np.median(absmag - ext) > 3.):
-                    vjmag=((input.rmag-np.median(ebvs*extfactors['ar'])) 
+                    rjmag=((input.rmag-np.median(ebvs*extfactors['ar'])) 
                          - (input.jmag-np.median(ebvs*extfactors['aj'])))
                     jhmag=((input.jmag-np.median(ebvs*extfactors['aj'])) 
                          - (input.hmag-np.median(ebvs*extfactors['ah'])))
                     input.teff = mann_rjh(rjmag, jhmag)
                     input.teffe = np.sqrt(52.**2 + 60.**2)
                     print('using Mann r-J,J-H for Teff')
+            '''
 
         
         if (input.teff == -99.0):
@@ -693,6 +697,11 @@ def casagrande_jk(jk,feh):
                + 0.0020*feh**2))
     return teff
     
+def mist_jk(jk,feh):
+    mist=ascii.read('jk-solar-mist.tx')
+    teff=np.interp(jk,mist['col1'],mist['col2'])
+    return teff
+    
 def casagrande_bv(bv,feh):
     teff = (5040.0
             / (0.5665 
@@ -732,10 +741,10 @@ def mann_vjh(vj,jh):
 def mann_rjh(rj,jh):
     teff = (3500. 
             * (2.151
-               - 1.092*vj
-               + 0.3767*vj**2
-               - 0.06292*vj**3
-               + 0.003950*vj**4
+               - 1.092*rj
+               + 0.3767*rj**2
+               - 0.06292*rj**3
+               + 0.003950*rj**4
                + 0.1697*jh+0.03106*jh**2))
     return teff
 

@@ -263,6 +263,7 @@ class PipelineDirect(Pipeline):
         self.addjhk(x)
         self.addbv(x)
         self.addbvt(x)
+        self.addgriz(x)
         self.addplx(x)
         self.addcoords(x)
         self.addmag(x)
