@@ -230,6 +230,8 @@ class PipelineDirect(Pipeline):
         'dir_lum': 'lum',
         'dir_teff': 'teff',
         'dir_mabs': 'mabs',
+        'dir_mass': 'mass',
+        'dir_rho': 'rho'
     }
     
     def run(self):

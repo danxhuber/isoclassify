@@ -174,6 +174,18 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         if (useav > -99):
             ebvs = np.zeros(len(dsamp)) + useav
         ext = extfactors['a'+bd]*ebvs
+
+        map = input.mag
+        mape = input.mage
+        np.random.seed(seed=12)
+        map_samp = map + np.random.randn(nsample)*mape
+
+        # NB no extinction correction here yet since it is either:
+        #   - already taken into account in ATLAS BCs below
+        #   - corrected for M dwarfs further below
+        absmag = -5.0*np.log10(dsamp) + map_samp + 5.
+
+        #pdb.set_trace()
         
         # assume solar metallicity if no input feh is provided
         if (input.feh == -99.0):
@@ -197,40 +209,23 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                           - (input.vtmag-np.median(ebvs*extfactors['avt'])))
                 input.teff = casagrande_bvt(bvtmag, feh)
                 print('using Casagrande Bt-Vt for Teff')
+            input.teffe = 100.0
             if ((input.jmag > -99.0) & (input.vmag > -99.0) & (input.hmag > -99.0)):
-                if (input.vmag-input.jmag > 2.7):
+                if (input.vmag-input.jmag > 2.7) & (np.median(absmag - ext) > 3.):
                     vjmag=((input.vmag-np.median(ebvs*extfactors['av'])) 
                          - (input.jmag-np.median(ebvs*extfactors['aj'])))
                     jhmag=((input.jmag-np.median(ebvs*extfactors['aj'])) 
                          - (input.hmag-np.median(ebvs*extfactors['ah'])))
                     input.teff = mann_vjh(vjmag, jhmag)
+                    input.teffe = np.sqrt(48.**2 + 60.**2)
                     print('using Mann V-J,J-H for Teff')
-                
-                
-                
-                #pdb.set_trace()
-            input.teffe = 100.0
-        #else:
-        #    teff=input.teff
-        #    teffe=input.teffe
+
 
         np.random.seed(seed=11)
         teffsamp = input.teff + np.random.randn(nsample)*input.teffe
         
         # hack to avoid crazy Teff samples
         teffsamp[teffsamp < 1000.0] = 1000.0
-            
-        map = input.mag
-        mape = input.mage
-        np.random.seed(seed=12)
-        map_samp = map + np.random.randn(nsample)*mape
-        
-        # NB no extinction correction here yet since it is either:
-        #   - already taken into account in ATLAS BCs below
-        #   - corrected for M dwarfs further below
-        absmag = -5.0*np.log10(dsamp) + map_samp + 5.
-        
-        #pdb.set_trace()
         
         # if no logg is provided, take guess from absolute mag-logg
         # fit to solar-metallicity MIST isochrones NB these coeffs are
@@ -255,7 +250,8 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                         
         # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015
         # Mks-R relation instead
-        if ((input.teff < 4100.) & (np.median(absmag-ext) > 0.)):
+        if ((input.teff < 4100.) & (np.median(absmag-ext) > 3.)):
+            sampMabs = absmag - ext
             if (input.feh > -99.):
                 rad = ((1.9305 - 0.3466*(absmag-ext) + 0.01647*(absmag-ext)**2)
                        * (1.+0.04458*input.feh))
@@ -265,7 +261,31 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             # add 3% scatter in Mks-R relation 
             rad = rad + np.random.randn(len(rad))*np.median(rad)*0.03
             lum = rad**2 * (teffsamp/teffsun)**4
-		    
+
+            # Also compute M-dwarf masses:
+            sampMabsZP = sampMabs - 7.5 #7.5 is the ZP defined in Mann et al. (2019)
+            if (input.feh > -99.):
+                mass = (1. - 0.0035*input.feh) * 10.**(-0.647 - 0.207 * (sampMabsZP)
+                    - 6.53*10**(-4) * (sampMabsZP)**2
+                    + 7.13*10**(-3) * (sampMabsZP)**3
+                    + 1.84*10**(-4) * (sampMabsZP)**4
+                    - 1.60*10**(-4) * (sampMabsZP)**5)
+            else:
+                mass = 10.**(-0.647 - 0.207 * (sampMabsZP)
+                    - 6.53*10**(-4) * (sampMabsZP)**2
+                    + 7.13*10**(-3) * (sampMabsZP)**3
+                    + 1.84*10**(-4) * (sampMabsZP)**4
+                    - 1.60*10**(-4) * (sampMabsZP)**5)
+            # Add 4% scatter in Mks-M relation
+            mass = mass + np.random.randn(len(mass))*np.median(mass)*0.04
+
+            # Now compute density with the mass and radius relations given here:
+            rho = mass/rad**3
+
+            # Output mass and densities:
+            out.mass,out.massep,out.massem = getstat(mass)
+            out.rho,out.rhoep,out.rhoem = getstat(rho)
+        
         # for everything else, interpolate ATLAS BCs
         else:
             if (input.teff < np.min(teffgrid)):
@@ -345,31 +365,41 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         out.plx = input.plx
         out.plxe = input.plxe
 
-        if plot==1: 
-            fig = plt.figure('posteriors',figsize=(8,6))
-            plt.subplot(3,2,1)
+        if plot==1:
+            fig = plt.figure('posteriors',figsize=(10,8))
+            plt.subplot(4,2,1)
             plt.hist(teffsamp,bins=100)
             plt.title('Teff')
 
-            plt.subplot(3,2,2)
+            plt.subplot(4,2,2)
             plt.hist(lum,bins=100)
             plt.title('Lum')
 
-            plt.subplot(3,2,3)
+            plt.subplot(4,2,3)
             plt.hist(rad,bins=100)
             plt.title('Rad')
 
-            plt.subplot(3,2,4)
+            plt.subplot(4,2,4)
             plt.hist(absmag,bins=100)
             plt.title('absmag')
 
-            plt.subplot(3,2,5)
+            plt.subplot(4,2,5)
             plt.hist(dsamp,bins=100)
             plt.title('distance')
 
-            plt.subplot(3,2,6)
+            plt.subplot(4,2,6)
             plt.hist(avs,bins=100)
             plt.title('Av')
+
+            if input.teffe == np.sqrt(48.**2 + 60.**2):
+                plt.subplot(4,2,7)
+                plt.hist(mass,bins=100)
+                plt.title('Mass')
+
+                plt.subplot(4,2,8)
+                plt.hist(rho,bins=100)
+                plt.title('Density')
+            
             plt.tight_layout()
 
         print('   ')
@@ -379,6 +409,8 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         print('rad(rsun):',out.rad,'+',out.radep,'-',out.radem)
         print('lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem)
         print('mabs(',band,'):',out.mabs,'+',out.mabsep,'-',out.mabsem)
+        print('mass(msun):',out.mass,'+',out.massep,'-',out.massem)
+        print('density(rhosun):',out.rho,'+',out.rhoep,'-',out.rhoem)
         print('-----')
 
     ##############################################
@@ -629,13 +661,12 @@ def casagrande_bvt(bvt,feh):
     
 def mann_vjh(vj,jh):
     #print(vj,jh)
-    jh=0. # needs further testing
     teff = (3500. 
-            / (2.769 
-               - 1.421*vj 
-               + 0.4284*vj**2 
+            * (2.769
+               - 1.421*vj
+               + 0.4284*vj**2
                - 0.06133*vj**3
-               + 0.00331*vj**4
+               + 0.003310*vj**4
                + 0.1333*jh+0.05416*jh**2))
     return teff
 
