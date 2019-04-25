@@ -19,7 +19,7 @@ from isoclassify import DATADIR
 
 CONSTRAINTS = [
     'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
-    'parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu'
+    'gamag','bpmag','rpmag','parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu'
 ]
 
 COORDS = ['ra','dec']
@@ -140,6 +140,12 @@ class Pipeline(object):
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addgriz(val,err)
+        
+    def addgaia(self,x):
+        keys = 'gamag bpmag rpmag'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addgaia(val,err)
         
     def addbvt(self,x):
         keys = 'btmag vtmag'.split()
@@ -264,6 +270,7 @@ class PipelineDirect(Pipeline):
         self.addbv(x)
         self.addbvt(x)
         self.addgriz(x)
+        self.addgaia(x)
         self.addplx(x)
         self.addcoords(x)
         self.addmag(x)
@@ -344,6 +351,7 @@ class PipelineGrid(Pipeline):
         self.addspec(x)
         self.addjhk(x)
         self.addgriz(x)
+        self.addgaia(x)
         self.addbv(x)
         self.addbvt(x)
         self.addseismo(x)

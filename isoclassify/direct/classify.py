@@ -227,6 +227,15 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             input.teffe = input.teff*0.02    
             
             # M dwarfs
+            if ((input.jmag > -99.0) & (input.bpmag > -99.0) & (input.hmag > -99.0)):
+                if (input.bpmag-input.rpmag > 1.5) & (np.median(absmag - ext) > 3.):
+                    bprpmag=input.bpmag-input.rpmag
+                    jhmag=((input.jmag-np.median(ebvs*extfactors['aj'])) 
+                         - (input.hmag-np.median(ebvs*extfactors['ah'])))
+                    input.teff = mann_bprpjh(bprpmag, jhmag)
+                    input.teffe = np.sqrt(49.**2 + 60.**2)
+                    print('using Mann Bp-Rp,J-H for Teff')
+                    
             if ((input.jmag > -99.0) & (input.vmag > -99.0) & (input.hmag > -99.0)):
                 if (input.vmag-input.jmag > 2.7) & (np.median(absmag - ext) > 3.):
                     vjmag=((input.vmag-np.median(ebvs*extfactors['av'])) 
@@ -747,6 +756,16 @@ def mann_rjh(rj,jh):
                + 0.003950*rj**4
                + 0.1697*jh+0.03106*jh**2))
     return teff
+    
+def mann_bprpjh(bprp,jh):
+    teff = (3500. 
+            * (3.172
+               - 2.475*bprp
+               + 1.082*bprp**2
+               - 0.2231*bprp**3
+               + 0.01738*bprp**4
+               + 0.08776*jh+0.04355*jh**2))
+    return teff
 
 
 class obsdata():
@@ -840,6 +859,14 @@ class obsdata():
         self.image = sigma[2]
         self.zmag = value[3]
         self.zmage = sigma[3]
+        
+    def addgaia(self,value,sigma):
+        self.gamag = value[0]
+        self.gamage = sigma[0]
+        self.bpmag = value[1]
+        self.bpmage = sigma[1]
+        self.rpmag = value[2]
+        self.rpmage = sigma[2]
         
     def addjhk(self,value,sigma):
         self.jmag = value[0]
