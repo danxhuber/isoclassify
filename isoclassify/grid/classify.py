@@ -90,6 +90,14 @@ class obsdata():
         self.kmag = value[2]
         self.kmage = sigma[2]
         
+    def addgaia(self,value,sigma):
+        self.gamag = value[0]
+        self.gamage = sigma[0]
+        self.bpmag = value[1]
+        self.bpmage = sigma[1]
+        self.rpmag = value[2]
+        self.rpmage = sigma[2]
+        
     def addplx(self,value,sigma):
         self.plx = value
         self.plxe = sigma

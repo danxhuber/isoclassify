@@ -206,6 +206,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 if (bvmag < 0.19):
                     input.teff=torres_bv(bvmag,feh)
                     print('using Flower/Torres B-V for Teff')
+                    print(input.teff)
                     
             if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
                 bvtmag = ((input.btmag-np.median(ebvs*extfactors['abt'])) 
@@ -213,6 +214,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 if ((bvmag >= 0.19) & (bvmag <= 1.49)):
                     input.teff = casagrande_bvt(bvtmag, feh)
                     print('using Casagrande Bt-Vt for Teff')
+                    
                     
             if ((input.jmag > -99.0) & (input.kmag > -99.0)):
                 jkmag = ((input.jmag-np.median(ebvs*extfactors['aj'])) 
@@ -706,7 +708,7 @@ def casagrande_jk(jk,feh):
                + 0.0020*feh**2))
     return teff
     
-def mist_jk(jk,feh):
+def mist_jk(jk):
     mist=ascii.read('jk-solar-mist.tx')
     teff=np.interp(jk,mist['col1'],mist['col2'])
     return teff
@@ -845,11 +847,7 @@ class obsdata():
         self.btmage = sigma[0]
         self.vtmag = value[1]
         self.vtmage = sigma[1]
-
-    def addgaia(self,value1,value2):
-        self.gamag = value1
-        self.gamage = value2
-        
+       
     def addgriz(self,value,sigma):
         self.gmag = value[0]
         self.gmage = sigma[0]
