@@ -21,6 +21,9 @@ class obsdata():
         self.logge = -99.0
         self.feh = -99.0
         self.fehe = -99.0
+
+        self.lum = -99.0
+        self.lume = -99.0
         
         self.bmag = -99.0
         self.bmage = -99.0
@@ -59,6 +62,10 @@ class obsdata():
         self.logge = sigma[1]
         self.feh = value[2]
         self.fehe = sigma[2]
+
+    def addlum(self,value,sigma):
+        self.lum = value[0]
+        self.lume = sigma[0]
                
     def addbv(self,value,sigma):
         self.bmag = value[0]
@@ -280,6 +287,12 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         (model['teff'] < input.teff+sig*input.teffe))[0]
         um=np.intersect1d(um,ut)
         print('teff',len(um))
+        
+    if (input.lum > -99.0):
+        ut=np.where((model['lum'] > input.lum-sig*input.lume) & \
+        (model['lum'] < input.lum+sig*input.lume))[0]
+        um=np.intersect1d(um,ut)
+        print('lum',len(um))
 
     if (input.dnu > 0.0):
         model_dnu = dnusun*model['fdnu']*np.sqrt(10**model['rho'])
@@ -488,6 +501,11 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     else:
         lh_teff = np.ones(len(um))
 
+    if (input.lum > -99):
+        lh_lum = gaussian(input.lum, mod['lum'][um], input.lume)
+    else:
+        lh_lum = np.ones(len(um))
+
     if (input.logg > -99.0):
         lh_logg = gaussian(input.logg, mod['logg'][um], input.logge)
     else:
@@ -525,8 +543,10 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     else:
         lh_numax = np.ones(len(um))
 
+    #pdb.set_trace()
     tlh = (lh_gr*lh_ri*lh_iz*lh_jh*lh_hk*lh_bv*lh_bvt*lh_teff*lh_logg*lh_feh
-           *lh_mabs*lh_dnu*lh_numax)
+           *lh_mabs*lh_dnu*lh_numax*lh_lum)
+        
         
     # metallicity prior (only if no FeH input is given)
     if (input.feh > -99.0):
@@ -704,6 +724,8 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
         ebvs = np.interp(x=dis, xp=xp, fp = fp)
         ext_band = extfactors['a'+bd]*ebvs	
         dis=10**((map-ext_band-model_mabs[um]+5)/5.)
+        
+    
 
     # if no models have been pre-selected (i.e. input is
     # photometry+parallax only), redden all models
@@ -718,7 +740,8 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
 
         model3['dis'] = dis
         model3['avs'] = extfactors['av']*ebvs	
-	 
+        #pdb.set_trace() 
+	    
     # if models have been pre-selected, extract and only redden those
     else:
         model2 = dict((k, model[k][um]) for k in model.keys())

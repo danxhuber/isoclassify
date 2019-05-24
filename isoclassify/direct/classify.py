@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
+import pdb
 
 def distance_likelihood(plx, plxe, ds):
     """Distance Likelihood
@@ -200,6 +201,9 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             if ((input.bmag > -99.0) & (input.vmag > -99.0)):
                 bvmag = ((input.bmag-np.median(ebvs*extfactors['ab'])) 
                          - (input.vmag-np.median(ebvs*extfactors['av'])))
+                print(bvmag)
+                col=((input.bmag-ebvs*extfactors['ab'])-(input.vmag-ebvs*extfactors['av']))
+                #pdb.set_trace()
                 if ((bvmag >= 0.18) & (bvmag <= 1.29)):
                     input.teff=casagrande_bv(bvmag,feh)
                     print('using Casagrande B-V for Teff')

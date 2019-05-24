@@ -18,7 +18,7 @@ from isoclassify.grid import classify as classify_grid
 from isoclassify import DATADIR
 
 CONSTRAINTS = [
-    'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
+    'teff','logg','feh','lum','gmag','rmag','imag','zmag','jmag','hmag','kmag',
     'gamag','bpmag','rpmag','parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu'
 ]
 
@@ -128,6 +128,12 @@ class Pipeline(object):
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addspec(val,err)
+
+    def addlum(self,x):
+        keys = 'lum'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addlum(val,err)
 
     def addjhk(self,x):
         keys = 'jmag hmag kmag'.split()
@@ -266,6 +272,7 @@ class PipelineDirect(Pipeline):
 
         x = classify_direct.obsdata()
         self.addspec(x)
+        self.addlum(x)
         self.addjhk(x)
         self.addbv(x)
         self.addbvt(x)
@@ -304,6 +311,7 @@ class PipelineGrid(Pipeline):
         'teff':np.array(file['teff']),\
         'logg':np.array(file['logg']),\
         'rad':np.array(file['rad']),\
+        'lum':np.array(file['rad']),\
         'rho':np.array(file['rho']),\
         'dage':np.array(file['dage']),\
         'dmass':np.array(file['dmass']),\
@@ -330,6 +338,7 @@ class PipelineGrid(Pipeline):
         # prelims to manipulate some model variables (to be automated soon ...)
         #pdb.set_trace()
         model['rho'] = np.log10(model['rho'])
+        model['lum'] = model['rad']**2*(model['teff']/5777.)**4
         # next line turns off Dnu scaling relation corrections
         model['fdnu'][:]=1.
         model['avs']=np.zeros(len(model['teff']))
@@ -349,6 +358,7 @@ class PipelineGrid(Pipeline):
         x = classify_grid.obsdata()
         self.addcoords(x)
         self.addspec(x)
+        self.addlum(x)
         self.addjhk(x)
         self.addgriz(x)
         self.addgaia(x)
