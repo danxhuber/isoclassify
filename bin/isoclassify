@@ -8,8 +8,7 @@ import pylab as pl
 import numpy as np
 
 import pandas as pd
-import isoclassify
-
+import isoclassify.pipeline
 
 def main():
     p = ArgumentParser()
@@ -46,11 +45,11 @@ def main():
     args.func(args)
 
 def run(args):
-    isoclassify.run(**vars(args))
+    isoclassify.pipeline.run(**vars(args))
 
 def batch(args):
     df = pd.read_csv(args.csv,engine='python')
-    print "#!/bin/sh"
+    print("#!/bin/sh")
     for i, row in df.iterrows():
         fmt = dict(**row)
         fmt = dict(fmt,**vars(args))
@@ -63,11 +62,11 @@ def batch(args):
         s+="--plot {plot:} "
         s+="&> {outdir:}/output.log"
         s = s.format(**fmt)
-        print s 
+        print(s) 
 
 def scrape_output(args):
     path = args.baseoutdir
-    df = isoclassify.scrape_csv(path)
+    df = isoclassify.pipeline.scrape_csv(path)
     df.to_csv(args.csvfn)
     
 if __name__=="__main__":

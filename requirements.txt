@@ -1,0 +1,7 @@
+ephem
+dustmaps
+mwdust
+astropy
+scipy
+h5py
+

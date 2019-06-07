@@ -10,34 +10,24 @@ Python codes to perform stellar classifications given any set of input observabl
 # Clone repo
 git clone https://github.com/danxhuber/isoclassify
 
-# Download dependencies
-pip install ebfpy 
-pip install ephem
-pip install dustmaps
+# Download dependencies (see requirements.txt)
 
 # Download MESA models into isoclassify directory
 cd isoclassify
-wget https://www.dropbox.com/s/yjgm8bwpw9cs0ew/mesa.ebf?dl=0 
-
-# Download asfgrid input files for asteroseismic Delta_nu corrections
-cd isoclassify/direct
-wget https://www.dropbox.com/s/26enigp5q03bz5n/grid_interp1.ebf?dl=0
-wget https://www.dropbox.com/s/xrwwhgdgrhwgms7/grid_interp2.ebf?dl=0
+wget https://www.dropbox.com/s/vrr8hc7qav1fzyb/mesa.h5?dl=0
+wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5?dl=0 
 
 # Set environment variables
-export ISOCLASSIFY=${WKDIR}/code/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
-export PYTHONPATH=${PYTHONPATH}:${ISOCLASSIFY}
-export PATH=${WKDIR}/code/isoclassify/bin:$PATH # This adds isoclassify executable to your path
+export ISOCLASSIFY=yourpath/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
+export PYTHONPATH=yourpath/isoclassify:$PYTHONPATH
+export PATH=yourpath/isoclassify/bin:$PATH # This adds isoclassify executable to your path
 ```
 
 ## Grid Modeling:
 
 Derives posterior distributions for stellar parameters (teff, logg, feh, rad, mass, rho, lum, age, distance, av) through direct intregration of isochrones, given any set of observables (photometry, spectroscopy, parallax, asteroseismology) and priors. Can fit for extinction or use reddening map, includes (optionally) a correction to the Dnu scaling relation corrections by Sharma et al. (2016). <br />
 
-Required isochrone grid interpolated from MIST models (Choi et al. 2016): <br />
-https://www.dropbox.com/s/yjgm8bwpw9cs0ew/mesa.ebf?dl=0 <br />
-
-See grid/example.ipynb for an application.
+See example/grid.ipynb for an application.
 
 ## Direct Method:
 
@@ -45,9 +35,9 @@ Uses bolometric corrections and extinction maps to derive stellar parameters usi
 
 1.  RA/DEC + Photometry + (Spectroscopy) + Parallax -> Teff, R, L, distance, Av. Uses Monte-Carlo method to implement exponentially decreasing volume density prior with a length scale of 1.35 kpc (Astraatmadja & Bailer-Jones 2016)
 
-1. RA/DEC + Asteroseismology + Spectroscopy -> logg, rho, rad, mass, lum, distance, Av. Uses Dnu scaling relation corrections by Sharma et al. (2016). 
+1. RA/DEC + Asteroseismology + Spectroscopy -> logg, rho, rad, mass, lum, distance, Av. Uses Dnu scaling relation corrections by Sharma et al. (2016) [not yet implemented]
 
-Bolometric corrections are interpolated in (Teff, logg, FeH, Av) from the MIST grid, Conroy et al. in prep (http://waps.cfa.harvard.edu/MIST/model_grids.html)
+Bolometric corrections are interpolated in (Teff, logg, FeH, Av) from the MIST grid (http://waps.cfa.harvard.edu/MIST/model_grids.html)
 
 
 ## Command line interface
