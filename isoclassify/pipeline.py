@@ -272,7 +272,7 @@ class PipelineDirect(Pipeline):
 
         x = classify_direct.obsdata()
         self.addspec(x)
-        self.addlum(x)
+        #self.addlum(x)
         self.addjhk(x)
         self.addbv(x)
         self.addbvt(x)
