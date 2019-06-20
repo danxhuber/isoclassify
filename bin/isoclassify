@@ -67,7 +67,7 @@ def batch(args):
 def scrape_output(args):
     path = args.baseoutdir
     df = isoclassify.pipeline.scrape_csv(path)
-    df.to_csv(args.csvfn)
+    df.to_csv(args.csvfn,index=False)
     
 if __name__=="__main__":
     main()

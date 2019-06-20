@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 import pdb
+from astropy.io import ascii
 
 def distance_likelihood(plx, plxe, ds):
     """Distance Likelihood
@@ -175,6 +176,11 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         if (useav > -99):
             ebvs = np.zeros(len(dsamp)) + useav
         ext = extfactors['a'+bd]*ebvs
+        
+        #pdb.set_trace()
+        if (np.max(ebvs) > 0.15):
+            ebvs[:]=0.15
+        #ebvs[:]=0.05
 
         map = input.mag
         mape = input.mage
@@ -204,31 +210,55 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 print(bvmag)
                 col=((input.bmag-ebvs*extfactors['ab'])-(input.vmag-ebvs*extfactors['av']))
                 #pdb.set_trace()
-                if ((bvmag >= 0.18) & (bvmag <= 1.29)):
-                    input.teff=casagrande_bv(bvmag,feh)
-                    print('using Casagrande B-V for Teff')
-                if (bvmag < 0.19):
+                #if ((bvmag >= 0.18) & (bvmag <= 1.29)):
+                #    input.teff=casagrande_bv(bvmag,feh)
+                #    print('using Casagrande B-V for Teff')
+
+                '''
+                if ((bvmag >= -0.05) & (bvmag <= 1.73)):
+                    input.teff=huang_bv(bvmag,feh)
+                    print('using Huang B-V for Teff')
+
+                #if (bvmag < 0.19):
+                if (bvmag < -0.05):
                     input.teff=torres_bv(bvmag,feh)
                     print('using Flower/Torres B-V for Teff')
                     print(input.teff)
-                    
+                '''
+                
+                input.teff=torres_bv(bvmag,feh)
+                print('using Flower/Torres B-V for Teff')
+                
+                #pdb.set_trace()
+                #input.teff=bv_mod(bvmag,feh)
+                #print('using modified B-V for Teff')
+                
             if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
                 bvtmag = ((input.btmag-np.median(ebvs*extfactors['abt'])) 
                           - (input.vtmag-np.median(ebvs*extfactors['avt'])))
-                if ((bvmag >= 0.19) & (bvmag <= 1.49)):
-                    input.teff = casagrande_bvt(bvtmag, feh)
-                    print('using Casagrande Bt-Vt for Teff')
+                input.teff=bvt_mod(bvtmag,feh)
+                print('using modified Bt-Vt for Teff')
+                #if ((bvmag >= 0.19) & (bvmag <= 1.49)):
+                #    input.teff = casagrande_bvt(bvtmag, feh)
+                #    print('using Casagrande Bt-Vt for Teff')
                     
-                    
+            if ((input.bpmag > -99.0) & (input.rpmag > -99.0) & (band == 'kmag')):
+                bprpmag = ((input.bpmag-np.median(ebvs*extfactors['abp'])) 
+                         - (input.rpmag-np.median(ebvs*extfactors['arp'])))
+                input.teff=mist_bprp(bprpmag)
+                print('using MIST BP-RP for Teff')
+
+            ''''     
             if ((input.jmag > -99.0) & (input.kmag > -99.0)):
                 jkmag = ((input.jmag-np.median(ebvs*extfactors['aj'])) 
                          - (input.kmag-np.median(ebvs*extfactors['ak'])))
-                if ((jkmag >= 0.07) & (jkmag <= 0.8)):
-                    input.teff=casagrande_jk(jkmag,feh)
-                    print('using Casagrande J-K for Teff')
-                if (jkmag > 0.8):
-                    input.teff=mist_jk(jkmag)
-                    print('using MIST J-K for Teff')
+                #if ((jkmag >= 0.07) & (jkmag <= 0.8)):
+                #    input.teff=casagrande_jk(jkmag,feh)
+                #    print('using Casagrande J-K for Teff')
+                #if ((jkmag < 0.07) | (jkmag > 0.8)):
+                input.teff=mist_jk(jkmag)
+                print('using MIST J-K for Teff')
+            '''
                 
             input.teffe = input.teff*0.02    
             
@@ -261,8 +291,9 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                     input.teff = mann_rjh(rjmag, jhmag)
                     input.teffe = np.sqrt(52.**2 + 60.**2)
                     print('using Mann r-J,J-H for Teff')
-            
-
+                    
+                    
+            #pdb.set_trace()
         
         if (input.teff == -99.0):
             print('no valid Teff provided or calculated, skipping')
@@ -713,8 +744,13 @@ def casagrande_jk(jk,feh):
     return teff
     
 def mist_jk(jk):
-    mist=ascii.read('jk-solar-mist.tx')
+    mist=ascii.read('/Users/daniel/science/github/isoclassify/isoclassify/direct/jk-solar-mist.txt')
     teff=np.interp(jk,mist['col1'],mist['col2'])
+    return teff
+    
+def mist_bprp(bprp):
+    mist=ascii.read('/Users/daniel/science/github/isoclassify/isoclassify/direct/bprp-solar-mist.txt')
+    teff=np.interp(bprp,mist['col1'],mist['col2'])
     return teff
     
 def casagrande_bv(bv,feh):
@@ -732,6 +768,68 @@ def torres_bv(bv,feh):
     logteff = 3.979145106714099-0.654992268598245*bv+1.740690042385095*bv**2-4.608815154057166*bv**3+6.792599779944473*bv**4-5.396909891322525*bv**5+2.192970376522490*bv**6-0.359495739295671*bv**7
     return 10**logteff
 
+def bv_mod(bv,feh):
+    #teff=np.zeros(len(bv))
+    #um=np.where(bv < 0.18)[0]
+    #if (len(um) > 0):
+    #    teff[um]=10**(3.979145106714099-0.654992268598245*bv[um]+1.740690042385095*bv[um]**2-4.608815154057166*bv[um]**3+6.792599779944473*bv[um]**4-5.396909891322525*bv[um]**5+2.192970376522490*bv[um]**6-0.359495739295671*bv[um]**7)-167.9
+    
+    if (bv < 0.18):
+        teff=10**(3.979145106714099-0.654992268598245*bv+1.740690042385095*bv**2-4.608815154057166*bv**3+6.792599779944473*bv**4-5.396909891322525*bv**5+2.192970376522490*bv**6-0.359495739295671*bv**7)-167.9
+    
+    if (bv >= 0.18):
+        teff = (5040.0
+            / (0.5665 
+               + 0.4809*bv
+               - 0.0060*bv**2 
+               - 0.0613*bv*feh 
+               - 0.0042*feh
+               - 0.0055*feh**2))
+    '''
+    um=np.where(bv >= 0.18)[0]
+    if (len(um) > 0):
+        teff[um] = (5040.0
+            / (0.5665 
+               + 0.4809*bv[um] 
+               - 0.0060*bv[um]**2 
+               - 0.0613*bv[um]*feh 
+               - 0.0042*feh
+               - 0.0055*feh**2))
+    '''
+    
+    return teff
+
+
+def bvt_mod(bv,feh):
+    #teff=np.zeros(len(bv))
+    #um=np.where(bv < 0.19)[0]
+    #if (len(um) > 0):
+    
+    if (bv < 0.19):
+        teff=10**(3.979145106714099-0.654992268598245*bv+1.740690042385095*bv**2-4.608815154057166*bv**3+6.792599779944473*bv**4-5.396909891322525*bv**5+2.192970376522490*bv**6-0.359495739295671*bv**7)-185.6714397176347
+    
+    if (bv >= 0.19):
+        teff = (5040.0 
+            / (0.5839 
+               + 0.4000*bv 
+               - 0.0067*bv**2 
+               - 0.0282*bv*feh 
+               - 0.00346*feh 
+               - 0.0087*feh**2))
+   
+    return teff
+
+
+def huang_bv(bv,feh):
+    teff = (5040.0 
+            / (0.59225 
+               + 0.39926*bv 
+               + 0.07848*bv**2 
+               - 0.04374*bv*feh 
+               - 0.04289*feh 
+               - 0.01406*feh**2))
+    return teff
+ 
 def casagrande_bvt(bvt,feh):
     teff = (5040.0 
             / (0.5839 
@@ -835,6 +933,10 @@ class obsdata():
         self.logge = sigma[1]
         self.feh = value[2]
         self.fehe = sigma[2]
+
+    def addlum(self,value,sigma):
+        self.lum = value[0]
+        self.lume = sigma[0]
 
     def addmag(self,value,sigma):
         self.mag = value[0]
@@ -954,7 +1056,9 @@ def extinction(law):
             "aj":0.89326176, 
             "ah":0.56273418, 
             "ak":0.35666104, 
-            "aga":2.4623915
+            "aga":2.7117787,
+            "abp":3.5273231,
+            "arp":2.0141017
         }
         
     elif (law == 'schlafly11'):
