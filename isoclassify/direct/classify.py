@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 import pdb
+from astropy.io import ascii
 
 def distance_likelihood(plx, plxe, ds):
     """Distance Likelihood
@@ -713,7 +714,7 @@ def casagrande_jk(jk,feh):
     return teff
     
 def mist_jk(jk):
-    mist=ascii.read('jk-solar-mist.tx')
+    mist=ascii.read('/Users/daniel/science/github/isoclassify/isoclassify/direct/jk-solar-mist.txt')
     teff=np.interp(jk,mist['col1'],mist['col2'])
     return teff
     
