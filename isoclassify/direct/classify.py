@@ -62,7 +62,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
     # assumed uncertainty in bolometric corrections
     err_bc=0.02
 
-    # assumed uncertainty in extinction
+    # assumed uncertainty in extinction 
     err_ext=0.02
 
     # object containing output values
@@ -191,6 +191,9 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         #   - already taken into account in ATLAS BCs below
         #   - corrected for M dwarfs further below
         absmag = -5.0*np.log10(dsamp) + map_samp + 5.
+        
+        # add uncertaintes due to extinction and BC
+        absmag = absmag + np.random.randn(nsample)*err_bc + np.random.randn(nsample)*err_ext
         
         # assume solar metallicity if no input feh is provided
         if (input.feh == -99.0):
