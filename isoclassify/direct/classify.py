@@ -175,13 +175,14 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         
 
         # NB the next line means that useav is not actually working yet
-        if (useav > -99):
-            ebvs = np.zeros(len(dsamp)) + useav
+        #if (input.av > -99):
+        avs[:]=input.av
+        ebvs = np.zeros(len(dsamp)) + input.av
         ext = extfactors['a'+bd]*ebvs
         
         #pdb.set_trace()
-        if (np.max(ebvs) > 0.161):
-            ebvs[:]=0.161
+        #if (np.max(ebvs) > 0.161):
+        #    ebvs[:]=0.161
         #ebvs[:]=0.05
 
         map = input.mag
@@ -898,6 +899,9 @@ class obsdata():
         self.mag = -99.
         self.mage = -99.
 
+        self.av = -99.
+        self.ave = -99.
+
         self.bmag = -99.
         self.bmage = -99.
         self.vmag = -99.
@@ -944,6 +948,10 @@ class obsdata():
     def addlum(self,value,sigma):
         self.lum = value[0]
         self.lume = sigma[0]
+        
+    def addav(self,value,sigma):
+        self.av = value[0]
+        self.ave = sigma[0]
 
     def addmag(self,value,sigma):
         self.mag = value[0]

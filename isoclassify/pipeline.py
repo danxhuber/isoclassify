@@ -19,7 +19,7 @@ from isoclassify import DATADIR
 
 CONSTRAINTS = [
     'teff','logg','feh','lum','gmag','rmag','imag','zmag','jmag','hmag','kmag',
-    'gamag','bpmag','rpmag','parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu'
+    'gamag','bpmag','rpmag','parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu','av'
 ]
 
 COORDS = ['ra','dec']
@@ -134,6 +134,12 @@ class Pipeline(object):
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addlum(val,err)
+
+    def addav(self,x):
+        keys = 'av'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addav(val,err)
 
     def addjhk(self,x):
         keys = 'jmag hmag kmag'.split()
@@ -273,6 +279,7 @@ class PipelineDirect(Pipeline):
         x = classify_direct.obsdata()
         self.addspec(x)
         self.addlum(x)
+        self.addav(x)
         self.addjhk(x)
         self.addbv(x)
         self.addbvt(x)
