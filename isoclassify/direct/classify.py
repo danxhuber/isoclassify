@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 import pdb
 from astropy.io import ascii
+from isoclassify import DATADIR
 
 def distance_likelihood(plx, plxe, ds):
     """Distance Likelihood
@@ -60,10 +61,10 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
     Msun = 4.74 # NB this is fixed to MESA BCs!
 
     # assumed uncertainty in bolometric corrections
-    err_bc=0.02
+    err_bc=0.03
 
     # assumed uncertainty in extinction 
-    err_ext=0.02
+    err_ext=0.03
 
     # object containing output values
     out = resdata()
@@ -178,8 +179,8 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         ext = extfactors['a'+bd]*ebvs
         
         #pdb.set_trace()
-        if (np.max(ebvs) > 0.15):
-            ebvs[:]=0.15
+        if (np.max(ebvs) > 0.161):
+            ebvs[:]=0.161
         #ebvs[:]=0.05
 
         map = input.mag
@@ -746,15 +747,17 @@ def casagrande_jk(jk,feh):
                + 0.0020*feh**2))
     return teff
     
+fn = os.path.join(DATADIR,'isoclassify/direct/jk-solar-mist.txt')
 def mist_jk(jk):
-    mist=ascii.read('/Users/daniel/science/github/isoclassify/isoclassify/direct/jk-solar-mist.txt')
+    mist=ascii.read(fn)
     teff=np.interp(jk,mist['col1'],mist['col2'])
     return teff
-    
+
+fn = os.path.join(DATADIR,'isoclassify/direct/bprp-solar-mist.txt')
 def mist_bprp(bprp):
-    mist=ascii.read('/Users/daniel/science/github/isoclassify/isoclassify/direct/bprp-solar-mist.txt')
+    mist=ascii.read(fn)
     teff=np.interp(bprp,mist['col1'],mist['col2'])
-    return teff
+    return teff  
     
 def casagrande_bv(bv,feh):
     teff = (5040.0
