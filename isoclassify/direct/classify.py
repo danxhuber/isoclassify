@@ -188,6 +188,9 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         #   - already taken into account in ATLAS BCs below
         #   - corrected for M dwarfs further below
         absmag = -5.0*np.log10(dsamp) + map_samp + 5.
+
+        # add uncertaintes due to extinction and BC
+        absmag = absmag + np.random.randn(nsample)*err_bc + np.random.randn(nsample)*err_ext
         
         # assume solar metallicity if no input feh is provided
         if (input.feh == -99.0):
@@ -221,8 +224,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 if ((bvmag >= 0.19) & (bvmag <= 1.49)):
                     input.teff = casagrande_bvt(bvtmag, feh)
                     print('using Casagrande Bt-Vt for Teff')
-                    
-                    
+                                    
             if ((input.jmag > -99.0) & (input.kmag > -99.0)):
                 jkmag = ((input.jmag-np.median(ebvs*extfactors['aj'])) 
                          - (input.kmag-np.median(ebvs*extfactors['ak'])))
@@ -232,6 +234,12 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 if (jkmag > 0.8):
                     input.teff=mist_jk(jkmag)
                     print('using MIST J-K for Teff')
+                    
+            if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
+                bprpmag = ((input.bpmag-np.median(ebvs*extfactors['abp'])) 
+                         - (input.rpmag-np.median(ebvs*extfactors['arp'])))
+                input.teff=mist_bprp(bprpmag)
+                print('using MIST BP-RP for Teff')
                 
             input.teffe = input.teff*0.02    
             
@@ -704,6 +712,9 @@ def getstat(indat):
     emed1 = med - p16
     emed2 = p84 - med
     return med, emed2, emed1
+
+
+# various color-Teff relations start here
   
 def casagrande_jk(jk,feh):
     teff = (5040.0
@@ -715,12 +726,6 @@ def casagrande_jk(jk,feh):
                + 0.0020*feh**2))
     return teff
 
-fn = os.path.join(DATADIR,'isoclassify/direct/jk-solar-mist.txt')
-def mist_jk(jk):
-    mist=ascii.read(fn)
-    teff=np.interp(jk,mist['col1'],mist['col2'])
-    return teff
-    
 def casagrande_bv(bv,feh):
     teff = (5040.0
             / (0.5665 
@@ -731,6 +736,18 @@ def casagrande_bv(bv,feh):
                - 0.0055*feh**2))
 
     return teff
+
+fn = os.path.join(DATADIR,'isoclassify/direct/jk-solar-mist.txt')
+def mist_jk(jk):
+    mist=ascii.read(fn)
+    teff=np.interp(jk,mist['col1'],mist['col2'])
+    return teff
+
+fn = os.path.join(DATADIR,'isoclassify/direct/bprp-solar-mist.txt')
+def mist_bprp(bprp):
+    mist=ascii.read(fn)
+    teff=np.interp(bprp,mist['col1'],mist['col2'])
+    return teff  
     
 def torres_bv(bv,feh):
     logteff = 3.979145106714099-0.654992268598245*bv+1.740690042385095*bv**2-4.608815154057166*bv**3+6.792599779944473*bv**4-5.396909891322525*bv**5+2.192970376522490*bv**6-0.359495739295671*bv**7
@@ -958,7 +975,9 @@ def extinction(law):
             "aj":0.89326176, 
             "ah":0.56273418, 
             "ak":0.35666104, 
-            "aga":2.4623915
+            "aga":2.4623915,
+            "abp":3.5273231,
+            "arp":2.0141017
         }
         
     elif (law == 'schlafly11'):
