@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 import pdb
+import os
 from astropy.io import ascii
 from isoclassify import DATADIR
 
