@@ -41,6 +41,40 @@ def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
         xt=np.arange(-2.,1.,0.01)
         yt=fehprior(xt)
         plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
+    
+def plotposterior_sec(x,y,res,err1,err2,names,j,ix,iy):
+    fig3 = plt.figure('secondary',figsize=(8,12))
+    plt.figure('secondary')
+    plt.subplot(len(names),2,ix)
+    plt.plot(x,np.cumsum(y))
+    plt.plot([res,res],[0,1],'r')
+    plt.plot([res+err1,res+err1],[0,1],'--r')
+    plt.plot([res-err2,res-err2],[0,1],'--r')
+    plt.ylim([0,1])
+    plt.title(names[j])
+    if fnmatch.fnmatch(names[j],'*rho*'):
+        plt.xscale('log')
+    if fnmatch.fnmatch(names[j],'*lum*'):
+        plt.xscale('log')
+
+
+    plt.subplot(len(names),2,iy)
+    plt.plot(x,y)
+    plt.plot([res,res],[0,1],'r')
+    plt.plot([res+err1,res+err1],[0,1],'--r')
+    plt.plot([res-err2,res-err2],[0,1],'--r')
+    plt.ylim([0,np.max(y)+np.max(y)*0.1])
+    plt.title(names[j])
+    if fnmatch.fnmatch(names[j],'*rho*'):
+        plt.xscale('log')
+    if fnmatch.fnmatch(names[j],'*lum*'):
+        plt.xscale('log')
+
+    if fnmatch.fnmatch(names[j],'*feh*'):
+        xt=np.arange(-2.,1.,0.01)
+        yt=fehprior(xt)
+        plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
+    
 
 def plothrd(model,input,mabs,mabse,ix,iy):
     plt.subplots_adjust(

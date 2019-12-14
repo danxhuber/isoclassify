@@ -34,6 +34,9 @@ class obsdata():
         self.btmage = -99.0
         self.vtmag = -99.0
         self.vtmage = -99.0
+        
+        self.dmag = -99.0
+        self.dmage = -99.0
 
         self.gmag = -99.0
         self.gmage = -99.0
@@ -108,6 +111,10 @@ class obsdata():
     def addplx(self,value,sigma):
         self.plx = value
         self.plxe = sigma
+        
+    def adddmag(self,value,sigma):
+        self.dmag = value
+        self.dmage = sigma
         
     def addseismo(self,value,sigma):
         self.numax = value[0]
@@ -192,7 +199,7 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
+def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'):
     """
     Run grid based classifier
 
@@ -649,11 +656,83 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
             ix += 2
             iy += 2
     
+    
+    
+    # calculate posteriors for a secondary with a given delta_mag, assuming it has the same 
+    # distance, age, and metallicity. to do this we'll interpolate the physical properties 
+    # of the secondary given a delta_mag, and assign it the same likelihoods 
+    # same procedure as used in Kraus+ 16
+    if (input.dmag > -99.):
+        print(' ')
+        print('calculating properties for secondary ...')
+        
+        delta_k=input.dmag
+        delta_k_err=input.dmage
+        print('using dmag=',delta_k,'+/-',delta_k_err,' in ',band)
+    
+        secresult = resdata()
+    
+        # interpolate across constant age and metallicity
+        feh_un=np.unique(mod['feh'][um])
+        age_un=np.unique(mod['age'][um])
+    
+        #adding in the contrast error without sampling is tricky, because that uncertainty 
+        # is not present in the primary posterior; instead, calculate the secondary 
+        # posteriors 3 times for +/- contrast errors, and then add those in quadrature 
+        # *explicitly assumes that the contrast errors are gaussian*
+        mds=[delta_k+delta_k_err,delta_k,delta_k-delta_k_err]
+    
+        # the new model quantities for the secondary
+        mod_sec=np.zeros((6,3,len(prob)))
+    
+        # insanely inefficient triple loop follows
+        for s in range(0,len(mds)):
+            for r in range(0,len(feh_un)):
+                for k in range (0,len(age_un)):
+                    ux=np.where((mod['feh'] == feh_un[r]) & (mod['age'] == age_un[k]))[0]
+                    ux2=np.where((mod['feh'][um] == feh_un[r]) & (mod['age'][um] == age_un[k]))[0]
+                    sr=np.argsort(mod[band][ux])
+                    mod_sec[0,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['teff'][ux[sr]])
+                    mod_sec[1,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['logg'][ux[sr]])
+                    mod_sec[2,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['rad'][ux[sr]])
+                    mod_sec[3,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['mass'][ux[sr]])
+                    mod_sec[4,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['rho'][ux[sr]])
+    
+        # now get PDFs across all delta mags, add errors in quadrature    
+        names = ['teff', 'logg', 'rad', 'mass', 'rho']
+        steps=[0.001, 0.01, 0.01, 0.01, 0.01]
+        fixes=[0, 1, 0, 0, 1]
+
+        ix = 1
+        iy = 2
+        npar = len(names)
+        for j in range(0,4):
+            x, y, res_1, err1_1, err2_1 = getpdf(mod_sec[j,0,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
+            xo, yo, res_2, err1_2, err2_2 = getpdf(mod_sec[j,1,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
+            x, y, res_3, err1_3, err2_3 = getpdf(mod_sec[j,2,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
+        
+            finerr1=np.sqrt(err1_2**2 + (np.abs(res_2-res_1))**2)
+            finerr2=np.sqrt(err2_2**2 + (np.abs(res_2-res_3))**2)
+
+            print(names[j], res_2, finerr1, finerr2)
+            setattr(secresult, names[j], res_2)
+            setattr(secresult, names[j]+'ep', finerr1)
+            setattr(secresult, names[j]+'em', finerr2)
+            setattr(secresult, names[j]+'px', x)
+            setattr(secresult, names[j]+'py', y)
+        
+            # Plot individual posteriors
+            if plot:
+                plotposterior_sec(xo,yo, res_2, finerr1, finerr2, names, j, ix, iy)
+                ix += 2
+                iy += 2
+       
+    
     # Plot HR diagrams
     if plot:
         plothrd(model,input,mabs,mabse,ix,iy)
 
-    return result
+    return result,secresult
             
 # add extinction as a model parameter
 def reddening(model,um,avs,extfactors):
