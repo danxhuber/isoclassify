@@ -340,7 +340,7 @@ class PipelineGrid(Pipeline):
         model['rho'] = np.log10(model['rho'])
         model['lum'] = model['rad']**2*(model['teff']/5777.)**4
         # next line turns off Dnu scaling relation corrections
-        model['fdnu'][:]=1.
+        # model['fdnu'][:]=1.
         model['avs']=np.zeros(len(model['teff']))
         model['dis']=np.zeros(len(model['teff']))
 
