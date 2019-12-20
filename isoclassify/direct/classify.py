@@ -177,7 +177,8 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         # NB the next line means that useav is not actually working yet
         #if (input.av > -99):
         avs[:]=input.av
-        ebvs = np.zeros(len(dsamp)) + input.av
+        #ebvs = np.zeros(len(dsamp)) + input.av
+        ebvs = avs/extfactors['av']
         ext = extfactors['a'+bd]*ebvs
         
         #pdb.set_trace()
