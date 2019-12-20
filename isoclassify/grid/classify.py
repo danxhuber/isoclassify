@@ -179,6 +179,32 @@ class resdata():
         self.dispx = 0.0
         self.dispy = 0.0
 
+        self.teffsec = 0.0
+        self.teffsecep = 0.0
+        self.teffsecem = 0.0
+        self.teffsecpx = 0.0
+        self.teffsecpy = 0.0        
+        self.radsec = 0.0
+        self.radsecep = 0.0
+        self.radsecem = 0.0
+        self.radsecpx = 0.0
+        self.radsecpy = 0.0    
+        self.loggsec = 0.0
+        self.loggsecep = 0.0
+        self.loggsecem = 0.0
+        self.loggsecpx = 0.0
+        self.loggsecpy = 0.0    
+        self.rhosec = 0.0
+        self.rhosecep = 0.0
+        self.rhosecem = 0.0
+        self.rhosecpx = 0.0
+        self.rhosecpy = 0.0    
+        self.masssec = 0.0
+        self.masssecep = 0.0
+        self.masssecem = 0.0
+        self.masssecpx = 0.0
+        self.masssecpy = 0.0    
+        
 class extinction():
     def __init__(self):
         self.ab = 1.3454449
@@ -669,9 +695,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'
         delta_k=input.dmag
         delta_k_err=input.dmage
         print('using dmag=',delta_k,'+/-',delta_k_err,' in ',band)
-    
-        secresult = resdata()
-    
+        
         # interpolate across constant age and metallicity
         feh_un=np.unique(mod['feh'][um])
         age_un=np.unique(mod['age'][um])
@@ -706,7 +730,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'
         ix = 1
         iy = 2
         npar = len(names)
-        for j in range(0,4):
+        for j in range(0,5):
             x, y, res_1, err1_1, err2_1 = getpdf(mod_sec[j,0,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
             xo, yo, res_2, err1_2, err2_2 = getpdf(mod_sec[j,1,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
             x, y, res_3, err1_3, err2_3 = getpdf(mod_sec[j,2,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
@@ -715,11 +739,11 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'
             finerr2=np.sqrt(err2_2**2 + (np.abs(res_2-res_3))**2)
 
             print(names[j], res_2, finerr1, finerr2)
-            setattr(secresult, names[j], res_2)
-            setattr(secresult, names[j]+'ep', finerr1)
-            setattr(secresult, names[j]+'em', finerr2)
-            setattr(secresult, names[j]+'px', x)
-            setattr(secresult, names[j]+'py', y)
+            setattr(result, names[j]+'sec', res_2)
+            setattr(result, names[j]+'sec'+'ep', finerr1)
+            setattr(result, names[j]+'sec'+'em', finerr2)
+            setattr(result, names[j]+'sec'+'px', x)
+            setattr(result, names[j]+'sec'+'py', y)
         
             # Plot individual posteriors
             if plot:
@@ -732,7 +756,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'
     if plot:
         plothrd(model,input,mabs,mabse,ix,iy)
 
-    return result,secresult
+    return result
             
 # add extinction as a model parameter
 def reddening(model,um,avs,extfactors):

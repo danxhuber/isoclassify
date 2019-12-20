@@ -122,7 +122,6 @@ class Pipeline(object):
 
         self.pdffn = os.path.join(self.outdir,'output.pdf')
         self.csvfn = os.path.join(self.outdir,'output.csv')
-        self.csvfn2 = os.path.join(self.outdir,'output_secondary.csv')
 
     def addspec(self,x):
         keys = 'teff logg feh'.split()
@@ -213,6 +212,7 @@ class Pipeline(object):
         out = {}
         out['id_starname'] = self.id_starname
         out = dict(out, **self.const)
+        
         for outcol,incol in self.outputcols.items():
             out[outcol] = getattr(self.paras, incol)
             out[outcol+'_err1'] = getattr(self.paras, incol+'ep')
@@ -238,33 +238,7 @@ class Pipeline(object):
         out.to_csv(self.csvfn)
         print("created {}".format(self.csvfn))
         
-        out = {}
-        out['id_starname'] = self.id_starname
-        out = dict(out, **self.const)
-        for outcol,incol in self.outputcols.items():
-            out[outcol] = getattr(self.secondary, incol)
-            out[outcol+'_err1'] = getattr(self.secondary, incol+'ep')
-            out[outcol+'_err2'] = -getattr(self.secondary, incol+'em')
-
-        out = pd.Series(out)
-        
-        # Re-ordering series
-        block1 = []
-        block2 = []
-        block3 = []
-        for col in list(out.index):
-            if col.count('id_starname')==1:
-                block1.append(col)
-                continue
-            if (col.count('iso_')==1) :
-                block3.append(col)
-                continue
-
-            block2.append(col)
-
-        out = out[block1 + block2 + block3]
-        out.to_csv(self.csvfn2)
-        print("created {}".format(self.csvfn2))
+    
 
 class PipelineDirect(Pipeline):
     outputcols = {
@@ -330,6 +304,11 @@ class PipelineGrid(Pipeline):
         'iso_logg':'logg',
         'iso_rho': 'rho',
         'iso_teff':'teff',
+        'iso_teffsec':'teffsec',
+        'iso_radsec':'radsec',
+        'iso_masssec':'masssec',
+        'iso_rhosec':'rhosec',
+        'iso_loggsec':'loggsec',
     }
     def run(self):
         self.print_constraints()
@@ -399,7 +378,7 @@ class PipelineGrid(Pipeline):
         self.addseismo(x)
         self.addplx(x)
         self.adddmag(x)
-        self.paras, self.secondary = classify_grid.classify(
+        self.paras = classify_grid.classify(
             input=x, model=model, dustmodel=dustmodel,ext=ext, 
             plot=self.plot, useav=0, band=self.const['band']
         )
