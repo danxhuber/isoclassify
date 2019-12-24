@@ -19,7 +19,7 @@ from isoclassify import DATADIR
 
 CONSTRAINTS = [
     'teff','logg','feh','lum','gmag','rmag','imag','zmag','jmag','hmag','kmag',
-    'gamag','bpmag','rpmag','parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu'
+    'gamag','bpmag','rpmag','parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu','dmag'
 ]
 
 COORDS = ['ra','dec']
@@ -173,7 +173,10 @@ class Pipeline(object):
 
     def addplx(self,x):
         x.addplx(self.const['parallax'], self.const['parallax_err'])
-    
+        
+    def adddmag(self,x):
+        x.adddmag(self.const['dmag'], self.const['dmag_err'])
+
     def addcoords(self,x):
         x.addcoords(self.const['ra'],self.const['dec'])
     
@@ -209,6 +212,7 @@ class Pipeline(object):
         out = {}
         out['id_starname'] = self.id_starname
         out = dict(out, **self.const)
+        
         for outcol,incol in self.outputcols.items():
             out[outcol] = getattr(self.paras, incol)
             out[outcol+'_err1'] = getattr(self.paras, incol+'ep')
@@ -233,6 +237,8 @@ class Pipeline(object):
         out = out[block1 + block2 + block3]
         out.to_csv(self.csvfn)
         print("created {}".format(self.csvfn))
+        
+    
 
 class PipelineDirect(Pipeline):
     outputcols = {
@@ -298,6 +304,11 @@ class PipelineGrid(Pipeline):
         'iso_logg':'logg',
         'iso_rho': 'rho',
         'iso_teff':'teff',
+        'iso_teffsec':'teffsec',
+        'iso_radsec':'radsec',
+        'iso_masssec':'masssec',
+        'iso_rhosec':'rhosec',
+        'iso_loggsec':'loggsec',
     }
     def run(self):
         self.print_constraints()
@@ -366,9 +377,10 @@ class PipelineGrid(Pipeline):
         self.addbvt(x)
         self.addseismo(x)
         self.addplx(x)
+        self.adddmag(x)
         self.paras = classify_grid.classify(
             input=x, model=model, dustmodel=dustmodel,ext=ext, 
-            plot=self.plot, useav=0
+            plot=self.plot, useav=0, band=self.const['band']
         )
 
 def _csv_reader(f):
