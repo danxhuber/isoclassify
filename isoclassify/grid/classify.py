@@ -225,7 +225,7 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'):
+def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='kmag'):
     """
     Run grid based classifier
 
@@ -269,37 +269,46 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'
     hkcole = np.sqrt(input.hmage**2 + input.kmage**2)
 
     # determine apparent mag to use for distance estimation. K>J>g>Vt>V
+    # todo: generalize this using band input parameter
     map = -99.0
     if (input.vmag > -99.0):
         map = input.vmag
         mape = input.vmage
-        band = 'v'
+        band = 'vmag'
         model_mabs = model['vmag']
 
     if (input.vtmag > -99.0):
         map = input.vtmag
         mape = input.vtmage
         model_mabs = model['vtmag']
-        band = 'vt'
+        band = 'vtmag'
 
     if (input.gmag > -99.0):
         map = input.gmag
         mape = input.gmage
         model_mabs = model['gmag']   
-        band = 'g'
+        band = 'gmag'
 	
     if (input.jmag > -99.0):
         map = input.jmag
         mape = input.jmage
         model_mabs = model['jmag']
-        band = 'j'
+        band = 'jmag'
 
     if (input.kmag > -99.0):
-        map = input.kmag
-        mape = input.kmage
+        band = 'kmag'
+        if (input.dmag == -99.):
+            map = input.kmag
+            mape = input.kmage
+        else:
+            # correct input apparent mag for companion
+            dx=-0.4*input.dmag
+            dxe=-0.4*input.dmage
+            cor=2.5*np.log10(1.+10**dx)
+            map = input.kmag+cor
+            mape = np.sqrt( input.kmage**2 + (dxe*2.5*10**dx/(1.+10**dx))**2)
         model_mabs = model['kmag']
-        band = 'k'
-        
+
     # absolute magnitude
     if (input.plx > -99.0):
         mabs = -5.0 * np.log10(1.0 / input.plx) + map + 5.0
@@ -576,7 +585,6 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'
     else:
         lh_numax = np.ones(len(um))
 
-    #pdb.set_trace()
     tlh = (lh_gr*lh_ri*lh_iz*lh_jh*lh_hk*lh_bv*lh_bvt*lh_teff*lh_logg*lh_feh
            *lh_mabs*lh_dnu*lh_numax*lh_lum)
         
@@ -682,16 +690,15 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'
             ix += 2
             iy += 2
     
-    
-    
+
     # calculate posteriors for a secondary with a given delta_mag, assuming it has the same 
     # distance, age, and metallicity. to do this we'll interpolate the physical properties 
-    # of the secondary given a delta_mag, and assign it the same likelihoods 
+    # of the secondary given a delta_mag, and assign it the same posterior probabilities 
     # same procedure as used in Kraus+ 16
-    if (input.dmag > -99.):
+    if ((input.dmag > -99.) & (band == 'kmag')):
         print(' ')
         print('calculating properties for secondary ...')
-        
+       
         delta_k=input.dmag
         delta_k_err=input.dmage
         print('using dmag=',delta_k,'+/-',delta_k_err,' in ',band)
@@ -713,14 +720,20 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='k'
         for s in range(0,len(mds)):
             for r in range(0,len(feh_un)):
                 for k in range (0,len(age_un)):
-                    ux=np.where((mod['feh'] == feh_un[r]) & (mod['age'] == age_un[k]))[0]
+                    # NB the next line uses model instead of mod, since the interpolation needs 
+                    # the full model grid rather than the pre-selected models returned by the 
+                    # reddening routine (which excludes secondary solutions). This may screw 
+                    # things up when trying to constrain reddening (i.e. dust="none")
+                    ux=np.where((model['feh'] == feh_un[r]) & (model['age'] == age_un[k]))[0]
                     ux2=np.where((mod['feh'][um] == feh_un[r]) & (mod['age'][um] == age_un[k]))[0]
-                    sr=np.argsort(mod[band][ux])
-                    mod_sec[0,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['teff'][ux[sr]])
-                    mod_sec[1,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['logg'][ux[sr]])
-                    mod_sec[2,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['rad'][ux[sr]])
-                    mod_sec[3,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['mass'][ux[sr]])
-                    mod_sec[4,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],mod[band][ux[sr]],mod['rho'][ux[sr]])
+                    sr=np.argsort(model[band][ux])
+                    if ((len(ux) == 0) | (len(ux2) == 0)):
+                        continue
+                    mod_sec[0,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['teff'][ux[sr]])
+                    mod_sec[1,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['logg'][ux[sr]])
+                    mod_sec[2,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['rad'][ux[sr]])
+                    mod_sec[3,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['mass'][ux[sr]])
+                    mod_sec[4,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['rho'][ux[sr]])
     
         # now get PDFs across all delta mags, add errors in quadrature    
         names = ['teff', 'logg', 'rad', 'mass', 'rho']
