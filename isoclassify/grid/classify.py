@@ -225,7 +225,7 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='kmag'):
+def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band=''):
     """
     Run grid based classifier
 
@@ -268,47 +268,20 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='km
     jhcole = np.sqrt(input.jmage**2 + input.hmage**2)
     hkcole = np.sqrt(input.hmage**2 + input.kmage**2)
 
-    # determine apparent mag to use for distance estimation. K>J>g>Vt>V
-    # todo: generalize this using band input parameter
+    # apparent mag to use for distance estimation. set by "band" input   
     map = -99.0
-    if (input.vmag > -99.0):
-        map = input.vmag
-        mape = input.vmage
-        band = 'vmag'
-        model_mabs = model['vmag']
-
-    if (input.vtmag > -99.0):
-        map = input.vtmag
-        mape = input.vtmage
-        model_mabs = model['vtmag']
-        band = 'vtmag'
-
-    if (input.gmag > -99.0):
-        map = input.gmag
-        mape = input.gmage
-        model_mabs = model['gmag']   
-        band = 'gmag'
-	
-    if (input.jmag > -99.0):
-        map = input.jmag
-        mape = input.jmage
-        model_mabs = model['jmag']
-        band = 'jmag'
-
-    if (input.kmag > -99.0):
-        band = 'kmag'
-        if (input.dmag == -99.):
-            map = input.kmag
-            mape = input.kmage
-        else:
-            # correct input apparent mag for companion
+    if (getattr(input,band) > -99.):
+        map = getattr(input,band)
+        mape = getattr(input,band+'e')
+        model_mabs = model[band]
+        # correct for companion
+        if (input.dmag != -99.):
             dx=-0.4*input.dmag
             dxe=-0.4*input.dmage
             cor=2.5*np.log10(1.+10**dx)
-            map = input.kmag+cor
-            mape = np.sqrt( input.kmage**2 + (dxe*2.5*10**dx/(1.+10**dx))**2)
-        model_mabs = model['kmag']
-
+            map = map+cor
+            mape = np.sqrt( mape**2 + (dxe*2.5*10**dx/(1.+10**dx))**2)
+    
     # absolute magnitude
     if (input.plx > -99.0):
         mabs = -5.0 * np.log10(1.0 / input.plx) + map + 5.0
@@ -319,6 +292,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='km
     else:
         mabs = -99.0
         mabse = -99.0
+
 
     # pre-select model grid; first only using reddening-independent quantities
     sig = 4.0
@@ -402,21 +376,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='km
             )
 
         # photometry to use for distance
-        if (input.vmag > -99.0):
-            mod_mabs = mod['vmag']
-
-        if (input.vtmag > -99.0):
-            mod_mabs = mod['vtmag']
-
-        if (input.gmag > -99.0):
-            mod_mabs = mod['gmag']
-
-        if (input.jmag > -99.0):
-            mod_mabs = mod['jmag']
-
-        if (input.kmag > -99.0):
-            mod_mabs = mod['kmag']
-
+        mod_mabs = mod[band]
+        
         um = np.arange(0,len(mod['teff']),1)
 
         mod['dis'] = 10**((map - mod_mabs + 5.0)/5.0)
@@ -433,7 +394,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='km
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-
+        
     if (input.teff == -99.0):
         if ((input.bmag > -99.0) & (input.vmag > -99.0)):
             ut=np.where(
@@ -695,7 +656,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='km
     # distance, age, and metallicity. to do this we'll interpolate the physical properties 
     # of the secondary given a delta_mag, and assign it the same posterior probabilities 
     # same procedure as used in Kraus+ 16
-    if ((input.dmag > -99.) & (band == 'kmag')):
+    if (input.dmag > -99.):
         print(' ')
         print('calculating properties for secondary ...')
        
