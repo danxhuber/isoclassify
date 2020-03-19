@@ -8,6 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
+import pdb
+from astropy.io import ascii
+import os 
+from isoclassify import DATADIR
 
 def distance_likelihood(plx, plxe, ds):
     """Distance Likelihood
@@ -141,8 +145,8 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         else:
             minds = 1.0
 
-        print 'using max distance:', maxds
-        print 'using min distance:', minds
+        print('using max distance:', maxds)
+        print('using min distance:', minds)
         
         ds = np.linspace(minds,maxds,nsample)
 
@@ -174,6 +178,19 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         if (useav > -99):
             ebvs = np.zeros(len(dsamp)) + useav
         ext = extfactors['a'+bd]*ebvs
+
+        map = input.mag
+        mape = input.mage
+        np.random.seed(seed=12)
+        map_samp = map + np.random.randn(nsample)*mape
+
+        # NB no extinction correction here yet since it is either:
+        #   - already taken into account in ATLAS BCs below
+        #   - corrected for M dwarfs further below
+        absmag = -5.0*np.log10(dsamp) + map_samp + 5.
+
+        # add uncertaintes due to extinction and BC
+        absmag = absmag + np.random.randn(nsample)*err_bc + np.random.randn(nsample)*err_ext
         
         # assume solar metallicity if no input feh is provided
         if (input.feh == -99.0):
@@ -181,42 +198,92 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         else:
             feh = input.feh
     
+        # if no Teff is provided, use color-Teff relations:
+        ### A and earlier: Flower et al. 
+        ### FGK dwarfs: Casagrande et al. 2010
+        ### M dwarfs: Mann et al. 2015
         if (input.teff == -99.0):
-            if ((input.jmag > -99.0) & (input.kmag > -99.0)):
-                jkmag = ((input.jmag-np.median(ebvs*extfactors['aj'])) 
-                         - (input.kmag-np.median(ebvs*extfactors['ak'])))
-                input.teff=casagrande_jk(jkmag,feh)
+                
             if ((input.bmag > -99.0) & (input.vmag > -99.0)):
                 bvmag = ((input.bmag-np.median(ebvs*extfactors['ab'])) 
                          - (input.vmag-np.median(ebvs*extfactors['av'])))
-                input.teff=casagrande_bv(bvmag,feh)
+                print(bvmag)
+                col=((input.bmag-ebvs*extfactors['ab'])-(input.vmag-ebvs*extfactors['av']))
+                #pdb.set_trace()
+                if ((bvmag >= 0.18) & (bvmag <= 1.29)):
+                    input.teff=casagrande_bv(bvmag,feh)
+                    print('using Casagrande B-V for Teff')
+                if (bvmag < 0.19):
+                    input.teff=torres_bv(bvmag,feh)
+                    print('using Flower/Torres B-V for Teff')
+                    print(input.teff)
+                    
             if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
                 bvtmag = ((input.btmag-np.median(ebvs*extfactors['abt'])) 
                           - (input.vtmag-np.median(ebvs*extfactors['avt'])))
-                input.teff = casagrande_bvt(bvtmag, feh)
-                #pdb.set_trace()
-            input.teffe = 100.0
-        #else:
-        #    teff=input.teff
-        #    teffe=input.teffe
+                if ((bvmag >= 0.19) & (bvmag <= 1.49)):
+                    input.teff = casagrande_bvt(bvtmag, feh)
+                    print('using Casagrande Bt-Vt for Teff')
+                                    
+            if ((input.jmag > -99.0) & (input.kmag > -99.0)):
+                jkmag = ((input.jmag-np.median(ebvs*extfactors['aj'])) 
+                         - (input.kmag-np.median(ebvs*extfactors['ak'])))
+                if ((jkmag >= 0.07) & (jkmag <= 0.8)):
+                    input.teff=casagrande_jk(jkmag,feh)
+                    print('using Casagrande J-K for Teff')
+                if (jkmag > 0.8):
+                    input.teff=mist_jk(jkmag)
+                    print('using MIST J-K for Teff')
+                    
+            if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
+                bprpmag = ((input.bpmag-np.median(ebvs*extfactors['abp'])) 
+                         - (input.rpmag-np.median(ebvs*extfactors['arp'])))
+                input.teff=mist_bprp(bprpmag)
+                print('using MIST BP-RP for Teff')
+                
+            input.teffe = input.teff*0.02    
+            
+            # M dwarfs
+            if ((input.jmag > -99.0) & (input.bpmag > -99.0) & (input.hmag > -99.0)):
+                if (input.bpmag-input.rpmag > 1.5) & (np.median(absmag - ext) > 3.):
+                    bprpmag=input.bpmag-input.rpmag
+                    jhmag=((input.jmag-np.median(ebvs*extfactors['aj'])) 
+                         - (input.hmag-np.median(ebvs*extfactors['ah'])))
+                    input.teff = mann_bprpjh(bprpmag, jhmag)
+                    input.teffe = np.sqrt(49.**2 + 60.**2)
+                    print('using Mann Bp-Rp,J-H for Teff')
+                    
+            if ((input.jmag > -99.0) & (input.vmag > -99.0) & (input.hmag > -99.0)):
+                if (input.vmag-input.jmag > 2.7) & (np.median(absmag - ext) > 3.):
+                    vjmag=((input.vmag-np.median(ebvs*extfactors['av'])) 
+                         - (input.jmag-np.median(ebvs*extfactors['aj'])))
+                    jhmag=((input.jmag-np.median(ebvs*extfactors['aj'])) 
+                         - (input.hmag-np.median(ebvs*extfactors['ah'])))
+                    input.teff = mann_vjh(vjmag, jhmag)
+                    input.teffe = np.sqrt(48.**2 + 60.**2)
+                    print('using Mann V-J,J-H for Teff')
+                    
+            if ((input.jmag > -99.0) & (input.rmag > -99.0) & (input.hmag > -99.0)):
+                if (input.rmag-input.jmag > 2.0) & (np.median(absmag - ext) > 3.):
+                    rjmag=((input.rmag-np.median(ebvs*extfactors['ar'])) 
+                         - (input.jmag-np.median(ebvs*extfactors['aj'])))
+                    jhmag=((input.jmag-np.median(ebvs*extfactors['aj'])) 
+                         - (input.hmag-np.median(ebvs*extfactors['ah'])))
+                    input.teff = mann_rjh(rjmag, jhmag)
+                    input.teffe = np.sqrt(52.**2 + 60.**2)
+                    print('using Mann r-J,J-H for Teff')
+            
 
+        
+        if (input.teff == -99.0):
+            print('no valid Teff provided or calculated, skipping')
+            return out
+        
         np.random.seed(seed=11)
         teffsamp = input.teff + np.random.randn(nsample)*input.teffe
         
         # hack to avoid crazy Teff samples
         teffsamp[teffsamp < 1000.0] = 1000.0
-            
-        map = input.mag
-        mape = input.mage
-        np.random.seed(seed=12)
-        map_samp = map + np.random.randn(nsample)*mape
-        
-        # NB no extinction correction here yet since it is either:
-        #   - already taken into account in ATLAS BCs below
-        #   - corrected for M dwarfs further below
-        absmag = -5.0*np.log10(dsamp) + map_samp + 5.
-        
-        #pdb.set_trace()
         
         # if no logg is provided, take guess from absolute mag-logg
         # fit to solar-metallicity MIST isochrones NB these coeffs are
@@ -228,7 +295,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                     [ 0.00255731, -0.07991211,  0.85140418,  1.82465197]
                 ) 
                 input.logg = fitv(np.median(absmag-ext))
-                print 'no input logg provided, guessing (using Mv):', input.logg
+                print('no input logg provided, guessing (using Mv):', input.logg)
                 #pdb.set_trace()
             # should really be done filter by filter with a dictionary; TODO 
             else:            
@@ -237,11 +304,12 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 msg = 'no input logg provided, guessing (using Mk): {}'.format(
                     input.logg
                 )
-                print msg
+                print(msg)
                         
         # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015
         # Mks-R relation instead
-        if ((input.teff < 4100.) & (np.median(absmag-ext) > 0.)):
+        if ((input.teff < 4100.) & (np.median(absmag-ext) > 3.)):
+            sampMabs = absmag - ext
             if (input.feh > -99.):
                 rad = ((1.9305 - 0.3466*(absmag-ext) + 0.01647*(absmag-ext)**2)
                        * (1.+0.04458*input.feh))
@@ -251,7 +319,31 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             # add 3% scatter in Mks-R relation 
             rad = rad + np.random.randn(len(rad))*np.median(rad)*0.03
             lum = rad**2 * (teffsamp/teffsun)**4
-		    
+
+            # Also compute M-dwarf masses:
+            sampMabsZP = sampMabs - 7.5 #7.5 is the ZP defined in Mann et al. (2019)
+            if (input.feh > -99.):
+                mass = (1. - 0.0035*input.feh) * 10.**(-0.647 - 0.207 * (sampMabsZP)
+                    - 6.53*10**(-4) * (sampMabsZP)**2
+                    + 7.13*10**(-3) * (sampMabsZP)**3
+                    + 1.84*10**(-4) * (sampMabsZP)**4
+                    - 1.60*10**(-4) * (sampMabsZP)**5)
+            else:
+                mass = 10.**(-0.647 - 0.207 * (sampMabsZP)
+                    - 6.53*10**(-4) * (sampMabsZP)**2
+                    + 7.13*10**(-3) * (sampMabsZP)**3
+                    + 1.84*10**(-4) * (sampMabsZP)**4
+                    - 1.60*10**(-4) * (sampMabsZP)**5)
+            # Add 4% scatter in Mks-M relation
+            mass = mass + np.random.randn(len(mass))*np.median(mass)*0.04
+
+            # Now compute density with the mass and radius relations given here:
+            rho = mass/rad**3
+
+            # Output mass and densities:
+            out.mass,out.massep,out.massem = getstat(mass)
+            out.rho,out.rhoep,out.rhoem = getstat(rho)
+        
         # for everything else, interpolate ATLAS BCs
         else:
             if (input.teff < np.min(teffgrid)):
@@ -281,6 +373,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 um = np.where(arr[:,3] < 0.)[0]
                 arr[um,3] = 0.0
                 bc = interp(arr)	    
+                #print(np.median(bc))
 
                 Mvbol = absmag + bc
                 lum = 10**((Mvbol-Msun)/(-2.5))
@@ -330,41 +423,80 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         out.plx = input.plx
         out.plxe = input.plxe
 
-        if plot==1: 
-            fig = plt.figure('posteriors',figsize=(8,6))
-            plt.subplot(3,2,1)
-            plt.hist(teffsamp,bins=100)
-            plt.title('Teff')
+        if plot==1:
+            if (out.mass > 0.):
+                fig = plt.figure('posteriors',figsize=(10,8))
+                plt.subplot(4,2,1)
+                plt.hist(teffsamp,bins=100)
+                plt.title('Teff')
 
-            plt.subplot(3,2,2)
-            plt.hist(lum,bins=100)
-            plt.title('Lum')
+                plt.subplot(4,2,2)
+                plt.hist(lum,bins=100)
+                plt.title('Lum')
 
-            plt.subplot(3,2,3)
-            plt.hist(rad,bins=100)
-            plt.title('Rad')
+                plt.subplot(4,2,3)
+                plt.hist(rad,bins=100)
+                plt.title('Rad')
 
-            plt.subplot(3,2,4)
-            plt.hist(absmag,bins=100)
-            plt.title('absmag')
+                plt.subplot(4,2,4)
+                plt.hist(absmag,bins=100)
+                plt.title('absmag')
 
-            plt.subplot(3,2,5)
-            plt.hist(dsamp,bins=100)
-            plt.title('distance')
+                plt.subplot(4,2,5)
+                plt.hist(dsamp,bins=100)
+                plt.title('distance')
 
-            plt.subplot(3,2,6)
-            plt.hist(avs,bins=100)
-            plt.title('Av')
-            plt.tight_layout()
+                plt.subplot(4,2,6)
+                plt.hist(avs,bins=100)
+                plt.title('Av')
+            
+                plt.subplot(4,2,7)
+                plt.hist(mass,bins=100)
+                plt.title('Mass')
 
-        print '   '
-        print 'teff(K):',out.teff,'+/-',out.teffe
-        print 'dis(pc):',out.dis,'+',out.disep,'-',out.disem
-        print 'av(mag):',out.avs,'+',out.avsep,'-',out.avsem
-        print 'rad(rsun):',out.rad,'+',out.radep,'-',out.radem
-        print 'lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem
-        print 'mabs(',band,'):',out.mabs,'+',out.mabsep,'-',out.mabsem
-        print '-----'
+                plt.subplot(4,2,8)
+                plt.hist(rho,bins=100)
+                plt.title('Density')
+    
+                plt.tight_layout()
+            else:
+                fig = plt.figure('posteriors',figsize=(10,6))
+                plt.subplot(3,2,1)
+                plt.hist(teffsamp,bins=100)
+                plt.title('Teff')
+
+                plt.subplot(3,2,2)
+                plt.hist(lum,bins=100)
+                plt.title('Lum')
+
+                plt.subplot(3,2,3)
+                plt.hist(rad,bins=100)
+                plt.title('Rad')
+
+                plt.subplot(3,2,4)
+                plt.hist(absmag,bins=100)
+                plt.title('absmag')
+
+                plt.subplot(3,2,5)
+                plt.hist(dsamp,bins=100)
+                plt.title('distance')
+
+                plt.subplot(3,2,6)
+                plt.hist(avs,bins=100)
+                plt.title('Av')
+        
+                plt.tight_layout()
+            
+        print('   ')
+        print('teff(K):',out.teff,'+/-',out.teffe)
+        print('dis(pc):',out.dis,'+',out.disep,'-',out.disem)
+        print('av(mag):',out.avs,'+',out.avsep,'-',out.avsem)
+        print('rad(rsun):',out.rad,'+',out.radep,'-',out.radem)
+        print('lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem)
+        print('mabs(',band,'):',out.mabs,'+',out.mabsep,'-',out.mabsem)
+        print('mass(msun):',out.mass,'+',out.massep,'-',out.massem)
+        print('density(rhosun):',out.rho,'+',out.rhoep,'-',out.rhoem)
+        print('-----')
 
     ##############################################
     # case 2: input is spectroscopy + seismology #
@@ -431,7 +563,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             oldmass = out.mass
             nit = nit+1
 
-        print fdnu
+        print(fdnu)
 
         #pdb.set_trace()
         out.lum = out.rad**2. * teffn**4.
@@ -439,15 +571,15 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             (2.*out.rade/out.rad)**2.0 + (4.*input.teffe/input.teff)**2. 
         )
 
-        print '   '
-        print 'teff(K):',input.teff,'+/-',input.teffe
-        print 'feh(dex):',input.feh,'+/-',input.fehe
-        print 'logg(dex):',out.logg,'+/-',out.logge
-        print 'rho(cgs):',out.rho,'+/-',out.rhoe
-        print 'rad(rsun):',out.rad,'+/-',out.rade
-        print 'mass(msun):',out.mass,'+/-',out.masse
-        print 'lum(lsun):',out.lum,'+/-',out.lume
-        print '-----'
+        print('   ')
+        print('teff(K):',input.teff,'+/-',input.teffe)
+        print('feh(dex):',input.feh,'+/-',input.fehe)
+        print('logg(dex):',out.logg,'+/-',out.logge)
+        print('rho(cgs):',out.rho,'+/-',out.rhoe)
+        print('rad(rsun):',out.rad,'+/-',out.rade)
+        print('mass(msun):',out.mass,'+/-',out.masse)
+        print('lum(lsun):',out.lum,'+/-',out.lume)
+        print('-----')
 
         out.teff = input.teff
         out.teffep = input.teffe
@@ -505,8 +637,8 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
 
         # if apparent mag is given, calculate distance
         if (map > -99.):
-            print 'using '+str
-            print 'using coords: ',input.ra,input.dec
+            print('using '+str)
+            print('using coords: ',input.ra,input.dec)
 
             # iterated since BC depends on extinction
             nit=0
@@ -565,9 +697,9 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 nit = nit+1
                 #print out.dis,out.avs
 
-            print 'Av(mag):',out.avs
-            print 'plx(mas):',out.plx*1e3,'+/-',out.plxe*1e3
-            print 'dis(pc):',out.dis,'+/-',out.dise
+            print('Av(mag):',out.avs)
+            print('plx(mas):',out.plx*1e3,'+/-',out.plxe*1e3)
+            print('dis(pc):',out.dis,'+/-',out.dise)
 
             out.disep = out.dise
             out.disem = out.dise
@@ -580,6 +712,9 @@ def getstat(indat):
     emed1 = med - p16
     emed2 = p84 - med
     return med, emed2, emed1
+
+
+# various color-Teff relations start here
   
 def casagrande_jk(jk,feh):
     teff = (5040.0
@@ -590,7 +725,7 @@ def casagrande_jk(jk,feh):
                + 0.0291*feh 
                + 0.0020*feh**2))
     return teff
-    
+
 def casagrande_bv(bv,feh):
     teff = (5040.0
             / (0.5665 
@@ -602,6 +737,22 @@ def casagrande_bv(bv,feh):
 
     return teff
 
+fn = os.path.join(DATADIR,'isoclassify/direct/jk-solar-mist.txt')
+def mist_jk(jk):
+    mist=ascii.read(fn)
+    teff=np.interp(jk,mist['col1'],mist['col2'])
+    return teff
+
+fn = os.path.join(DATADIR,'isoclassify/direct/bprp-solar-mist.txt')
+def mist_bprp(bprp):
+    mist=ascii.read(fn)
+    teff=np.interp(bprp,mist['col1'],mist['col2'])
+    return teff  
+    
+def torres_bv(bv,feh):
+    logteff = 3.979145106714099-0.654992268598245*bv+1.740690042385095*bv**2-4.608815154057166*bv**3+6.792599779944473*bv**4-5.396909891322525*bv**5+2.192970376522490*bv**6-0.359495739295671*bv**7
+    return 10**logteff
+
 def casagrande_bvt(bvt,feh):
     teff = (5040.0 
             / (0.5839 
@@ -610,6 +761,37 @@ def casagrande_bvt(bvt,feh):
                - 0.0282*bvt*feh 
                - 0.00346*feh 
                - 0.0087*feh**2))
+    return teff
+    
+def mann_vjh(vj,jh):
+    #print(vj,jh)
+    teff = (3500. 
+            * (2.769
+               - 1.421*vj
+               + 0.4284*vj**2
+               - 0.06133*vj**3
+               + 0.003310*vj**4
+               + 0.1333*jh+0.05416*jh**2))
+    return teff
+    
+def mann_rjh(rj,jh):
+    teff = (3500. 
+            * (2.151
+               - 1.092*rj
+               + 0.3767*rj**2
+               - 0.06292*rj**3
+               + 0.003950*rj**4
+               + 0.1697*jh+0.03106*jh**2))
+    return teff
+    
+def mann_bprpjh(bprp,jh):
+    teff = (3500. 
+            * (3.172
+               - 2.475*bprp
+               + 1.082*bprp**2
+               - 0.2231*bprp**3
+               + 0.01738*bprp**4
+               + 0.08776*jh+0.04355*jh**2))
     return teff
 
 
@@ -690,11 +872,7 @@ class obsdata():
         self.btmage = sigma[0]
         self.vtmag = value[1]
         self.vtmage = sigma[1]
-
-    def addgaia(self,value1,value2):
-        self.gamag = value1
-        self.gamage = value2
-        
+       
     def addgriz(self,value,sigma):
         self.gmag = value[0]
         self.gmage = sigma[0]
@@ -704,6 +882,14 @@ class obsdata():
         self.image = sigma[2]
         self.zmag = value[3]
         self.zmage = sigma[3]
+        
+    def addgaia(self,value,sigma):
+        self.gamag = value[0]
+        self.gamage = sigma[0]
+        self.bpmag = value[1]
+        self.bpmage = sigma[1]
+        self.rpmag = value[2]
+        self.rpmage = sigma[2]
         
     def addjhk(self,value,sigma):
         self.jmag = value[0]
@@ -789,7 +975,9 @@ def extinction(law):
             "aj":0.89326176, 
             "ah":0.56273418, 
             "ak":0.35666104, 
-            "aga":2.4623915
+            "aga":2.4623915,
+            "abp":3.5273231,
+            "arp":2.0141017
         }
         
     elif (law == 'schlafly11'):

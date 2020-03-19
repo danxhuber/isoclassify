@@ -6,19 +6,20 @@ import h5py
 import numpy as np
 from matplotlib import pylab as plt
 import pandas as pd
-import ebf
+#import ebf
 import astropy.units as units
 from astropy.coordinates import SkyCoord
 from dustmaps.bayestar import BayestarWebQuery
 import mwdust
+import pdb
 
 from isoclassify.direct import classify as classify_direct
 from isoclassify.grid import classify as classify_grid
 from isoclassify import DATADIR
 
 CONSTRAINTS = [
-    'teff','logg','feh','gmag','rmag','imag','zmag','jmag','hmag','kmag',
-    'parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu'
+    'teff','logg','feh','lum','gmag','rmag','imag','zmag','jmag','hmag','kmag',
+    'gamag','bpmag','rpmag','parallax', 'bmag','vmag', 'btmag','vtmag','numax','dnu','dmag'
 ]
 
 COORDS = ['ra','dec']
@@ -35,7 +36,7 @@ def run(**kw):
     if pipe.plotmode=='show':
         plt.ion()
         plt.show()
-        raw_input('[press return to continue]:')
+        input('[press return to continue]:')
     elif pipe.plotmode.count('save')==1:
         pipe.savefig()
 
@@ -50,7 +51,7 @@ def query_dustmodel_coords(ra,dec):
     
     dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
 
-    for index in xrange(len(reddenContainer)):
+    for index in range(len(reddenContainer)):
         dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
         
     return dustModelDF
@@ -64,15 +65,17 @@ def query_dustmodel_coords_allsky(ra,dec):
     
     dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
     
-    for index in xrange(len(reddenContainer)):
+    for index in range(len(reddenContainer)):
         dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
 
     return dustModelDF
 
 class Pipeline(object):
     def __init__(self, **kw):
-        assert kw.has_key('csv'), "must pass csv as keyword"
-        assert kw.has_key('outdir'), "must pass outdir as keyword"
+        assert 'csv' in kw, "must pass csv as keyword"
+        assert 'outdir' in kw, "must pass outdir as keyword"
+        #assert kw.has_key('csv'), "must pass csv as keyword"
+        #assert kw.has_key('outdir'), "must pass outdir as keyword"
 
         self.plotmode = kw['plot']
 
@@ -87,7 +90,11 @@ class Pipeline(object):
 
         # Read in inputs
         df = pd.read_csv(kw['csv'])
-        assert len(df.id_starname.drop_duplicates())==len(df)
+        
+        if (len(df.id_starname.drop_duplicates())!=len(df)):
+            print('dropping duplicates')
+            df=df.drop_duplicates(subset='id_starname')
+            
         df.index = df.id_starname
         star = df.ix[self.id_starname]
 
@@ -122,6 +129,12 @@ class Pipeline(object):
         err = [self.const[key+'_err'] for key in keys]
         x.addspec(val,err)
 
+    def addlum(self,x):
+        keys = 'lum'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addlum(val,err)
+
     def addjhk(self,x):
         keys = 'jmag hmag kmag'.split()
         val = [self.const[key] for key in keys]
@@ -133,6 +146,12 @@ class Pipeline(object):
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addgriz(val,err)
+        
+    def addgaia(self,x):
+        keys = 'gamag bpmag rpmag'.split()
+        val = [self.const[key] for key in keys]
+        err = [self.const[key+'_err'] for key in keys]
+        x.addgaia(val,err)
         
     def addbvt(self,x):
         keys = 'btmag vtmag'.split()
@@ -154,7 +173,10 @@ class Pipeline(object):
 
     def addplx(self,x):
         x.addplx(self.const['parallax'], self.const['parallax_err'])
-    
+        
+    def adddmag(self,x):
+        x.adddmag(self.const['dmag'], self.const['dmag_err'])
+
     def addcoords(self,x):
         x.addcoords(self.const['ra'],self.const['dec'])
     
@@ -168,13 +190,13 @@ class Pipeline(object):
         x.addcoords(self.const['ra'], self.const['dec'])
 
     def print_constraints(self):
-        print "id_starname {}".format(self.id_starname)
-        print "dust:", self.dust
+        print("id_starname {}".format(self.id_starname))
+        print("dust:", self.dust)
         for key in CONSTRAINTS:
-            print key, self.const[key], self.const[key+'_err']
+            print(key, self.const[key], self.const[key+'_err'])
 
         for key in COORDS:
-            print key, self.const[key]
+            print(key, self.const[key])
             
     def savefig(self):
         labels = plt.get_figlabels()
@@ -184,12 +206,13 @@ class Pipeline(object):
             fig = plt.figure(label)
             fig.set_tight_layout(True)
             plt.savefig(fn)
-            print "created {}".format(fn)
+            print("created {}".format(fn))
 
     def to_csv(self):
         out = {}
         out['id_starname'] = self.id_starname
         out = dict(out, **self.const)
+        
         for outcol,incol in self.outputcols.items():
             out[outcol] = getattr(self.paras, incol)
             out[outcol+'_err1'] = getattr(self.paras, incol+'ep')
@@ -213,7 +236,9 @@ class Pipeline(object):
 
         out = out[block1 + block2 + block3]
         out.to_csv(self.csvfn)
-        print "created {}".format(self.csvfn)
+        print("created {}".format(self.csvfn))
+        
+    
 
 class PipelineDirect(Pipeline):
     outputcols = {
@@ -223,10 +248,14 @@ class PipelineDirect(Pipeline):
         'dir_lum': 'lum',
         'dir_teff': 'teff',
         'dir_mabs': 'mabs',
+        'dir_mass': 'mass',
+        'dir_rho': 'rho'
     }
     
     def run(self):
         self.print_constraints()
+
+        #pdb.set_trace()
 
         fn = os.path.join(DATADIR,'bcgrid.h5')
         bcmodel = h5py.File(fn,'r', driver='core', backing_store=False)
@@ -249,9 +278,12 @@ class PipelineDirect(Pipeline):
 
         x = classify_direct.obsdata()
         self.addspec(x)
+        #self.addlum(x)
         self.addjhk(x)
         self.addbv(x)
         self.addbvt(x)
+        self.addgriz(x)
+        self.addgaia(x)
         self.addplx(x)
         self.addcoords(x)
         self.addmag(x)
@@ -272,15 +304,54 @@ class PipelineGrid(Pipeline):
         'iso_logg':'logg',
         'iso_rho': 'rho',
         'iso_teff':'teff',
+        'iso_teffsec':'teffsec',
+        'iso_radsec':'radsec',
+        'iso_masssec':'masssec',
+        'iso_rhosec':'rhosec',
+        'iso_loggsec':'loggsec',
     }
     def run(self):
         self.print_constraints()
 
-        model = ebf.read(os.path.join(DATADIR,'mesa.ebf'))
+#        model = ebf.read(os.path.join(DATADIR,'mesa.ebf'))
+        fn = os.path.join(DATADIR,'mesa.h5')
+        file = h5py.File(fn,'r+', driver='core', backing_store=False)
+        model = {'age':np.array(file['age']),\
+        'mass':np.array(file['mass']),\
+        'feh':np.array(file['feh']),\
+        'teff':np.array(file['teff']),\
+        'logg':np.array(file['logg']),\
+        'rad':np.array(file['rad']),\
+        'lum':np.array(file['rad']),\
+        'rho':np.array(file['rho']),\
+        'dage':np.array(file['dage']),\
+        'dmass':np.array(file['dmass']),\
+        'dfeh':np.array(file['dfeh']),\
+        'eep':np.array(file['eep']),\
+        'bmag':np.array(file['bmag']),\
+        'vmag':np.array(file['vmag']),\
+        'btmag':np.array(file['btmag']),\
+        'vtmag':np.array(file['vtmag']),\
+        'gmag':np.array(file['gmag']),\
+        'rmag':np.array(file['rmag']),\
+        'imag':np.array(file['imag']),\
+        'zmag':np.array(file['zmag']),\
+        'jmag':np.array(file['jmag']),\
+        'hmag':np.array(file['hmag']),\
+        'kmag':np.array(file['kmag']),\
+        'd51mag':np.array(file['d51mag']),\
+        'gamag':np.array(file['gamag']),\
+        'fdnu':np.array(file['fdnu']),\
+        'avs':np.zeros(len(np.array(file['gamag']))),\
+        'dis':np.zeros(len(np.array(file['gamag'])))}
+        
+        #ebf.read(os.path.join(DATADIR,'mesa.ebf'))
         # prelims to manipulate some model variables (to be automated soon ...)
+        #pdb.set_trace()
         model['rho'] = np.log10(model['rho'])
+        model['lum'] = model['rad']**2*(model['teff']/5777.)**4
         # next line turns off Dnu scaling relation corrections
-        model['fdnu'][:]=1.
+        # model['fdnu'][:]=1.
         model['avs']=np.zeros(len(model['teff']))
         model['dis']=np.zeros(len(model['teff']))
 
@@ -298,15 +369,18 @@ class PipelineGrid(Pipeline):
         x = classify_grid.obsdata()
         self.addcoords(x)
         self.addspec(x)
+        self.addlum(x)
         self.addjhk(x)
         self.addgriz(x)
+        self.addgaia(x)
         self.addbv(x)
         self.addbvt(x)
         self.addseismo(x)
         self.addplx(x)
+        self.adddmag(x)
         self.paras = classify_grid.classify(
             input=x, model=model, dustmodel=dustmodel,ext=ext, 
-            plot=self.plot, useav=0
+            plot=self.plot, useav=0, band=self.const['band']
         )
 
 def _csv_reader(f):
@@ -324,11 +398,11 @@ def scrape_csv(path):
 
     for i, f in enumerate(fL):
         if i%100==0:
-            print i
+            print(i)
         try:
             df.append(_csv_reader(f))
         except ValueError:
-            print "{} failed".format(f)
+            print("{} failed".format(f))
 
 
     df = pd.DataFrame(df)

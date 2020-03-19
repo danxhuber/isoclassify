@@ -1,13 +1,13 @@
 import copy
-import time
+import time,pdb
 
 import ephem
 import pandas as pd
 import numpy as np
 from astropy.io import ascii
 
-from pdf import *  # part of isoclassify package (to do make explicit import) 
-from priors import * # part of isoclassify package (to do make explicit import) 
+from .pdf import *  # part of isoclassify package (to do make explicit import) 
+from .priors import * # part of isoclassify package (to do make explicit import) 
 from .plot import * # part of isoclassify package (to do make explicit import) 
 
 class obsdata():
@@ -21,6 +21,9 @@ class obsdata():
         self.logge = -99.0
         self.feh = -99.0
         self.fehe = -99.0
+
+        self.lum = -99.0
+        self.lume = -99.0
         
         self.bmag = -99.0
         self.bmage = -99.0
@@ -31,6 +34,9 @@ class obsdata():
         self.btmage = -99.0
         self.vtmag = -99.0
         self.vtmage = -99.0
+        
+        self.dmag = -99.0
+        self.dmage = -99.0
 
         self.gmag = -99.0
         self.gmage = -99.0
@@ -59,6 +65,10 @@ class obsdata():
         self.logge = sigma[1]
         self.feh = value[2]
         self.fehe = sigma[2]
+
+    def addlum(self,value,sigma):
+        self.lum = value[0]
+        self.lume = sigma[0]
                
     def addbv(self,value,sigma):
         self.bmag = value[0]
@@ -90,9 +100,21 @@ class obsdata():
         self.kmag = value[2]
         self.kmage = sigma[2]
         
+    def addgaia(self,value,sigma):
+        self.gamag = value[0]
+        self.gamage = sigma[0]
+        self.bpmag = value[1]
+        self.bpmage = sigma[1]
+        self.rpmag = value[2]
+        self.rpmage = sigma[2]
+        
     def addplx(self,value,sigma):
         self.plx = value
         self.plxe = sigma
+        
+    def adddmag(self,value,sigma):
+        self.dmag = value
+        self.dmage = sigma
         
     def addseismo(self,value,sigma):
         self.numax = value[0]
@@ -157,6 +179,32 @@ class resdata():
         self.dispx = 0.0
         self.dispy = 0.0
 
+        self.teffsec = 0.0
+        self.teffsecep = 0.0
+        self.teffsecem = 0.0
+        self.teffsecpx = 0.0
+        self.teffsecpy = 0.0        
+        self.radsec = 0.0
+        self.radsecep = 0.0
+        self.radsecem = 0.0
+        self.radsecpx = 0.0
+        self.radsecpy = 0.0    
+        self.loggsec = 0.0
+        self.loggsecep = 0.0
+        self.loggsecem = 0.0
+        self.loggsecpx = 0.0
+        self.loggsecpy = 0.0    
+        self.rhosec = 0.0
+        self.rhosecep = 0.0
+        self.rhosecem = 0.0
+        self.rhosecpx = 0.0
+        self.rhosecpy = 0.0    
+        self.masssec = 0.0
+        self.masssecep = 0.0
+        self.masssecem = 0.0
+        self.masssecpx = 0.0
+        self.masssecpy = 0.0    
+        
 class extinction():
     def __init__(self):
         self.ab = 1.3454449
@@ -177,7 +225,7 @@ class extinction():
         self.aga=1.2348743
 
 
-def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
+def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band=''):
     """
     Run grid based classifier
 
@@ -220,38 +268,20 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     jhcole = np.sqrt(input.jmage**2 + input.hmage**2)
     hkcole = np.sqrt(input.hmage**2 + input.kmage**2)
 
-    # determine apparent mag to use for distance estimation. K>J>g>Vt>V
+    # apparent mag to use for distance estimation. set by "band" input   
     map = -99.0
-    if (input.vmag > -99.0):
-        map = input.vmag
-        mape = input.vmage
-        band = 'v'
-        model_mabs = model['vmag']
-
-    if (input.vtmag > -99.0):
-        map = input.vtmag
-        mape = input.vtmage
-        model_mabs = model['vtmag']
-        band = 'vt'
-
-    if (input.gmag > -99.0):
-        map = input.gmag
-        mape = input.gmage
-        model_mabs = model['gmag']   
-        band = 'g'
-	
-    if (input.jmag > -99.0):
-        map = input.jmag
-        mape = input.jmage
-        model_mabs = model['jmag']
-        band = 'j'
-
-    if (input.kmag > -99.0):
-        map = input.kmag
-        mape = input.kmage
-        model_mabs = model['kmag']
-        band = 'k'
-        
+    if (getattr(input,band) > -99.):
+        map = getattr(input,band)
+        mape = getattr(input,band+'e')
+        model_mabs = model[band]
+        # correct for companion
+        if (input.dmag != -99.):
+            dx=-0.4*input.dmag
+            dxe=-0.4*input.dmage
+            cor=2.5*np.log10(1.+10**dx)
+            map = map+cor
+            mape = np.sqrt( mape**2 + (dxe*2.5*10**dx/(1.+10**dx))**2)
+    
     # absolute magnitude
     if (input.plx > -99.0):
         mabs = -5.0 * np.log10(1.0 / input.plx) + map + 5.0
@@ -263,6 +293,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         mabs = -99.0
         mabse = -99.0
 
+
     # pre-select model grid; first only using reddening-independent quantities
     sig = 4.0
     um = np.arange(0,len(model['teff']),1)
@@ -271,7 +302,13 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         ut=np.where((model['teff'] > input.teff-sig*input.teffe) & \
         (model['teff'] < input.teff+sig*input.teffe))[0]
         um=np.intersect1d(um,ut)
-        print 'teff',len(um)
+        print('teff',len(um))
+        
+    if (input.lum > -99.0):
+        ut=np.where((model['lum'] > input.lum-sig*input.lume) & \
+        (model['lum'] < input.lum+sig*input.lume))[0]
+        um=np.intersect1d(um,ut)
+        print('lum',len(um))
 
     if (input.dnu > 0.0):
         model_dnu = dnusun*model['fdnu']*np.sqrt(10**model['rho'])
@@ -281,7 +318,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        print 'dnu', len(um)
+        print('dnu', len(um))
 
     if (input.numax > 0.0):
         model_numax = (numaxsun 
@@ -293,7 +330,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        print 'numax', len(um)
+        print('numax', len(um))
         
     if (input.logg > -99.0):
         ut = np.where(
@@ -310,9 +347,9 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        print 'feh', len(um)
+        print('feh', len(um))
                
-    print 'number of models used within non-phot obsconstraints:', len(um)
+    print('number of models used within non-phot obsconstraints:', len(um))
 
     # bail if there are not enough good models
     if (len(um) < 10):
@@ -339,25 +376,12 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
             )
 
         # photometry to use for distance
-        if (input.vmag > -99.0):
-            mod_mabs = mod['vmag']
-
-        if (input.vtmag > -99.0):
-            mod_mabs = mod['vtmag']
-
-        if (input.gmag > -99.0):
-            mod_mabs = mod['gmag']
-
-        if (input.jmag > -99.0):
-            mod_mabs = mod['jmag']
-
-        if (input.kmag > -99.0):
-            mod_mabs = mod['kmag']
-
+        mod_mabs = mod[band]
+        
         um = np.arange(0,len(mod['teff']),1)
 
         mod['dis'] = 10**((map - mod_mabs + 5.0)/5.0)
-        print 'number of models incl reddening:',len(um)
+        print('number of models incl reddening:',len(um))
     else:
         mod = model
 
@@ -370,7 +394,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-
+        
     if (input.teff == -99.0):
         if ((input.bmag > -99.0) & (input.vmag > -99.0)):
             ut=np.where(
@@ -424,8 +448,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
-    print 'number of models after phot constraints:',len(um)
-    print '----'
+    print('number of models after phot constraints:',len(um))
+    print('----')
 
     # bail if there are not enough good models
     if (len(um) < 10):
@@ -480,6 +504,11 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
     else:
         lh_teff = np.ones(len(um))
 
+    if (input.lum > -99):
+        lh_lum = gaussian(input.lum, mod['lum'][um], input.lume)
+    else:
+        lh_lum = np.ones(len(um))
+
     if (input.logg > -99.0):
         lh_logg = gaussian(input.logg, mod['logg'][um], input.logge)
     else:
@@ -518,7 +547,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
         lh_numax = np.ones(len(um))
 
     tlh = (lh_gr*lh_ri*lh_iz*lh_jh*lh_hk*lh_bv*lh_bvt*lh_teff*lh_logg*lh_feh
-           *lh_mabs*lh_dnu*lh_numax)
+           *lh_mabs*lh_dnu*lh_numax*lh_lum)
+        
         
     # metallicity prior (only if no FeH input is given)
     if (input.feh > -99.0):
@@ -608,7 +638,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
                 err1 = 0.0
                 err2 = 0.0
 
-        print names[j], res, err1, err2
+        print(names[j], res, err1, err2)
         setattr(result, names[j], res)
         setattr(result, names[j]+'ep', err1)
         setattr(result, names[j]+'em', err2)
@@ -620,6 +650,81 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0):
             plotposterior(x, y, res, err1, err2, names, j, ix, iy)
             ix += 2
             iy += 2
+    
+
+    # calculate posteriors for a secondary with a given delta_mag, assuming it has the same 
+    # distance, age, and metallicity. to do this we'll interpolate the physical properties 
+    # of the secondary given a delta_mag, and assign it the same posterior probabilities 
+    # same procedure as used in Kraus+ 16
+    if (input.dmag > -99.):
+        print(' ')
+        print('calculating properties for secondary ...')
+       
+        delta_k=input.dmag
+        delta_k_err=input.dmage
+        print('using dmag=',delta_k,'+/-',delta_k_err,' in ',band)
+        
+        # interpolate across constant age and metallicity
+        feh_un=np.unique(mod['feh'][um])
+        age_un=np.unique(mod['age'][um])
+    
+        #adding in the contrast error without sampling is tricky, because that uncertainty 
+        # is not present in the primary posterior; instead, calculate the secondary 
+        # posteriors 3 times for +/- contrast errors, and then add those in quadrature 
+        # *explicitly assumes that the contrast errors are gaussian*
+        mds=[delta_k+delta_k_err,delta_k,delta_k-delta_k_err]
+    
+        # the new model quantities for the secondary
+        mod_sec=np.zeros((6,3,len(prob)))
+    
+        # insanely inefficient triple loop follows
+        for s in range(0,len(mds)):
+            for r in range(0,len(feh_un)):
+                for k in range (0,len(age_un)):
+                    # NB the next line uses model instead of mod, since the interpolation needs 
+                    # the full model grid rather than the pre-selected models returned by the 
+                    # reddening routine (which excludes secondary solutions). This may screw 
+                    # things up when trying to constrain reddening (i.e. dust="none")
+                    ux=np.where((model['feh'] == feh_un[r]) & (model['age'] == age_un[k]))[0]
+                    ux2=np.where((mod['feh'][um] == feh_un[r]) & (mod['age'][um] == age_un[k]))[0]
+                    sr=np.argsort(model[band][ux])
+                    if ((len(ux) == 0) | (len(ux2) == 0)):
+                        continue
+                    mod_sec[0,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['teff'][ux[sr]])
+                    mod_sec[1,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['logg'][ux[sr]])
+                    mod_sec[2,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['rad'][ux[sr]])
+                    mod_sec[3,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['mass'][ux[sr]])
+                    mod_sec[4,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['rho'][ux[sr]])
+    
+        # now get PDFs across all delta mags, add errors in quadrature    
+        names = ['teff', 'logg', 'rad', 'mass', 'rho']
+        steps=[0.001, 0.01, 0.01, 0.01, 0.01]
+        fixes=[0, 1, 0, 0, 1]
+
+        ix = 1
+        iy = 2
+        npar = len(names)
+        for j in range(0,5):
+            x, y, res_1, err1_1, err2_1 = getpdf(mod_sec[j,0,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
+            xo, yo, res_2, err1_2, err2_2 = getpdf(mod_sec[j,1,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
+            x, y, res_3, err1_3, err2_3 = getpdf(mod_sec[j,2,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
+        
+            finerr1=np.sqrt(err1_2**2 + (np.abs(res_2-res_1))**2)
+            finerr2=np.sqrt(err2_2**2 + (np.abs(res_2-res_3))**2)
+
+            print(names[j], res_2, finerr1, finerr2)
+            setattr(result, names[j]+'sec', res_2)
+            setattr(result, names[j]+'sec'+'ep', finerr1)
+            setattr(result, names[j]+'sec'+'em', finerr2)
+            setattr(result, names[j]+'sec'+'px', x)
+            setattr(result, names[j]+'sec'+'py', y)
+        
+            # Plot individual posteriors
+            if plot:
+                plotposterior_sec(xo,yo, res_2, finerr1, finerr2, names, j, ix, iy)
+                ix += 2
+                iy += 2
+       
     
     # Plot HR diagrams
     if plot:
@@ -696,6 +801,8 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
         ebvs = np.interp(x=dis, xp=xp, fp = fp)
         ext_band = extfactors['a'+bd]*ebvs	
         dis=10**((map-ext_band-model_mabs[um]+5)/5.)
+        
+    
 
     # if no models have been pre-selected (i.e. input is
     # photometry+parallax only), redden all models
@@ -710,7 +817,8 @@ def reddening_map(model, model_mabs, map, dustmodel, um, input, extfactors,
 
         model3['dis'] = dis
         model3['avs'] = extfactors['av']*ebvs	
-	 
+        #pdb.set_trace() 
+	    
     # if models have been pre-selected, extract and only redden those
     else:
         model2 = dict((k, model[k][um]) for k in model.keys())
