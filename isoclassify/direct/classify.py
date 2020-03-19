@@ -158,7 +158,6 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         dsamp = np.random.choice(ds, p=dis2, size=nsample)
         
         # interpolate dustmodel dataframe to determine values of reddening.
-        redMapFracErr = 0.22092203269207672 # This value contains fractional random errors in the reddening map for the Kepler field by comparisons between bayestar15 and bayestar17 maps
         if (isinstance(dustmodel,pd.DataFrame) == False):
             ebvs = np.zeros(len(dsamp))
             avs = ebvs
@@ -168,7 +167,6 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             )
             fp = np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:])))
             ebvs=np.interp(x=dsamp, xp=xp, fp=fp)
-            ebvs = ebvs + np.random.randn(len(ebvs))*np.median(ebvs)*redMapFracErr # Includes errors in reddening map itself
             avs = extfactors['av']*ebvs
         
 
