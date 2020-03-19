@@ -7,10 +7,13 @@ import numpy as np
 from matplotlib import pylab as plt
 import pandas as pd
 import ebf
+import astropy.units as units
+from astropy.coordinates import SkyCoord
+from dustmaps.bayestar import BayestarWebQuery
+import mwdust
 
 from isoclassify.direct import classify as classify_direct
 from isoclassify.grid import classify as classify_grid
-from isoclassify.extinction import *
 from isoclassify import DATADIR
 
 CONSTRAINTS = [
@@ -37,6 +40,34 @@ def run(**kw):
         pipe.savefig()
 
     pipe.to_csv()
+
+def query_dustmodel_coords(ra,dec):
+    reddenMap = BayestarWebQuery(version='bayestar2017')
+    sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='icrs')
+    reddenContainer = reddenMap(sightLines,mode='best')
+    del reddenMap # To clear reddenMap from memory
+    distanceSamples = np.array([0.06309573,0.07943284,0.1,0.12589255,0.15848933,0.19952627,0.25118864,0.31622776,0.3981072,0.50118726,0.6309574,0.7943282 ,1.,1.2589258,1.5848933,1.9952621,2.511887,3.1622777,3.981073,5.011873,6.3095727,7.943284,10.,12.589258,15.848933,19.952621,25.11887,31.622776,39.81073,50.11873,63.095726])*1000. # In pc, from bayestar2017 map distance samples
+    
+    dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
+
+    for index in xrange(len(reddenContainer)):
+        dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
+        
+    return dustModelDF
+    
+def query_dustmodel_coords_allsky(ra,dec):
+    reddenMap = mwdust.Combined15()
+    sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='galactic')
+    distanceSamples = np.array([0.06309573,0.07943284,0.1,0.12589255,0.15848933,0.19952627,0.25118864,0.31622776,0.3981072,0.50118726,0.6309574,0.7943282 ,1.,1.2589258,1.5848933,1.9952621,2.511887,3.1622777,3.981073,5.011873,6.3095727,7.943284,10.,12.589258,15.848933,19.952621,25.11887,31.622776,39.81073,50.11873,63.095726])*1000. # In pc, from bayestar2017 map distance samples
+    reddenContainer=reddenMap(sightLines.l.value,sightLines.b.value,distanceSamples/1000.)
+    del reddenMap # To clear reddenMap from memory
+    
+    dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
+    
+    for index in xrange(len(reddenContainer)):
+        dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
+
+    return dustModelDF
 
 class Pipeline(object):
     def __init__(self, **kw):
@@ -303,3 +334,63 @@ def scrape_csv(path):
     df = pd.DataFrame(df)
     df = df.reset_index()
     return df
+ 
+# R_lambda values to convert E(B-V) given by dustmaps to extinction in
+# a given passband.  The two main caveats with this are: - strictly
+# speaking only cardelli is consistent with the BC tables used in the
+# MIST grid, but using wrong R_lambda's for the newer Green et
+# al. dustmaps is (probably) worse.  - some values were interpolated
+# to passbands that aren't included in the Schlafly/Green tables.
+
+def extinction(law):
+    if (law == 'cardelli'):
+        out = {
+            "ab":4.1708789, 
+            "av":3.1071930, 
+            "abt":4.3358221, 
+            "avt":3.2867038, 
+            "ag":3.8281101, 
+            "ar":2.7386468, 
+            "ai":2.1109662, 
+            "az":1.4975613, 
+            "aj":0.89326176, 
+            "ah":0.56273418, 
+            "ak":0.35666104, 
+            "aga":2.4623915
+        }
+        
+    if (law == 'schlafly11'):
+        out = {
+            "ab":3.626, 
+            "av":2.742, 
+            "abt":4.5309214, 
+            "avt":3.1026801, 
+            "ag":3.303, 
+            "ar":2.285, 
+            "ai":1.698, 
+            "az":1.263, 
+            "aj":0.77510388, 
+            "ah":0.50818384, 
+            "ak":0.33957048, 
+            "aga":1.9139634
+        }
+
+    if (law == 'schlafly16'):
+        # see http://argonaut.skymaps.info/usage under "Gray Component". this is a lower limit.
+        grayoffset=0.063
+        out = {
+            "ab":3.6060565+grayoffset, 
+            "av":2.9197679+grayoffset, 
+            "abt":3.7204173+grayoffset, 
+            "avt":3.0353634+grayoffset, 
+            "ag":3.384+grayoffset, 
+            "ar":2.483+grayoffset, 
+            "ai":1.838+grayoffset, 
+            "az":1.414+grayoffset, 
+            "aj":0.650+grayoffset, 
+            "ah":0.327+grayoffset, 
+            "ak":0.161+grayoffset, 
+            "aga":2.2203186+grayoffset
+        }
+    return out
+
