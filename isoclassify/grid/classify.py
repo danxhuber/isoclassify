@@ -331,6 +331,16 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             (-5.0 / (input.plx * np.log(10)))**2 * input.plxe**2 
             + redmape**2 + bcerr**2
         )
+
+        # Also compute extra error term for M-dwarfs with K band mags only:
+	if (mabs > 4.0) and (input.kmag > -99.0):
+	    print("M-dwarf with K band magnitude detected!")
+	    mabseex = compute_extra_MK_error(mabs)
+
+            print("M_K from photometry: ",mabse)
+            print("M_K error from best-fit polynomial: ",mabseex)
+            mabse = np.sqrt(mabse**2 + mabseex**2)
+            print("After adding in quadrature, using M_K error: ",mabse)
     else:
         mabs = -99.0
         mabse = -99.0
@@ -784,13 +794,14 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         lh_feh = np.ones(len(um))
 
     if (input.plx > -99.0):
-        lh_mabs = np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./mod['dis'][um])**2)
+        # Compute most likely value of absolute magnitude:
+        mabsIndex = np.argmax(np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./mod['dis'][um])**2))
 
-        #if (input.plxe/input.plx < 0.1):
-        #    lh_mabs = np.exp( -(mabs-mod_mabs[um])**2. / (2.*mabse**2.))
-        #else:
-        #    dv=mod_mabs[um]-mabs
-        #    lh_mabs = 10**(0.2*dv) * np.exp(-((10**(0.2*dv)-1.)**2)/(2.*(input.plxe/input.plx)**2))
+        # Only use downselected models based on input parameters:
+	downSelMagArr = mod_mabs[um]
+
+        # Compute the likelihood of the maximum magnitude given computed errors:
+	lh_mabs = gaussian(downSelMagArr[mabsIndex],mod_mabs[um],mabse) 
     else:
         lh_mabs = np.ones(len(um))
 
@@ -1110,6 +1121,19 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
             model3[key] = model2[key]
 
     return model3
+
+########################################## M-dwarf error computation:
+def compute_extra_MK_error(abskmag):
+    massPoly = np.array([-1.218087354981032275e-04,3.202749540513295540e-03,
+-2.649332720970200630e-02,5.491458806424324990e-02,6.102330369026183476e-02,
+6.122397810371335014e-01])
+
+    massPolyDeriv = np.array([-6.090436774905161376e-04,1.281099816205318216e-02,
+-7.947998162910602238e-02,1.098291761284864998e-01,6.102330369026183476e-02])
+
+    kmagExtraErr = abs(0.021*np.polyval(massPoly,abskmag)/np.polyval(massPolyDeriv,abskmag))
+
+    return kmagExtraErr
 
 
 ######################################### misc stuff
