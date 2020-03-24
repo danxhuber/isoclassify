@@ -384,8 +384,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         
     if (input.feh > -99.0):
         ut = np.where(
-            (model['feh'] > input.feh - sig*input.fehe) 
-            & (model['feh'] < input.feh + sig*input.fehe)
+            (model['feh_act'] > input.feh - sig*input.fehe) 
+            & (model['feh_act'] < input.feh + sig*input.fehe)
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
@@ -778,7 +778,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         lh_logg = np.ones(len(um))
 
     if (input.feh > -99.0):
-        lh_feh = gaussian(input.feh, mod['feh'][um], input.fehe)
+        lh_feh = gaussian(input.feh, mod['feh_act'][um], input.fehe)
 
     else:
         lh_feh = np.ones(len(um))
@@ -818,7 +818,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     if (input.feh > -99.0):
         fprior = np.ones(len(um))
     else:
-        fprior = fehprior(mod['feh'][um])
+        fprior = fehprior(mod['feh_act'][um])
     
     # distance prior
     if (input.plx > -99.0):
@@ -835,13 +835,13 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     prob = fprior*dprior*tprior*tlh
     prob = prob/np.sum(prob)
     if (isinstance(dustmodel,pd.DataFrame) == False):
-        names = ['teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age']
+        names = ['teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age']
         steps = [0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
         fixes = [0, 1, 1, 0, 0, 1, 1, 0, 1]
         
         if (redmap > -99.0):
             names = [
-                'teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age',
+                'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age',
                 'avs'
             ]
             steps = [0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
@@ -849,7 +849,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.plx == -99.0) & (redmap > -99)):
             names=[
-                'teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age', 
+                'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age', 
                 'avs', 'dis'
             ]
             steps=[0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
@@ -870,7 +870,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         #pdb.set_trace()
 
         names = [
-            'teff', 'logg', 'feh', 'rad', 'mass', 'rho', 'lum', 'age', 'avs',
+            'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age', 'avs',
            'dis'
         ]
         steps=[0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, avstep, 0.01]
@@ -929,7 +929,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         print('using dmag=',delta_k,'+/-',delta_k_err,' in ',band)
         
         # interpolate across constant age and metallicity
-        feh_un=np.unique(mod['feh'][um])
+        feh_un=np.unique(mod['feh_act'][um])
         age_un=np.unique(mod['age'][um])
     
         #adding in the contrast error without sampling is tricky, because that uncertainty 
@@ -949,8 +949,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
                     # the full model grid rather than the pre-selected models returned by the 
                     # reddening routine (which excludes secondary solutions). This may screw 
                     # things up when trying to constrain reddening (i.e. dust="none")
-                    ux=np.where((model['feh'] == feh_un[r]) & (model['age'] == age_un[k]))[0]
-                    ux2=np.where((mod['feh'][um] == feh_un[r]) & (mod['age'][um] == age_un[k]))[0]
+                    ux=np.where((model['feh_act'] == feh_un[r]) & (model['age'] == age_un[k]))[0]
+                    ux2=np.where((mod['feh_act'][um] == feh_un[r]) & (mod['age'][um] == age_un[k]))[0]
                     sr=np.argsort(model[band][ux])
                     if ((len(ux) == 0) | (len(ux2) == 0)):
                         continue
@@ -1004,7 +1004,7 @@ def reddening(model,um,avs,extfactors):
     #pdb.set_trace()
 
     keys = [
-        'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh', 'rad', 'mass', 
+        'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh_act', 'rad', 'mass', 
         'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag', 
         'bmag', 'vmag', 'btmag','vtmag', 'bpmag', 'gamag', 'rpmag',
 	'dis', 'kmag', 'avs', 'fdnu'
@@ -1028,7 +1028,7 @@ def reddening(model,um,avs,extfactors):
             av = extfactors['av']
             model3[cmag][ix] = model2[cmag] + avs[i]*extfactors[ac]/av
 
-        keys = 'teff logg feh rad mass rho age dfeh dmass dage fdnu'.split()
+        keys = 'teff logg feh_act rad mass rho age dfeh dmass dage fdnu'.split()
         for key in keys:
             model3[key][ix]=model2[key]
 
@@ -1089,7 +1089,7 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
         model2 = dict((k, model[k][um]) for k in model.keys())
         nmodels = len(model2['teff'])
         keys = [
-            'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh', 'rad', 'mass', 
+            'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh_act', 'rad', 'mass', 
             'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag', 
             'bmag', 'vmag', 'btmag','vtmag', 'bpmag', 'gamag', 'rpmag',
 	    'dis', 'kmag', 'avs', 'fdnu'
@@ -1105,7 +1105,7 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
 
         model3['dis']=dis
         model3['avs']=extfactors['av']*ebvs	
-        keys = 'teff logg feh rad mass rho age dfeh dmass dage fdnu'.split()
+        keys = 'teff logg feh_act rad mass rho age dfeh dmass dage fdnu'.split()
         for key in keys:
             model3[key] = model2[key]
 

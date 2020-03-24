@@ -297,7 +297,7 @@ class PipelineGrid(Pipeline):
         'iso_age':'age',
         'iso_avs':'avs',
         'iso_dis':'dis',
-        'iso_feh':'feh',
+        'iso_feh':'feh_act',
         'iso_mass':'mass',
         'iso_rad':'rad',
         'iso_lum':'lum',
