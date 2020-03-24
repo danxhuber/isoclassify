@@ -53,12 +53,12 @@ class obsdata():
         self.kmag = -99.0
         self.kmage = -99.0
 
-	self.gamag = -99.0
-	self.gamage = -99.0
-	self.bpmag = -99.0
-	self.bpmage = -99.0
-	self.rpmag = -99.0
-	self.rpmage = -99.0
+        self.gamag = -99.0
+        self.gamage = -99.0
+        self.bpmag = -99.0
+        self.bpmage = -99.0
+        self.rpmag = -99.0
+        self.rpmage = -99.0
         
         self.numax = -99.0
         self.numaxe = -99.0
@@ -475,21 +475,21 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.gmag > -99.0) & (input.imag > -99.0)):
+        if ((input.gmag > -99.0) & (input.imag > -99.0)):
             ut = np.where(
                 (mod['gmag'] - mod['imag'] > gicol-sig*gicole) 
                 & (mod['gmag'] - mod['imag'] < gicol+sig*gicole))
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.rmag > -99.0) & (input.zmag > -99.0)):
+        if ((input.rmag > -99.0) & (input.zmag > -99.0)):
             ut = np.where(
                 (mod['rmag'] - mod['zmag'] > rzcol-sig*rzcole) 
                 & (mod['rmag'] - mod['zmag'] < rzcol+sig*rzcole))
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.gmag > -99.0) & (input.zmag > -99.0)):
+        if ((input.gmag > -99.0) & (input.zmag > -99.0)):
             ut = np.where(
                 (mod['gmag'] - mod['zmag'] > gzcol-sig*gzcole) 
                 & (mod['gmag'] - mod['zmag'] < gzcol+sig*gzcole))
@@ -511,7 +511,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
-	if ((input.jmag > -99.0) & (input.kmag > -99.0)):
+        if ((input.jmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
                 (mod['jmag'] - mod['kmag'] > jkcol - sig*jkcole) 
                 & (mod['jmag'] - mod['kmag'] < jkcol + sig*jkcole)
@@ -519,7 +519,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.bpmag > -99.0) & (input.gamag > -99.0)):
+        if ((input.bpmag > -99.0) & (input.gamag > -99.0)):
             ut = np.where(
                 (mod['bpmag'] - mod['gamag'] > bpgacol - sig*bpgacole) 
                 & (mod['bpmag'] - mod['gamag'] < bpgacol + sig*bpgacole)
@@ -527,7 +527,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.gamag > -99.0) & (input.rpmag > -99.0)):
+        if ((input.gamag > -99.0) & (input.rpmag > -99.0)):
             ut = np.where(
                 (mod['gamag'] - mod['rpmag'] > garpcol - sig*garpcole) 
                 & (mod['gamag'] - mod['rpmag'] < garpcol + sig*garpcole)
@@ -535,7 +535,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
+        if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
             ut = np.where(
                 (mod['bpmag'] - mod['rpmag'] > bprpcol - sig*bprpcole) 
                 & (mod['bpmag'] - mod['rpmag'] < bprpcol + sig*bprpcole)
@@ -543,7 +543,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.vmag > -99.0) & (input.jmag > -99.0)):
+        if ((input.vmag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
                 (mod['vmag'] - mod['jmag'] > vjcol - sig*vjcole) 
                 & (mod['vmag'] - mod['jmag'] < vjcol + sig*vjcole)
@@ -551,7 +551,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.vtmag > -99.0) & (input.jmag > -99.0)):
+        if ((input.vtmag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
                 (mod['vtmag'] - mod['jmag'] > vtjcol - sig*vtjcole) 
                 & (mod['vtmag'] - mod['jmag'] < vtjcol + sig*vtjcole)
@@ -559,7 +559,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.gmag > -99.0) & (input.jmag > -99.0)):
+        if ((input.gmag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
                 (mod['gmag'] - mod['jmag'] > gjcol - sig*gjcole) 
                 & (mod['gmag'] - mod['jmag'] < gjcol + sig*gjcole)
@@ -567,7 +567,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.rmag > -99.0) & (input.jmag > -99.0)):
+        if ((input.rmag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
                 (mod['rmag'] - mod['jmag'] > rjcol - sig*rjcole) 
                 & (mod['rmag'] - mod['jmag'] < rjcol + sig*rjcole)
@@ -575,7 +575,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.vmag > -99.0) & (input.kmag > -99.0)):
+        if ((input.vmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
                 (mod['vmag'] - mod['kmag'] > vkcol - sig*vkcole) 
                 & (mod['vmag'] - mod['kmag'] < vkcol + sig*vkcole)
@@ -583,7 +583,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.vtmag > -99.0) & (input.kmag > -99.0)):
+        if ((input.vtmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
                 (mod['vtmag'] - mod['kmag'] > vtkcol - sig*vtkcole) 
                 & (mod['vtmag'] - mod['kmag'] < vtkcol + sig*vtkcole)
@@ -591,7 +591,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.gmag > -99.0) & (input.kmag > -99.0)):
+        if ((input.gmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
                 (mod['gmag'] - mod['kmag'] > gkcol - sig*gkcole) 
                 & (mod['gmag'] - mod['kmag'] < gkcol + sig*gkcole)
@@ -599,7 +599,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.rmag > -99.0) & (input.kmag > -99.0)):
+        if ((input.rmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
                 (mod['rmag'] - mod['kmag'] > rkcol - sig*rkcole) 
                 & (mod['rmag'] - mod['kmag'] < rkcol + sig*rkcole)
@@ -607,7 +607,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.gamag > -99.0) & (input.jmag > -99.0)):
+        if ((input.gamag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
                 (mod['gamag'] - mod['jmag'] > gajcol - sig*gajcole) 
                 & (mod['gamag'] - mod['jmag'] < gajcol + sig*gajcole)
@@ -615,7 +615,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
-	if ((input.gamag > -99.0) & (input.kmag > -99.0)):
+        if ((input.gamag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
                 (mod['gamag'] - mod['kmag'] > gakcol - sig*gakcole) 
                 & (mod['gamag'] - mod['kmag'] < gakcol + sig*gakcole)
@@ -810,8 +810,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         lh_numax = np.ones(len(um))
 
     tlh = (lh_gr*lh_ri*lh_iz*lh_gi*lh_rz*lh_gz*lh_jh*lh_hk*lh_jk*lh_bv*lh_bvt*lh_bpga*lh_garp*lh_bprp*
-	lh_vj*lh_vtj*lh_gj*lh_rj*lh_vk*lh_vtk*lh_gk*lh_rk*lh_gaj*lh_gak*
-	lh_teff*lh_logg*lh_feh*lh_mabs*lh_dnu*lh_numax*lh_lum)
+        lh_vj*lh_vtj*lh_gj*lh_rj*lh_vk*lh_vtk*lh_gk*lh_rk*lh_gaj*lh_gak*
+        lh_teff*lh_logg*lh_feh*lh_mabs*lh_dnu*lh_numax*lh_lum)
         
         
     # metallicity prior (only if no FeH input is given)

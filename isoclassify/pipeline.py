@@ -26,7 +26,7 @@ COORDS = ['ra','dec']
 
 def run(**kw):
     if kw['method']=='direct':
-        pipe = PipelineDirect(**kw)    
+        pipe = PipelineDirect(**kw)
     elif kw['method']=='grid':
         pipe = PipelineGrid(**kw) 
     else:
@@ -315,41 +315,43 @@ class PipelineGrid(Pipeline):
 
 #        model = ebf.read(os.path.join(DATADIR,'mesa.ebf'))
         fn = os.path.join(DATADIR,'mesa.h5')
-        file = h5py.File(fn,'r+', driver='core', backing_store=False)
-        model = {'age':np.array(file['age']),\
-        'mass':np.array(file['mass']),\
-        'feh':np.array(file['feh']),\
-        'teff':np.array(file['teff']),\
-        'logg':np.array(file['logg']),\
-        'rad':np.array(file['rad']),\
-        'lum':np.array(file['rad']),\
-        'rho':np.array(file['rho']),\
-        'dage':np.array(file['dage']),\
-        'dmass':np.array(file['dmass']),\
-        'dfeh':np.array(file['dfeh']),\
-        'eep':np.array(file['eep']),\
-        'bmag':np.array(file['bmag']),\
-        'vmag':np.array(file['vmag']),\
-        'btmag':np.array(file['btmag']),\
-        'vtmag':np.array(file['vtmag']),\
-        'gmag':np.array(file['gmag']),\
-        'rmag':np.array(file['rmag']),\
-        'imag':np.array(file['imag']),\
-        'zmag':np.array(file['zmag']),\
-        'jmag':np.array(file['jmag']),\
-        'hmag':np.array(file['hmag']),\
-        'kmag':np.array(file['kmag']),\
-        'd51mag':np.array(file['d51mag']),\
-        'gamag':np.array(file['gamag']),\
-        'fdnu':np.array(file['fdnu']),\
-        'avs':np.zeros(len(np.array(file['gamag']))),\
-        'dis':np.zeros(len(np.array(file['gamag'])))}
+        modfile = h5py.File(fn,'r+', driver='core', backing_store=False)
+        model = {'age':np.array(modfile['age']),\
+        'mass':np.array(modfile['mass']),\
+        'feh':np.array(modfile['feh']),\
+        'feh_act':np.array(modfile['feh_act']),\
+        'teff':np.array(modfile['teff']),\
+        'logg':np.array(modfile['logg']),\
+        'rad':np.array(modfile['rad']),\
+        'lum':np.array(modfile['rad']),\
+        'rho':np.array(modfile['rho']),\
+        'dage':np.array(modfile['dage']),\
+        'dmass':np.array(modfile['dmass']),\
+        'dfeh':np.array(modfile['dfeh']),\
+        'eep':np.array(modfile['eep']),\
+        'bmag':np.array(modfile['bmag']),\
+        'vmag':np.array(modfile['vmag']),\
+        'btmag':np.array(modfile['btmag']),\
+        'vtmag':np.array(modfile['vtmag']),\
+        'gmag':np.array(modfile['gmag']),\
+        'rmag':np.array(modfile['rmag']),\
+        'imag':np.array(modfile['imag']),\
+        'zmag':np.array(modfile['zmag']),\
+        'jmag':np.array(modfile['jmag']),\
+        'hmag':np.array(modfile['hmag']),\
+        'kmag':np.array(modfile['kmag']),\
+        'bpmag':np.array(modfile['bpmag']),\
+        'gamag':np.array(modfile['gamag']),\
+        'rpmag':np.array(modfile['rpmag']),\
+        'fdnu':np.array(modfile['fdnu']),\
+        'avs':np.zeros(len(np.array(modfile['gamag']))),\
+        'dis':np.zeros(len(np.array(modfile['gamag'])))}
         
         #ebf.read(os.path.join(DATADIR,'mesa.ebf'))
         # prelims to manipulate some model variables (to be automated soon ...)
         #pdb.set_trace()
         model['rho'] = np.log10(model['rho'])
-        model['lum'] = model['rad']**2*(model['teff']/5777.)**4
+        model['lum'] = model['rad']**2*(model['teff']/5772.)**4
         # next line turns off Dnu scaling relation corrections
         # model['fdnu'][:]=1.
         model['avs']=np.zeros(len(model['teff']))
@@ -419,52 +421,58 @@ def scrape_csv(path):
 def extinction(law):
     if (law == 'cardelli'):
         out = {
-            "ab":4.1708789, 
-            "av":3.1071930, 
-            "abt":4.3358221, 
-            "avt":3.2867038, 
-            "ag":3.8281101, 
-            "ar":2.7386468, 
-            "ai":2.1109662, 
-            "az":1.4975613, 
-            "aj":0.89326176, 
-            "ah":0.56273418, 
-            "ak":0.35666104, 
-            "aga":2.4623915
+            "abt":4.310572,
+            "ab":4.144700,
+            "ag":3.814809,
+            "abp":3.489064,
+            "avt":3.265694,
+            "av":3.100000,
+            "aga":2.789086,
+            "ar":2.544235,
+            "ai":1.778686,
+            "arp":1.731194,
+            "az":1.333100,
+            "aj":0.874200,
+            "ah":0.589000,
+            "ak":0.353400
         }
         
     if (law == 'schlafly11'):
         out = {
-            "ab":3.626, 
-            "av":2.742, 
-            "abt":4.5309214, 
-            "avt":3.1026801, 
-            "ag":3.303, 
-            "ar":2.285, 
-            "ai":1.698, 
-            "az":1.263, 
-            "aj":0.77510388, 
-            "ah":0.50818384, 
-            "ak":0.33957048, 
-            "aga":1.9139634
+            "abt":3.804412,
+            "ab":3.626000,
+            "ag":3.303000,
+            "abp":3.032628,
+            "avt":2.868737,
+            "av":2.742000,
+            "aga":2.488357,
+            "ar":2.285000,
+            "ai":1.698000,
+            "arp":1.659443,
+            "az":1.263000,
+            "aj":0.786000,
+            "ah":0.508000,
+            "ak":0.320000
         }
 
     if (law == 'schlafly16'):
         # see http://argonaut.skymaps.info/usage under "Gray Component". this is a lower limit.
         grayoffset=0.063
         out = {
-            "ab":3.6060565+grayoffset, 
-            "av":2.9197679+grayoffset, 
-            "abt":3.7204173+grayoffset, 
-            "avt":3.0353634+grayoffset, 
-            "ag":3.384+grayoffset, 
-            "ar":2.483+grayoffset, 
-            "ai":1.838+grayoffset, 
-            "az":1.414+grayoffset, 
-            "aj":0.650+grayoffset, 
-            "ah":0.327+grayoffset, 
-            "ak":0.161+grayoffset, 
-            "aga":2.2203186+grayoffset
+            "abt":3.862366+grayoffset,
+            "ab":3.734464+grayoffset,
+            "ag":3.479467+grayoffset,
+            "abp":3.226726+grayoffset,
+            "avt":3.052764+grayoffset,
+            "av":2.923314+grayoffset,
+            "aga":2.679286+grayoffset,
+            "ar":2.485822+grayoffset,
+            "ai":1.854215+grayoffset,
+            "arp":1.809670+grayoffset,
+            "az":1.326163+grayoffset,
+            "aj":0.650000+grayoffset,
+            "ah":0.327000+grayoffset,
+            "ak":0.161000+grayoffset
         }
     return out
 
