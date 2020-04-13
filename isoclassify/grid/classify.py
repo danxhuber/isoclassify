@@ -6,15 +6,15 @@ import pandas as pd
 import numpy as np
 from astropy.io import ascii
 
-from .pdf import *  # part of isoclassify package (to do make explicit import) 
-from .priors import * # part of isoclassify package (to do make explicit import) 
-from .plot import * # part of isoclassify package (to do make explicit import) 
+from .pdf import *  # part of isoclassify package (to do make explicit import)
+from .priors import * # part of isoclassify package (to do make explicit import)
+from .plot import * # part of isoclassify package (to do make explicit import)
 
 class obsdata():
     def __init__(self):
         self.plx = -99.0
         self.plxe = -99.0
-    
+
         self.teff = -99.0
         self.teffe = -99.0
         self.logg = -99.0
@@ -24,7 +24,7 @@ class obsdata():
 
         self.lum = -99.0
         self.lume = -99.0
-        
+
         self.bmag = -99.0
         self.bmage = -99.0
         self.vmag = -99.0
@@ -34,7 +34,7 @@ class obsdata():
         self.btmage = -99.0
         self.vtmag = -99.0
         self.vtmage = -99.0
-        
+
         self.dmag = -99.0
         self.dmage = -99.0
 
@@ -59,12 +59,12 @@ class obsdata():
         self.bpmage = -99.0
         self.rpmag = -99.0
         self.rpmage = -99.0
-        
+
         self.numax = -99.0
         self.numaxe = -99.0
         self.dnu = -99.0
         self.dnue = -99.0
-                   
+
     def addspec(self,value,sigma):
         self.teff = value[0]
         self.teffe = sigma[0]
@@ -76,7 +76,7 @@ class obsdata():
     def addlum(self,value,sigma):
         self.lum = value[0]
         self.lume = sigma[0]
-               
+
     def addbv(self,value,sigma):
         self.bmag = value[0]
         self.bmage = sigma[0]
@@ -88,7 +88,7 @@ class obsdata():
         self.btmage = sigma[0]
         self.vtmag = value[1]
         self.vtmage = sigma[1]
-        
+
     def addgriz(self,value,sigma):
         self.gmag = value[0]
         self.gmage = sigma[0]
@@ -98,7 +98,7 @@ class obsdata():
         self.image = sigma[2]
         self.zmag = value[3]
         self.zmage = sigma[3]
-        
+
     def addjhk(self,value,sigma):
         self.jmag = value[0]
         self.jmage = sigma[0]
@@ -106,7 +106,7 @@ class obsdata():
         self.hmage = sigma[1]
         self.kmag = value[2]
         self.kmage = sigma[2]
-        
+
     def addgaia(self,value,sigma):
         self.gamag = value[0]
         self.gamage = sigma[0]
@@ -114,21 +114,21 @@ class obsdata():
         self.bpmage = sigma[1]
         self.rpmag = value[2]
         self.rpmage = sigma[2]
-        
+
     def addplx(self,value,sigma):
         self.plx = value
         self.plxe = sigma
-        
+
     def adddmag(self,value,sigma):
         self.dmag = value
         self.dmage = sigma
-        
+
     def addseismo(self,value,sigma):
         self.numax = value[0]
         self.numaxe = sigma[0]
         self.dnu = value[1]
         self.dnue = sigma[1]
-	
+
     def addcoords(self,value1,value2):
         self.ra = value1
         self.dec = value2
@@ -190,28 +190,28 @@ class resdata():
         self.teffsecep = 0.0
         self.teffsecem = 0.0
         self.teffsecpx = 0.0
-        self.teffsecpy = 0.0        
+        self.teffsecpy = 0.0
         self.radsec = 0.0
         self.radsecep = 0.0
         self.radsecem = 0.0
         self.radsecpx = 0.0
-        self.radsecpy = 0.0    
+        self.radsecpy = 0.0
         self.loggsec = 0.0
         self.loggsecep = 0.0
         self.loggsecem = 0.0
         self.loggsecpx = 0.0
-        self.loggsecpy = 0.0    
+        self.loggsecpy = 0.0
         self.rhosec = 0.0
         self.rhosecep = 0.0
         self.rhosecem = 0.0
         self.rhosecpx = 0.0
-        self.rhosecpy = 0.0    
+        self.rhosecpy = 0.0
         self.masssec = 0.0
         self.masssecep = 0.0
         self.masssecem = 0.0
         self.masssecpx = 0.0
-        self.masssecpy = 0.0    
-        
+        self.masssecpy = 0.0
+
 class extinction():
     def __init__(self):
         self.ab = 1.3454449
@@ -255,7 +255,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
     ## extinction coefficients
     extfactors = ext
-    
+
     ## class containing output results
     result = resdata()
 
@@ -263,7 +263,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     bvcol = input.bmag - input.vmag
     bvtcol = input.btmag - input.vtmag
     grcol = input.gmag - input.rmag
-    ricol = input.rmag - input.imag 
+    ricol = input.rmag - input.imag
     izcol = input.imag - input.zmag
     gicol = input.gmag - input.imag
     rzcol = input.rmag - input.zmag
@@ -310,7 +310,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     gajcole = np.sqrt(input.gamage**2 + input.jmage**2)
     gakcole = np.sqrt(input.gamage**2 + input.kmage**2)
 
-    # apparent mag to use for distance estimation. set by "band" input   
+    # apparent mag to use for distance estimation. set by "band" input
     redmap = -99.0
     if (getattr(input,band) > -99.):
         redmap = getattr(input,band)
@@ -323,20 +323,18 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             cor=2.5*np.log10(1.+10**dx)
             redmap = redmap+cor
             redmape = np.sqrt( redmape**2 + (dxe*2.5*10**dx/(1.+10**dx))**2)
-    
+
     # absolute magnitude
     if (input.plx > -99.0):
         mabs = -5.0 * np.log10(1.0 / input.plx) + redmap + 5.0
         mabse = np.sqrt(
-            (-5.0 / (input.plx * np.log(10)))**2 * input.plxe**2 
-            + redmape**2 + bcerr**2
-        )
+            (-5.0 / (input.plx * np.log(10)))**2 * input.plxe**2
+            + redmape**2 + bcerr**2)
 
         # Also compute extra error term for M-dwarfs with K band mags only:
-	if (mabs > 4.0) and (input.kmag > -99.0):
-	    print("M-dwarf with K band magnitude detected!")
-	    mabseex = compute_extra_MK_error(mabs)
-
+        if (mabs > 4.0) and (input.kmag > -99.0):
+            print("M-dwarf with K band magnitude detected!")
+            mabseex = compute_extra_MK_error(mabs)
             print("M_K from photometry: ",mabse)
             print("M_K error from best-fit polynomial: ",mabseex)
             mabse = np.sqrt(mabse**2 + mabseex**2)
@@ -349,13 +347,13 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     # pre-select model grid; first only using reddening-independent quantities
     sig = 4.0
     um = np.arange(0,len(model['teff']),1)
-        
+
     if (input.teff > -99.0):
         ut=np.where((model['teff'] > input.teff-sig*input.teffe) & \
         (model['teff'] < input.teff+sig*input.teffe))[0]
         um=np.intersect1d(um,ut)
         print('teff',len(um))
-        
+
     if (input.lum > -99.0):
         ut=np.where((model['lum'] > input.lum-sig*input.lume) & \
         (model['lum'] < input.lum+sig*input.lume))[0]
@@ -365,7 +363,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     if (input.dnu > 0.0):
         model_dnu = dnusun*model['fdnu']*np.sqrt(10**model['rho'])
         ut = np.where(
-            (model_dnu > input.dnu - sig*input.dnue)  
+            (model_dnu > input.dnu - sig*input.dnue)
             & (model_dnu < input.dnu + sig*input.dnue)
         )
         ut = ut[0]
@@ -373,34 +371,34 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         print('dnu', len(um))
 
     if (input.numax > 0.0):
-        model_numax = (numaxsun 
+        model_numax = (numaxsun
                        * (10**model['logg']/gsun)
                        * (model['teff']/teffsun)**(-0.5))
         ut = np.where(
-            (model_numax > input.numax - sig*input.numaxe) 
+            (model_numax > input.numax - sig*input.numaxe)
             & (model_numax < input.numax + sig*input.numaxe)
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
         print('numax', len(um))
-        
+
     if (input.logg > -99.0):
         ut = np.where(
-            (model['logg'] > input.logg - sig*input.logge) 
+            (model['logg'] > input.logg - sig*input.logge)
             & (model['logg'] < input.logg + sig*input.logge)
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        
+
     if (input.feh > -99.0):
         ut = np.where(
-            (model['feh_act'] > input.feh - sig*input.fehe) 
+            (model['feh_act'] > input.feh - sig*input.fehe)
             & (model['feh_act'] < input.feh + sig*input.fehe)
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
         print('feh', len(um))
-               
+
     print('number of models used within non-phot obsconstraints:', len(um))
 
     # bail if there are not enough good models
@@ -414,11 +412,11 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         # and fit for it
         if (isinstance(dustmodel,pd.DataFrame) == False):
             avs = np.arange(-0.3,1.0,0.01)
-            
+
             # user-specified reddening
             #if (useav > -99.0):
             #    avs = np.zeros(1) + useav
-                
+
             mod = reddening(model, um, avs, extfactors)
 
         # otherwise, just redden each model according to the provided map
@@ -429,7 +427,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         # photometry to use for distance
         mod_mabs = mod[band]
-        
+
         um = np.arange(0,len(mod['teff']),1)
 
         mod['dis'] = 10**((redmap - mod_mabs + 5.0)/5.0)
@@ -441,37 +439,37 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     # only do this if no spec constraints are available
     if (mabs > -99.0):
         ut = np.where(
-            (mod_mabs > mabs - sig*mabse)  
+            (mod_mabs > mabs - sig*mabse)
             & (mod_mabs < mabs + sig*mabse)
         )
         ut = ut[0]
         um = np.intersect1d(um, ut)
-        
+
     if (input.teff == -99.0):
         if ((input.bmag > -99.0) & (input.vmag > -99.0)):
             ut=np.where(
-                (mod['bmag'] - mod['vmag'] > bvcol - sig*bvcole) 
+                (mod['bmag'] - mod['vmag'] > bvcol - sig*bvcole)
                 & (mod['bmag'] - mod['vmag'] < bvcol + sig*bvcole))
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
         if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
             ut=np.where(
-                (mod['btmag'] - mod['vtmag'] > bvtcol - sig*bvtcole) 
+                (mod['btmag'] - mod['vtmag'] > bvtcol - sig*bvtcole)
                 & (mod['btmag'] - mod['vtmag'] < bvtcol + sig*bvtcole))
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
         if ((input.gmag > -99.0) & (input.rmag > -99.0)):
             ut = np.where(
-                (mod['gmag'] - mod['rmag'] > grcol-sig*grcole) 
+                (mod['gmag'] - mod['rmag'] > grcol-sig*grcole)
                 & (mod['gmag'] - mod['rmag'] < grcol+sig*grcole))
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
         if ((input.rmag > -99.0) & (input.imag > -99.0)):
             ut = np.where(
-                (mod['rmag'] - mod['imag'] > ricol - sig*ricole) 
+                (mod['rmag'] - mod['imag'] > ricol - sig*ricole)
                 & (mod['rmag'] - mod['imag'] < ricol + sig*ricole)
             )
             ut = ut[0]
@@ -479,7 +477,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.imag > -99.0) & (input.zmag > -99.0)):
             ut = np.where(
-                (mod['imag'] - mod['zmag'] > izcol - sig*izcole) 
+                (mod['imag'] - mod['zmag'] > izcol - sig*izcole)
                 & (mod['imag'] - mod['zmag'] < izcol + sig*izcole)
             )
             ut = ut[0]
@@ -487,28 +485,28 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.gmag > -99.0) & (input.imag > -99.0)):
             ut = np.where(
-                (mod['gmag'] - mod['imag'] > gicol-sig*gicole) 
+                (mod['gmag'] - mod['imag'] > gicol-sig*gicole)
                 & (mod['gmag'] - mod['imag'] < gicol+sig*gicole))
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
         if ((input.rmag > -99.0) & (input.zmag > -99.0)):
             ut = np.where(
-                (mod['rmag'] - mod['zmag'] > rzcol-sig*rzcole) 
+                (mod['rmag'] - mod['zmag'] > rzcol-sig*rzcole)
                 & (mod['rmag'] - mod['zmag'] < rzcol+sig*rzcole))
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
         if ((input.gmag > -99.0) & (input.zmag > -99.0)):
             ut = np.where(
-                (mod['gmag'] - mod['zmag'] > gzcol-sig*gzcole) 
+                (mod['gmag'] - mod['zmag'] > gzcol-sig*gzcole)
                 & (mod['gmag'] - mod['zmag'] < gzcol+sig*gzcole))
             ut = ut[0]
             um = np.intersect1d(um, ut)
 
         if ((input.jmag > -99.0) & (input.hmag > -99.0)):
             ut = np.where(
-                (mod['jmag'] - mod['hmag'] > jhcol - sig*jhcole) 
+                (mod['jmag'] - mod['hmag'] > jhcol - sig*jhcole)
                 & (mod['jmag'] - mod['hmag'] < jhcol + sig*jhcole)
             )
             ut = ut[0]
@@ -516,14 +514,14 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.hmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
-                (mod['hmag'] - mod['kmag'] > hkcol - sig*hkcole) 
+                (mod['hmag'] - mod['kmag'] > hkcol - sig*hkcole)
                 & (mod['hmag'] - mod['kmag'] < hkcol + sig*hkcole))
             ut = ut[0]
             um = np.intersect1d(um,ut)
 
         if ((input.jmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
-                (mod['jmag'] - mod['kmag'] > jkcol - sig*jkcole) 
+                (mod['jmag'] - mod['kmag'] > jkcol - sig*jkcole)
                 & (mod['jmag'] - mod['kmag'] < jkcol + sig*jkcole)
             )
             ut = ut[0]
@@ -531,7 +529,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.bpmag > -99.0) & (input.gamag > -99.0)):
             ut = np.where(
-                (mod['bpmag'] - mod['gamag'] > bpgacol - sig*bpgacole) 
+                (mod['bpmag'] - mod['gamag'] > bpgacol - sig*bpgacole)
                 & (mod['bpmag'] - mod['gamag'] < bpgacol + sig*bpgacole)
             )
             ut = ut[0]
@@ -539,7 +537,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.gamag > -99.0) & (input.rpmag > -99.0)):
             ut = np.where(
-                (mod['gamag'] - mod['rpmag'] > garpcol - sig*garpcole) 
+                (mod['gamag'] - mod['rpmag'] > garpcol - sig*garpcole)
                 & (mod['gamag'] - mod['rpmag'] < garpcol + sig*garpcole)
             )
             ut = ut[0]
@@ -547,7 +545,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
             ut = np.where(
-                (mod['bpmag'] - mod['rpmag'] > bprpcol - sig*bprpcole) 
+                (mod['bpmag'] - mod['rpmag'] > bprpcol - sig*bprpcole)
                 & (mod['bpmag'] - mod['rpmag'] < bprpcol + sig*bprpcole)
             )
             ut = ut[0]
@@ -555,7 +553,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.vmag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
-                (mod['vmag'] - mod['jmag'] > vjcol - sig*vjcole) 
+                (mod['vmag'] - mod['jmag'] > vjcol - sig*vjcole)
                 & (mod['vmag'] - mod['jmag'] < vjcol + sig*vjcole)
             )
             ut = ut[0]
@@ -563,7 +561,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.vtmag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
-                (mod['vtmag'] - mod['jmag'] > vtjcol - sig*vtjcole) 
+                (mod['vtmag'] - mod['jmag'] > vtjcol - sig*vtjcole)
                 & (mod['vtmag'] - mod['jmag'] < vtjcol + sig*vtjcole)
             )
             ut = ut[0]
@@ -571,7 +569,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.gmag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
-                (mod['gmag'] - mod['jmag'] > gjcol - sig*gjcole) 
+                (mod['gmag'] - mod['jmag'] > gjcol - sig*gjcole)
                 & (mod['gmag'] - mod['jmag'] < gjcol + sig*gjcole)
             )
             ut = ut[0]
@@ -579,7 +577,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.rmag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
-                (mod['rmag'] - mod['jmag'] > rjcol - sig*rjcole) 
+                (mod['rmag'] - mod['jmag'] > rjcol - sig*rjcole)
                 & (mod['rmag'] - mod['jmag'] < rjcol + sig*rjcole)
             )
             ut = ut[0]
@@ -587,7 +585,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.vmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
-                (mod['vmag'] - mod['kmag'] > vkcol - sig*vkcole) 
+                (mod['vmag'] - mod['kmag'] > vkcol - sig*vkcole)
                 & (mod['vmag'] - mod['kmag'] < vkcol + sig*vkcole)
             )
             ut = ut[0]
@@ -595,7 +593,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.vtmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
-                (mod['vtmag'] - mod['kmag'] > vtkcol - sig*vtkcole) 
+                (mod['vtmag'] - mod['kmag'] > vtkcol - sig*vtkcole)
                 & (mod['vtmag'] - mod['kmag'] < vtkcol + sig*vtkcole)
             )
             ut = ut[0]
@@ -603,7 +601,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.gmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
-                (mod['gmag'] - mod['kmag'] > gkcol - sig*gkcole) 
+                (mod['gmag'] - mod['kmag'] > gkcol - sig*gkcole)
                 & (mod['gmag'] - mod['kmag'] < gkcol + sig*gkcole)
             )
             ut = ut[0]
@@ -611,7 +609,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.rmag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
-                (mod['rmag'] - mod['kmag'] > rkcol - sig*rkcole) 
+                (mod['rmag'] - mod['kmag'] > rkcol - sig*rkcole)
                 & (mod['rmag'] - mod['kmag'] < rkcol + sig*rkcole)
             )
             ut = ut[0]
@@ -619,7 +617,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.gamag > -99.0) & (input.jmag > -99.0)):
             ut = np.where(
-                (mod['gamag'] - mod['jmag'] > gajcol - sig*gajcole) 
+                (mod['gamag'] - mod['jmag'] > gajcol - sig*gajcole)
                 & (mod['gamag'] - mod['jmag'] < gajcol + sig*gajcole)
             )
             ut = ut[0]
@@ -627,7 +625,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.gamag > -99.0) & (input.kmag > -99.0)):
             ut = np.where(
-                (mod['gamag'] - mod['kmag'] > gakcol - sig*gakcole) 
+                (mod['gamag'] - mod['kmag'] > gakcol - sig*gakcole)
                 & (mod['gamag'] - mod['kmag'] < gakcol + sig*gakcole)
             )
             ut = ut[0]
@@ -655,8 +653,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         lh_ri = gaussian(ricol, mod['rmag'][um]-mod['imag'][um], ricole)
 
     else:
-        lh_ri = np.ones(len(um)) 
-        
+        lh_ri = np.ones(len(um))
+
     if ((input.imag > -99.0) & (input.zmag > -99.0)):
         lh_iz = gaussian(izcol, mod['imag'][um]-mod['zmag'][um], izcole)
     else:
@@ -679,7 +677,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
     else:
         lh_gz = np.ones(len(um))
-   
+
     if ((input.jmag > -99.0) & (input.hmag > -99.0)):
         lh_jh = gaussian(jhcol, mod['jmag'][um]-mod['hmag'][um], jhcole)
     else:
@@ -708,13 +706,13 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
         lh_bprp = gaussian(bprpcol, mod['bpmag'][um]-mod['rpmag'][um], bprpcole)
     else:
-        lh_bprp = np.ones(len(um)) 
+        lh_bprp = np.ones(len(um))
 
     if ((input.bmag > -99.0) & (input.vmag > -99.0)):
         lh_bv = gaussian(bvcol, mod['bmag'][um]-mod['vmag'][um], bvcole)
 
     else:
-        lh_bv = np.ones(len(um))  
+        lh_bv = np.ones(len(um))
 
     if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
         lh_bvt = gaussian(bvtcol, mod['btmag'][um]-mod['vtmag'][um], bvtcole)
@@ -725,7 +723,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     if ((input.vmag > -99.0) & (input.jmag > -99.0)):
         lh_vj = gaussian(vjcol, mod['vmag'][um]-mod['jmag'][um], vjcole)
     else:
-        lh_vj = np.ones(len(um))   
+        lh_vj = np.ones(len(um))
 
     if ((input.vtmag > -99.0) & (input.jmag > -99.0)):
         lh_vtj = gaussian(vtjcol, mod['vtmag'][um]-mod['jmag'][um], vtjcole)
@@ -765,12 +763,12 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     if ((input.gamag > -99.0) & (input.jmag > -99.0)):
         lh_gaj = gaussian(gajcol, mod['gamag'][um]-mod['jmag'][um], gajcole)
     else:
-        lh_gaj = np.ones(len(um)) 
+        lh_gaj = np.ones(len(um))
 
     if ((input.gamag > -99.0) & (input.kmag > -99.0)):
         lh_gak = gaussian(gakcol, mod['gamag'][um]-mod['kmag'][um], gakcole)
     else:
-        lh_gak = np.ones(len(um)) 
+        lh_gak = np.ones(len(um))
 
     if (input.teff > -99):
         lh_teff = gaussian(input.teff, mod['teff'][um], input.teffe)
@@ -798,10 +796,10 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         mabsIndex = np.argmax(np.exp( (-1./(2.*input.plxe**2))*(input.plx-1./mod['dis'][um])**2))
 
         # Only use downselected models based on input parameters:
-	downSelMagArr = mod_mabs[um]
+        downSelMagArr = mod_mabs[um]
 
         # Compute the likelihood of the maximum magnitude given computed errors:
-	lh_mabs = gaussian(downSelMagArr[mabsIndex],mod_mabs[um],mabse) 
+        lh_mabs = gaussian(downSelMagArr[mabsIndex],mod_mabs[um],mabse)
     else:
         lh_mabs = np.ones(len(um))
 
@@ -823,14 +821,14 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     tlh = (lh_gr*lh_ri*lh_iz*lh_gi*lh_rz*lh_gz*lh_jh*lh_hk*lh_jk*lh_bv*lh_bvt*lh_bpga*lh_garp*lh_bprp*
         lh_vj*lh_vtj*lh_gj*lh_rj*lh_vk*lh_vtk*lh_gk*lh_rk*lh_gaj*lh_gak*
         lh_teff*lh_logg*lh_feh*lh_mabs*lh_dnu*lh_numax*lh_lum)
-        
-        
+
+
     # metallicity prior (only if no FeH input is given)
     if (input.feh > -99.0):
         fprior = np.ones(len(um))
     else:
         fprior = fehprior(mod['feh_act'][um])
-    
+
     # distance prior
     if (input.plx > -99.0):
         lscale = 1350.
@@ -849,7 +847,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         names = ['teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age']
         steps = [0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
         fixes = [0, 1, 1, 0, 0, 1, 1, 0, 1]
-        
+
         if (redmap > -99.0):
             names = [
                 'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age',
@@ -860,17 +858,17 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
         if ((input.plx == -99.0) & (redmap > -99)):
             names=[
-                'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age', 
+                'teff', 'logg', 'feh_act', 'rad', 'mass', 'rho', 'lum', 'age',
                 'avs', 'dis'
             ]
             steps=[0.001, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
             fixes=[0, 1, 1, 0, 0, 1, 1, 0, 1, 0]
-            
+
         #if ((input.plx == -99.0) & (map > -99) & (useav > -99.0)):
         #    names=['teff','logg','feh','rad','mass','rho','lum','age','dis']
         #    steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
         #    fixes=[0,1,1,0,0,1,1,0,0]
-            
+
     else:
         #names=['teff','logg','feh','rad','mass','rho','lum','age']
         #steps=[0.001,0.01,0.01,0.01,0.01,0.01,0.01,0.01]
@@ -895,7 +893,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     ix = 1
     iy = 2
     npar = len(names)
-   
+
     for j in range(0,npar):
         if fnmatch.fnmatch(names[j],'*lum*'):
             lum=np.log10((mod['rad'][um]**2. * (mod['teff'][um]/5777.)**4.))
@@ -925,40 +923,40 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             plotposterior(x, y, res, err1, err2, names, j, ix, iy)
             ix += 2
             iy += 2
-    
 
-    # calculate posteriors for a secondary with a given delta_mag, assuming it has the same 
-    # distance, age, and metallicity. to do this we'll interpolate the physical properties 
-    # of the secondary given a delta_mag, and assign it the same posterior probabilities 
+
+    # calculate posteriors for a secondary with a given delta_mag, assuming it has the same
+    # distance, age, and metallicity. to do this we'll interpolate the physical properties
+    # of the secondary given a delta_mag, and assign it the same posterior probabilities
     # same procedure as used in Kraus+ 16
     if (input.dmag > -99.):
         print(' ')
         print('calculating properties for secondary ...')
-       
+
         delta_k=input.dmag
         delta_k_err=input.dmage
         print('using dmag=',delta_k,'+/-',delta_k_err,' in ',band)
-        
+
         # interpolate across constant age and metallicity
         feh_un=np.unique(mod['feh_act'][um])
         age_un=np.unique(mod['age'][um])
-    
-        #adding in the contrast error without sampling is tricky, because that uncertainty 
-        # is not present in the primary posterior; instead, calculate the secondary 
-        # posteriors 3 times for +/- contrast errors, and then add those in quadrature 
+
+        #adding in the contrast error without sampling is tricky, because that uncertainty
+        # is not present in the primary posterior; instead, calculate the secondary
+        # posteriors 3 times for +/- contrast errors, and then add those in quadrature
         # *explicitly assumes that the contrast errors are gaussian*
         mds=[delta_k+delta_k_err,delta_k,delta_k-delta_k_err]
-    
+
         # the new model quantities for the secondary
         mod_sec=np.zeros((6,3,len(prob)))
-    
+
         # insanely inefficient triple loop follows
         for s in range(0,len(mds)):
             for r in range(0,len(feh_un)):
                 for k in range (0,len(age_un)):
-                    # NB the next line uses model instead of mod, since the interpolation needs 
-                    # the full model grid rather than the pre-selected models returned by the 
-                    # reddening routine (which excludes secondary solutions). This may screw 
+                    # NB the next line uses model instead of mod, since the interpolation needs
+                    # the full model grid rather than the pre-selected models returned by the
+                    # reddening routine (which excludes secondary solutions). This may screw
                     # things up when trying to constrain reddening (i.e. dust="none")
                     ux=np.where((model['feh_act'] == feh_un[r]) & (model['age'] == age_un[k]))[0]
                     ux2=np.where((mod['feh_act'][um] == feh_un[r]) & (mod['age'][um] == age_un[k]))[0]
@@ -970,8 +968,8 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
                     mod_sec[2,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['rad'][ux[sr]])
                     mod_sec[3,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['mass'][ux[sr]])
                     mod_sec[4,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['rho'][ux[sr]])
-    
-        # now get PDFs across all delta mags, add errors in quadrature    
+
+        # now get PDFs across all delta mags, add errors in quadrature
         names = ['teff', 'logg', 'rad', 'mass', 'rho']
         steps=[0.001, 0.01, 0.01, 0.01, 0.01]
         fixes=[0, 1, 0, 0, 1]
@@ -983,7 +981,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             x, y, res_1, err1_1, err2_1 = getpdf(mod_sec[j,0,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
             xo, yo, res_2, err1_2, err2_2 = getpdf(mod_sec[j,1,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
             x, y, res_3, err1_3, err2_3 = getpdf(mod_sec[j,2,:], prob, name=names[j], step=steps[j], fixed=fixes[j],dustmodel=dustmodel)
-        
+
             finerr1=np.sqrt(err1_2**2 + (np.abs(res_2-res_1))**2)
             finerr2=np.sqrt(err2_2**2 + (np.abs(res_2-res_3))**2)
 
@@ -993,20 +991,20 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             setattr(result, names[j]+'sec'+'em', finerr2)
             setattr(result, names[j]+'sec'+'px', x)
             setattr(result, names[j]+'sec'+'py', y)
-        
+
             # Plot individual posteriors
             if plot:
                 plotposterior_sec(xo,yo, res_2, finerr1, finerr2, names, j, ix, iy)
                 ix += 2
                 iy += 2
-       
-    
+
+
     # Plot HR diagrams
     if plot:
         plothrd(model,input,mabs,mabse,ix,iy)
 
     return result
-            
+
 # add extinction as a model parameter
 def reddening(model,um,avs,extfactors):
 
@@ -1015,8 +1013,8 @@ def reddening(model,um,avs,extfactors):
     #pdb.set_trace()
 
     keys = [
-        'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh_act', 'rad', 'mass', 
-        'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag', 
+        'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh_act', 'rad', 'mass',
+        'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag',
         'bmag', 'vmag', 'btmag','vtmag', 'bpmag', 'gamag', 'rpmag',
 	'dis', 'kmag', 'avs', 'fdnu'
     ]
@@ -1050,14 +1048,14 @@ def reddening(model,um,avs,extfactors):
     return model3
 
 # redden model given a reddening map
-def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors, 
+def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
                   band):
 
     if (len(band) == 4):
         bd = band[0:1]
     else:
         bd = band[0:2]
-        
+
     equ = ephem.Equatorial(
         input.ra*np.pi/180.0, input.dec*np.pi/180.0, epoch=ephem.J2000
     )
@@ -1075,10 +1073,10 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
         )
         fp = np.concatenate(([0.0],np.array(dustmodel.iloc[0][2:])))
         ebvs = np.interp(x=dis, xp=xp, fp = fp)
-        ext_band = extfactors['a'+bd]*ebvs	
+        ext_band = extfactors['a'+bd]*ebvs
         dis=10**((redmap-ext_band-model_mabs[um]+5)/5.)
-        
-    
+
+
 
     # if no models have been pre-selected (i.e. input is
     # photometry+parallax only), redden all models
@@ -1092,20 +1090,20 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
             model3[cmag] = model[cmag] + extfactors[ac] * ebvs
 
         model3['dis'] = dis
-        model3['avs'] = extfactors['av']*ebvs	
-        #pdb.set_trace() 
-	    
+        model3['avs'] = extfactors['av']*ebvs
+        #pdb.set_trace()
+
     # if models have been pre-selected, extract and only redden those
     else:
         model2 = dict((k, model[k][um]) for k in model.keys())
         nmodels = len(model2['teff'])
         keys = [
-            'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh_act', 'rad', 'mass', 
-            'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag', 
+            'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh_act', 'rad', 'mass',
+            'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag',
             'bmag', 'vmag', 'btmag','vtmag', 'bpmag', 'gamag', 'rpmag',
 	    'dis', 'kmag', 'avs', 'fdnu'
         ]
-        
+
         dtype = [(key, float) for key in keys]
         model3 = np.zeros(nmodels,dtype=dtype)
         for c in 'b v g r i z j h k bt vt bp ga rp'.split():
@@ -1115,7 +1113,7 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
             model3[cmag] = model2[cmag] + extfactors[ac] * ebvs
 
         model3['dis']=dis
-        model3['avs']=extfactors['av']*ebvs	
+        model3['avs']=extfactors['av']*ebvs
         keys = 'teff logg feh_act rad mass rho age dfeh dmass dage fdnu'.split()
         for key in keys:
             model3[key] = model2[key]
@@ -1188,10 +1186,9 @@ def readinput(input):
     feh = input['col1'][13]
     fehe = input['col2'][13]
     out = (
-        ra, dec, bmag, bmage, vmag, vmage, gmag, gmage, rmag, rmage, 
-        imag, image, zmag, zmage, jmag, jmage, hmag, hmage, kmag, kmage, 
+        ra, dec, bmag, bmage, vmag, vmage, gmag, gmage, rmag, rmage,
+        imag, image, zmag, zmage, jmag, jmage, hmag, hmage, kmag, kmage,
         plx, plxe, teff, teffe, logg, logge, feh, fehe
     )
 
     return out
-
