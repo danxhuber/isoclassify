@@ -896,7 +896,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
     for j in range(0,npar):
         if fnmatch.fnmatch(names[j],'*lum*'):
-            lum=np.log10((mod['rad'][um]**2. * (mod['teff'][um]/5777.)**4.))
+            lum=np.log10((mod['rad'][um]**2. * (mod['teff'][um]/5772.)**4.))
             x, y, res, err1, err2 = getpdf(
                 lum, prob, name=names[j], step=steps[j], fixed=fixes[j],
                 dustmodel=dustmodel)
@@ -906,6 +906,12 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
                     mod[names[j]][um], prob, name=names[j], step=steps[j],
                     fixed=fixes[j],dustmodel=dustmodel
                 )
+            elif ((len(np.unique(mod[names[j]][um])) == 1) and (names[j] == 'avs')):
+                res = mod[names[j]][um[0]]
+                err1 = 0.0
+                err2 = 0.0
+                x = res
+                y = 1.0
             else:
                 res = 0.0
                 err1 = 0.0
@@ -1001,7 +1007,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
 
     # Plot HR diagrams
     if plot:
-        plothrd(model,input,mabs,mabse,ix,iy)
+        plothrd(model,mod,um,input,mabs,mabse,ix,iy)
 
     return result
 

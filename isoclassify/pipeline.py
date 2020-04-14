@@ -5,6 +5,7 @@ import h5py
 
 import numpy as np
 from matplotlib import pylab as plt
+from matplotlib import rcParams
 import pandas as pd
 import astropy.units as units
 from astropy.coordinates import SkyCoord
@@ -35,6 +36,13 @@ def run(**kw):
     if pipe.plotmode=='show':
         plt.ion()
         plt.show()
+
+        # Set tight layout bounds to make shown figures clearer
+        fig1 = plt.figure('hrd')
+        fig1.set_tight_layout(True)
+        fig2 = plt.figure('posteriors')
+        fig2.set_tight_layout(True)
+        
         input('[press return to continue]:')
     elif pipe.plotmode.count('save')==1:
         pipe.savefig()
