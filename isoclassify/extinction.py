@@ -19,6 +19,7 @@ def query_dustmodel_coords(ra,dec,dust):
     if dust == 'none':
         reddenMap = 0
         ext = extinction('cardelli')
+        print('Fitting for reddening.')
         return reddenMap,ext
 
     sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='galactic')
