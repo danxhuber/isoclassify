@@ -8,7 +8,7 @@ import pdb
 
 def plotinit():
     fig1 = plt.figure('posteriors',figsize=(8,12))
-    fig2 = plt.figure('hrd',figsize=(10,12))
+    fig2 = plt.figure('hrd',figsize=(12,12))
     plt.figure('posteriors')
 
 def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
@@ -119,22 +119,38 @@ def plotcm_auto(model,modelSel,input,mabs,mabse,ran,umran,d,g,mag1,mag2,absmag):
     plt.autoscale()
 
 def plothrd_auto(model,modelSel,input,mabs,mabse,ran,umran,d,g):
-    plt.plot(model['teff'][ran[d]],model['logg'][ran[d]],\
-             '.',color='blue',markersize=1,zorder=-32)
-    plt.plot(model['teff'][ran[g]],model['logg'][ran[g]],\
-             '.',color='red',markersize=1,zorder=-32)
-    plt.plot(modelSel['teff'][umran],modelSel['logg'][umran],\
-             '.',color='black',markersize=1,zorder=-32)
+    if (input.numax == -99):
+        plt.plot(model['teff'][ran[d]],model['logg'][ran[d]],\
+                '.',color='blue',markersize=1,zorder=-32)
+        plt.plot(model['teff'][ran[g]],model['logg'][ran[g]],\
+                '.',color='red',markersize=1,zorder=-32)
+        plt.plot(modelSel['teff'][umran],modelSel['logg'][umran],\
+                '.',color='black',markersize=1,zorder=-32)
+        if (vars(input)['teff'] > -99 & (vars(input)['logg'] > -99)):
+            plt.errorbar([input.teff], [input.logg], xerr=input.teffe, yerr=input.logge,\
+                 color='green',elinewidth=5)
 
-    plt.errorbar([input.teff], [input.logg], xerr=input.teffe, yerr=input.logge, \
-             color='green',elinewidth=5)
+        plt.xlabel('teff')
+        plt.ylabel('logg')
+        plt.xlim([10000,2800])
+        plt.ylim([5.5,0])
 
-    plt.xlabel('teff')
-    plt.ylabel('logg')
-    plt.gca().invert_yaxis()
-    plt.gca().invert_xaxis()
+    else:
+        mod_numax=3090*(10**model['logg']/27420.)*(model['teff']/5772.)**(-0.5)
+        plt.semilogy(model['teff'][ran[d]],mod_numax[ran[d]],\
+                 '.',color='blue',markersize=1,zorder=-32)
+        plt.plot(model['teff'][ran[g]],mod_numax[ran[g]],\
+                 '.',color='red',markersize=1,zorder=-32)
+        plt.plot(modelSel['teff'][umran],mod_numax[umran],\
+                 '.',color='black',markersize=1,zorder=-32)
+        if (vars(input)['teff'] > -99 & (vars(input)['numax'] > -99)):
+            plt.errorbar([input.teff], [input.numax], xerr=input.teffe, yerr=input.numaxe, \
+                 color='green',elinewidth=5)
+
+        plt.xlim([10000,2800])
+        plt.ylim([100000,0.1])
+
     plt.minorticks_on()
-    plt.autoscale()
 
 def plothrd(model,modelSel,um,input,mabs,mabse,ix,iy):
     plt.subplots_adjust(
