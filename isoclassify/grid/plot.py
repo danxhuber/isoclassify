@@ -77,7 +77,6 @@ def plotposterior_sec(x,y,res,err1,err2,names,j,ix,iy):
         plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
 
 def plotcc_auto(model,modelSel,input,ran,umran,d,g,mag1,mag2,mag3):
-
     plt.plot(model[mag1][ran[d]]-model[mag2][ran[d]],\
              model[mag2][ran[d]]-model[mag3][ran[d]],\
     '.',color='blue',markersize=1,zorder=-32)
@@ -99,7 +98,6 @@ def plotcc_auto(model,modelSel,input,ran,umran,d,g,mag1,mag2,mag3):
     plt.autoscale()
 
 def plotcm_auto(model,modelSel,input,mabs,mabse,ran,umran,d,g,mag1,mag2,absmag):
-
     plt.plot(model[mag1][ran[d]]-model[mag2][ran[d]],\
              model[absmag][ran[d]],'.',color='blue',markersize=1,zorder=-32)
     plt.plot(model[mag1][ran[g]]-model[mag2][ran[g]], \
@@ -160,16 +158,16 @@ def plothrd(model,modelSel,um,input,mabs,mabse,ix,iy):
     plt.figure('hrd')
     frac=0.01
 
+    # Select a fractional subset of models from the entire model array according to frac parameter:
     ran=np.array(random.sample(range(len(model['teff'])),\
     int(len(model['teff'])*frac)))
     umran = np.array(random.sample(list(um),int(len(um)*frac)))
 
-    #np.array(random.sample(range(len(modelSel['teff'][um])),\int(len(modelSel['teff'][um])*frac)))
-
+    # Choose dwarf (d) and giant (g) models:
     d=np.where(model['logg'][ran] > 3.5)[0]
     g=np.where(model['logg'][ran] < 3.5)[0]
 
-    # Plot color-color diagrams on top:
+    # Plot color-color diagrams on top, and change bands by editing the mag strings:
     plt.subplot(2,4,1)
     plotcc_auto(model=model,modelSel=modelSel,input=input,ran=ran,umran=umran,d=d,g=g,mag1='gmag',mag2='rmag',mag3='imag')
 
@@ -182,7 +180,7 @@ def plothrd(model,modelSel,um,input,mabs,mabse,ix,iy):
     plt.subplot(2,4,4)
     plotcc_auto(model=model,modelSel=modelSel,input=input,ran=ran,umran=umran,d=d,g=g,mag1='jmag',mag2='hmag',mag3='kmag')
 
-    # Plot color-magnitude diagram on bottom row:
+    # Plot color-magnitude diagram on bottom row; change mags by editing the mag strings:
     plt.subplot(2,4,5)
     plotcm_auto(model=model,modelSel=modelSel,input=input,mabs=mabs,mabse=mabse,ran=ran,umran=umran,d=d,g=g,mag1='gmag',mag2='kmag',absmag='kmag')
 
@@ -192,6 +190,6 @@ def plothrd(model,modelSel,um,input,mabs,mabse,ix,iy):
     plt.subplot(2,4,7)
     plotcm_auto(model=model,modelSel=modelSel,input=input,mabs=mabs,mabse=mabse,ran=ran,umran=umran,d=d,g=g,mag1='bpmag',mag2='rpmag',absmag='gamag')
 
-    # Plot logg-teff diagram in last plot:
+    # Plot logg-teff diagram in last plot unless numax is constrained, then use it instead of logg:
     plt.subplot(2,4,8)
     plothrd_auto(model=model,modelSel=modelSel,input=input,mabs=mabs,mabse=mabse,ran=ran,umran=umran,d=d,g=g)
