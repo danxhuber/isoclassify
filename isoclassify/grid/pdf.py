@@ -11,7 +11,6 @@ def binpdf(x,y,step,iname,dustmodel):
     xax = np.arange(np.min(x),np.max(x),step)
 
     if fnmatch.fnmatch(iname,'*age*'):
-    #xax = np.arange(0.,14.5,0.25)
         xax = 10.**(np.arange(71.)/(70./2.15) - 1.) # Exact grid ages (log + linear)
         xax = np.concatenate((xax[:50],xax[50]+np.arange(67)*0.25))
 
@@ -76,7 +75,7 @@ def getpdf(x,y,step,fixed,name,dustmodel):
 
     if ( (isinstance(dustmodel,pd.DataFrame) == False) & (fnmatch.fnmatch(name,'*avs*'))):
         return xax,yax,med,emed1,emed2
-    if fnmatch.fnmatch(name,'*feh_act*'):
+    if fnmatch.fnmatch(name,'*feh*'):
         return xax,yax,med,emed1,emed2
     if fnmatch.fnmatch(name,'*age*'):
         return xax,yax,med,emed1,emed2
