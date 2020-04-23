@@ -5,6 +5,7 @@ import ephem
 import pandas as pd
 import numpy as np
 from astropy.io import ascii
+from itertools import product
 
 from .pdf import *  # part of isoclassify package (to do make explicit import)
 from .priors import * # part of isoclassify package (to do make explicit import)
@@ -953,7 +954,7 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         print('using dmag=',delta_k,'+/-',delta_k_err,' in ',band)
 
         # interpolate across constant age and metallicity
-        feh_un=np.unique(mod['feh'][um])
+        feh_un=np.unique(mod['feh_init'][um])
         age_un=np.unique(mod['age'][um])
 
         #adding in the contrast error without sampling is tricky, because that uncertainty
@@ -963,7 +964,15 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         mds=[delta_k+delta_k_err,delta_k,delta_k-delta_k_err]
 
         # the new model quantities for the secondary
-        mod_sec=np.zeros((6,3,len(prob)))
+        mod_sec=np.zeros((5,3,len(prob)))
+
+        # Now reduce model to only those that match metallicity, age, and mass (must be less than max primary mass) conditions:
+        ufeh = np.in1d(model['feh_init'],feh_un) # Must match all potential primary initial metallicities
+        uage = np.in1d(model['age'],age_un) # Must match all potential primary ages
+        umass = np.where(model['mass'] < np.max(mod['mass'][um]))[0] # Must be less than max primary mass
+        ufa = np.where((ufeh == True) & (uage == True))[0] # Find intersection of age and feh
+        ufam = np.intersect1d(umass,ufa) # Find intersection of mass and ufa
+        modelMin = dict((k, model[k][ufam]) for k in model.keys()) # Define minimal model grid
 
         # insanely inefficient triple loop follows
         for s in range(0,len(mds)):
@@ -973,16 +982,16 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
                     # the full model grid rather than the pre-selected models returned by the
                     # reddening routine (which excludes secondary solutions). This may screw
                     # things up when trying to constrain reddening (i.e. dust="none")
-                    ux=np.where((model['feh'] == feh_un[r]) & (model['age'] == age_un[k]))[0]
-                    ux2=np.where((mod['feh'][um] == feh_un[r]) & (mod['age'][um] == age_un[k]))[0]
-                    sr=np.argsort(model[band][ux])
+                    ux=np.where((modelMin['feh_init'] == feh_un[r]) & (modelMin['age'] == age_un[k]))[0]
+                    ux2=np.where((mod['feh_init'][um] == feh_un[r]) & (mod['age'][um] == age_un[k]))[0]
+                    sr=np.argsort(modelMin[band][ux])
                     if ((len(ux) == 0) | (len(ux2) == 0)):
                         continue
-                    mod_sec[0,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['teff'][ux[sr]])
-                    mod_sec[1,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['logg'][ux[sr]])
-                    mod_sec[2,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['rad'][ux[sr]])
-                    mod_sec[3,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['mass'][ux[sr]])
-                    mod_sec[4,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],model[band][ux[sr]],model['rho'][ux[sr]])
+                    mod_sec[0,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],modelMin[band][ux[sr]],modelMin['teff'][ux[sr]])
+                    mod_sec[1,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],modelMin[band][ux[sr]],modelMin['logg'][ux[sr]])
+                    mod_sec[2,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],modelMin[band][ux[sr]],modelMin['rad'][ux[sr]])
+                    mod_sec[3,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],modelMin[band][ux[sr]],modelMin['mass'][ux[sr]])
+                    mod_sec[4,s,ux2]=np.interp(mod[band][um[ux2]]+mds[s],modelMin[band][ux[sr]],modelMin['rho'][ux[sr]])
 
         # now get PDFs across all delta mags, add errors in quadrature
         names = ['teff', 'logg', 'rad', 'mass', 'rho']
