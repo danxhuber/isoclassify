@@ -310,6 +310,15 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
     gajcole = np.sqrt(input.gamage**2 + input.jmage**2)
     gakcole = np.sqrt(input.gamage**2 + input.kmage**2)
 
+    # Compute extra color error term based on underestimation of stellar teff errors with nominal 2% error floor:
+    if ((input.gmag > -99.0) & (input.kmag > -99.0)):
+        gkexcole = compute_extra_gk_color_error(gkcol)
+	# Determine which gK error term is greater and use that one:
+        print("g - K error from photometry: ",gkcole)
+        print("g - K error from best-fit polynomial: ",gkexcole)
+        gkcole = max(gkcole,gkexcole)
+        print("Using g - K error: ",gkcole)
+
     # apparent mag to use for distance estimation. set by "band" input
     redmap = -99.0
     if (getattr(input,band) > -99.):
@@ -1126,7 +1135,7 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
 
     return model3
 
-########################################## M-dwarf error computation:
+########################### M-dwarf error computation and gK to 2% teff uncertainty computation:
 def compute_extra_MK_error(abskmag):
     massPoly = np.array([-1.218087354981032275e-04,3.202749540513295540e-03,
 -2.649332720970200630e-02,5.491458806424324990e-02,6.102330369026183476e-02,
@@ -1139,6 +1148,22 @@ def compute_extra_MK_error(abskmag):
 
     return kmagExtraErr
 
+def compute_extra_gk_color_error(gk):
+    teffPoly = np.array([5.838899127633915245e-06,-4.579640759410575821e-04,
+1.591988911769273360e-02,-3.229622768514631148e-01,4.234782988549875782e+00,
+-3.752421323678526477e+01,2.279521336429464498e+02,-9.419602441779162518e+02,
+2.570487048729761227e+03,-4.396474893847861495e+03,4.553858427460818348e+03,
+-4.123317864249115701e+03,9.028586421378711748e+03])
+
+    teffPolyDeriv = np.array([7.006678953160697955e-05,-5.037604835351633566e-03,
+1.591988911769273429e-01,-2.906660491663167978e+00,3.387826390839900625e+01,
+-2.626694926574968463e+02,1.367712801857678642e+03,-4.709801220889581600e+03,
+1.028194819491904491e+04,-1.318942468154358357e+04,9.107716854921636696e+03,
+-4.123317864249115701e+03])
+
+    gkExtraColorErr = abs(0.02*np.polyval(teffPoly,gk)/np.polyval(teffPolyDeriv,gk))
+
+    return gkExtraColorErr
 
 ######################################### misc stuff
 
