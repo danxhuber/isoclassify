@@ -2,6 +2,7 @@ import os
 import copy
 import glob
 import h5py
+import sys
 
 import numpy as np
 from matplotlib import pylab as plt
@@ -42,12 +43,32 @@ def run(**kw):
         fig1.set_tight_layout(True)
         fig2 = plt.figure('posteriors')
         fig2.set_tight_layout(True)
-        
+
         input('[press return to continue]:')
     elif pipe.plotmode.count('save')==1:
         pipe.savefig()
 
     pipe.to_csv()
+
+def runMulti(modelGridIn, **kw):
+    if not os.path.exists(kw['outdir']):
+        os.mkdir(kw['outdir'])
+    print('running',kw['id_starname'])
+    f = open(os.path.join(kw['outdir'], 'output.log'), 'w')
+    sys.stdout = f
+
+    if kw['method']=='direct':
+        pipe = PipelineDirect(**kw)
+    elif kw['method']=='grid':
+        pipe = PipelineGrid(**kw)
+    else:
+        assert False, "method {} not supported ".format(kw['method'])
+
+    pipe.runMulti(modelGridIn)
+    pipe.savefig()
+    pipe.to_csv()
+    sys.stdout = sys.__stdout__
+    f.close()
 
 class Pipeline(object):
     def __init__(self, **kw):
@@ -186,6 +207,7 @@ class Pipeline(object):
             fig.set_tight_layout(True)
             plt.savefig(fn)
             print("created {}".format(fn))
+            plt.close()
 
     def to_csv(self):
         out = {}
@@ -255,12 +277,33 @@ class PipelineDirect(Pipeline):
             band=self.const['band'], ext=ext, plot=1
         )
 
+    def runMulti(self, modelGridIn):
+        self.print_constraints()
+
+        dustmodelIn,extIn = query_dustmodel_coords(self.const['ra'],self.const['dec'],self.dust)
+
+        x = classify_direct.obsdata()
+        self.addspec(x)
+        #self.addlum(x)
+        self.addjhk(x)
+        self.addbv(x)
+        self.addbvt(x)
+        self.addgriz(x)
+        self.addgaia(x)
+        self.addplx(x)
+        self.addcoords(x)
+        self.addmag(x)
+        self.paras = classify_direct.stparas(
+            input=x, bcmodel=modelGridIn, dustmodel=dustmodelIn,
+            band=self.const['band'], ext=extIn, plot=1
+        )
+
 class PipelineGrid(Pipeline):
     outputcols = {
         'iso_age':'age',
         'iso_avs':'avs',
         'iso_dis':'dis',
-        'iso_feh':'feh_act',
+        'iso_feh':'feh',
         'iso_mass':'mass',
         'iso_rad':'rad',
         'iso_lum':'lum',
@@ -281,8 +324,8 @@ class PipelineGrid(Pipeline):
         modfile = h5py.File(fn,'r', driver='core', backing_store=False)
         model = {'age':np.array(modfile['age']),\
         'mass':np.array(modfile['mass']),\
-        'feh':np.array(modfile['feh']),\
-        'feh_act':np.array(modfile['feh_act']),\
+        'feh_init':np.array(modfile['feh']),\
+        'feh':np.array(modfile['feh_act']),\
         'teff':np.array(modfile['teff']),\
         'logg':np.array(modfile['logg']),\
         'rad':np.array(modfile['rad']),\
@@ -337,6 +380,29 @@ class PipelineGrid(Pipeline):
             plot=self.plot, useav=0, band=self.const['band']
         )
 
+    def runMulti(self,modelGridIn):
+        self.print_constraints()
+
+        dustmodelIn,extIn = query_dustmodel_coords(self.const['ra'],self.const['dec'],self.dust)
+
+        # Instantiate model
+        x = classify_grid.obsdata()
+        self.addcoords(x)
+        self.addspec(x)
+        self.addlum(x)
+        self.addjhk(x)
+        self.addgriz(x)
+        self.addgaia(x)
+        self.addbv(x)
+        self.addbvt(x)
+        self.addseismo(x)
+        self.addplx(x)
+        self.adddmag(x)
+        self.paras = classify_grid.classify(
+            input=x, model=modelGridIn, dustmodel=dustmodelIn,ext=extIn,
+            plot=self.plot, useav=0, band=self.const['band']
+        )
+
 def _csv_reader(f):
     row = pd.read_csv(f,header=None,squeeze=True, index_col=0)
     return row
@@ -360,5 +426,4 @@ def scrape_csv(path):
 
 
     df = pd.DataFrame(df)
-    df = df.reset_index()
     return df
