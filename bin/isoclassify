@@ -29,7 +29,7 @@ def main():
     p2.add_argument(
         '--plot', choices=['none', 'show', 'save-pdf','save-png'],
         default='save-png',
-        help="plotmode: none: Don't create plots (default), "
+        help="plotmode: none: Don't create plots, "
         "show: create plot in interactive mode, "
         "save-pdf: save plot as pdf file"
     )
@@ -52,7 +52,12 @@ def main():
     p2.add_argument(
         '-o','--baseoutdir',default='./',help='base path of output directory'
     )
-    p2.add_argument('--plot', default='save-png',help="passed to run command")
+    p2.add_argument(
+        '--plot', choices=['none', 'save-pdf','save-png'],
+        default='save-png',
+        help="plotmode: none: Don't create plots, "
+        "save-pdf: save plot as pdf file"
+    )
     p2.set_defaults(func=run_multi)
 
     p2 = subp.add_parser('scrape-output', description="Combine batch outputs")
