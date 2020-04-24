@@ -133,6 +133,33 @@ def read_modelGrid():
 
     return model
 
+def memmap_grid():
+    # Now define tempfiles to load into memory for multiple child processes:
+    temp_folder = os.path.join(DATADIR,'tmp')
+    if (os.path.exists(temp_folder) == False):
+        os.mkdir(temp_folder)
+    filename_model = os.path.join(temp_folder, 'isoclassify_modelGrid.mmap')
+
+    if os.path.exists(filename_model):
+        # If the memmapped file exists, do not read in model grid:
+        print('Memory-mapped file already exists here:',filename_model)
+        print('Loading file now.')
+
+    else:
+        # Otherwise, read model grid file:
+        modelGridIn = read_modelGrid()
+
+        # Dump memory contents to memory-mapped file:
+        _model = dump(modelGridIn, filename_model)
+
+        # Delete memory contents with garbage collector:
+        _model = gc.collect()
+
+    # Now load memory mapped files:
+    modelGridIn = load(filename_model, mmap_mode='r')
+
+    return modelGridIn
+
 def scrape_csv_multi(i,f,dfOut):
     if i%100==0:
         print(i)
@@ -146,36 +173,13 @@ def run_multi(args):
     df['outdir'] = args.baseoutdir + '/' + df['id_starname']
 
     if args.method == 'grid':
-        # Now define tempfiles to load into memory for multiple child processes:
-        temp_folder = os.path.join(DATADIR,'tmp')
-        if (os.path.exists(temp_folder) == False):
-            os.mkdir(temp_folder)
-        filename_model = os.path.join(temp_folder, 'isoclassify_modelGrid.mmap')
-
-        if os.path.exists(filename_model):
-            # If the memmapped file exists, do not read in model grid:
-            print('Memory-mapped file already exists here:',filename_model)
-            print('Loading file now.')
-
-        else:
-            # Otherwise, read model grid file:
-            modelGridIn = read_modelGrid()
-
-            # Dump memory contents to memory-mapped file:
-            _model = dump(modelGridIn, filename_model)
-
-            # Delete memory contents with garbage collector:
-            _model = gc.collect()
-
-        # Instead, load memory mapped files:
-        modelGridIn = load(filename_model, mmap_mode='r')
+        modelGridIn = memmap_grid()
+        # Run pipeline in parallel with memmapped model grid:
+        Parallel(n_jobs=args.cpuCount, max_nbytes=None, verbose=10)(delayed(isoclassify.pipeline.runMulti)(modelGridIn, **dict(**row,**vars(args))) for i,row in df.iterrows())
     else:
-        # Run direct version of the code:
-        fn = os.path.join(DATADIR,'bcgrid.h5')
-        modelGridIn = h5py.File(fn,'r', driver='core', backing_store=False) # This array is not very large so we do not need to memmamp it
-
-    # Run pipeline in parallel with memmapped model grid:
-    Parallel(n_jobs=args.cpuCount, max_nbytes=None, verbose=10)(delayed(isoclassify.pipeline.runMulti)(modelGridIn, **dict(**row,**vars(args))) for i,row in df.iterrows())
+        # Run pipeline in parallel. No need to use memmapped model grid because the bcmodel is small:
+        modelGridIn = {}
+        Parallel(n_jobs=args.cpuCount, max_nbytes=None, verbose=10)(delayed(isoclassify.pipeline.runMulti)(modelGridIn, **dict(**row,**vars(args))) for i,row in df.iterrows())
 
     # Now output to file using shared memory DataFrame, dfOut, for eventual output to csv file:
     print("Now scraping all output.csv files into ",args.csvfn)

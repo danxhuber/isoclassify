@@ -52,19 +52,20 @@ def run(**kw):
 
 def runMulti(modelGridIn, **kw):
     if not os.path.exists(kw['outdir']):
-        os.mkdir(kw['outdir'])
+        os.makedirs(kw['outdir'])
     print('running',kw['id_starname'])
     f = open(os.path.join(kw['outdir'], 'output.log'), 'w')
     sys.stdout = f
 
     if kw['method']=='direct':
         pipe = PipelineDirect(**kw)
+        pipe.run()
     elif kw['method']=='grid':
         pipe = PipelineGrid(**kw)
+        pipe.runMulti(modelGridIn)
     else:
         assert False, "method {} not supported ".format(kw['method'])
 
-    pipe.runMulti(modelGridIn)
     pipe.savefig()
     pipe.to_csv()
     sys.stdout = sys.__stdout__
@@ -275,27 +276,6 @@ class PipelineDirect(Pipeline):
         self.paras = classify_direct.stparas(
             input=x, bcmodel=bcmodel, dustmodel=dustmodel,
             band=self.const['band'], ext=ext, plot=1
-        )
-
-    def runMulti(self, modelGridIn):
-        self.print_constraints()
-
-        dustmodelIn,extIn = query_dustmodel_coords(self.const['ra'],self.const['dec'],self.dust)
-
-        x = classify_direct.obsdata()
-        self.addspec(x)
-        #self.addlum(x)
-        self.addjhk(x)
-        self.addbv(x)
-        self.addbvt(x)
-        self.addgriz(x)
-        self.addgaia(x)
-        self.addplx(x)
-        self.addcoords(x)
-        self.addmag(x)
-        self.paras = classify_direct.stparas(
-            input=x, bcmodel=modelGridIn, dustmodel=dustmodelIn,
-            band=self.const['band'], ext=extIn, plot=1
         )
 
 class PipelineGrid(Pipeline):
