@@ -173,10 +173,11 @@ def run_multi(args):
     Parallel(n_jobs=args.cpuCount, max_nbytes=None, verbose=10)(delayed(isoclassify.pipeline.runMulti)(modelGridIn, **dict(**row,**vars(args))) for i,row in df.iterrows())
 
     # Now output to file using shared memory DataFrame, dfOut, for eventual output to csv file:
+    print("Now scraping all output.csv files into ",args.csvfn)
     path = args.baseoutdir + '/*/output.csv'
     fL = glob.glob(path)
     dfOut = []
-    Parallel(n_jobs=args.cpuCount, max_nbytes=None, verbose=10, require='sharedmem')(delayed(scrape_csv_multi)(i,f,dfOut) for i,f in enumerate(fL))
+    Parallel(n_jobs=args.cpuCount, max_nbytes=None, require='sharedmem')(delayed(scrape_csv_multi)(i,f,dfOut) for i,f in enumerate(fL))
     dfOut = pd.DataFrame(dfOut)
     dfOut.to_csv(args.csvfn,index=False)
 

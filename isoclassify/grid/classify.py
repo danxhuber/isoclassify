@@ -426,7 +426,6 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
             # user-specified reddening
             #if (useav > -99.0):
             #    avs = np.zeros(1) + useav
-
             mod = reddening(model, um, avs, extfactors)
 
         # otherwise, just redden each model according to the provided map
@@ -1034,13 +1033,12 @@ def reddening(model,um,avs,extfactors):
 
     model2=dict((k, model[k][um]) for k in model.keys())
     nmodels=len(model2['teff'])*len(avs)
-    #pdb.set_trace()
 
     keys = [
         'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh', 'rad', 'mass',
         'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag',
         'bmag', 'vmag', 'btmag','vtmag', 'bpmag', 'gamag', 'rpmag',
-	'dis', 'kmag', 'avs', 'fdnu'
+	    'dis', 'kmag', 'avs', 'fdnu', 'feh_init'
     ]
 
     dtype = [(key, float) for key in keys]
@@ -1061,13 +1059,14 @@ def reddening(model,um,avs,extfactors):
             av = extfactors['av']
             model3[cmag][ix] = model2[cmag] + avs[i]*extfactors[ac]/av
 
-        keys = 'teff logg feh rad mass rho age dfeh dmass dage fdnu'.split()
+        keys = 'teff logg feh rad mass rho age feh_init dfeh dmass dage fdnu'.split()
         for key in keys:
             model3[key][ix]=model2[key]
 
         model3['avs'][ix] = avs[i]
         start = start + len(um)
         end = end + len(um)
+        print(i)
 
     return model3
 
@@ -1125,7 +1124,7 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
             'dage', 'dmass', 'dfeh', 'teff', 'logg', 'feh', 'rad', 'mass',
             'rho', 'age', 'gmag', 'rmag', 'imag', 'zmag', 'jmag', 'hmag',
             'bmag', 'vmag', 'btmag','vtmag', 'bpmag', 'gamag', 'rpmag',
-	    'dis', 'kmag', 'avs', 'fdnu'
+	        'dis', 'kmag', 'avs', 'fdnu', 'feh_init'
         ]
 
         dtype = [(key, float) for key in keys]
@@ -1138,7 +1137,7 @@ def reddening_map(model, model_mabs, redmap, dustmodel, um, input, extfactors,
 
         model3['dis']=dis
         model3['avs']=extfactors['av']*ebvs
-        keys = 'teff logg feh rad mass rho age dfeh dmass dage fdnu'.split()
+        keys = 'teff logg feh rad mass rho age feh_init dfeh dmass dage fdnu'.split()
         for key in keys:
             model3[key] = model2[key]
 
