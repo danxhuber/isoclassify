@@ -14,7 +14,7 @@ git clone https://github.com/danxhuber/isoclassify
 
 # Download MESA models into isoclassify directory
 cd isoclassify
-wget https://www.dropbox.com/s/vrr8hc7qav1fzyb/mesa.h5?dl=0
+wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5?dl=0
 wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5?dl=0 
 
 # Set environment variables
@@ -73,6 +73,21 @@ parallel :::: isoclassify.tot
 # Combine outputs into one CSV file
 bin/isoclassify scrape-output 'output/*/output.csv' output.csv
 ```
+
+You can also run python-based multiprocessing through joblib and memory-mapping to reduce RAM overhead.
+
+```bash
+isoclassify multiproc <mode> <num processes> <input csv> <output csv> --baseoutdir <base output directory> --plot <plot mode>
+```
+
+1. `<mode>` direct or grid
+1. `<num processes>` number of processes to run at a time. -1 uses all processors, including hyperthreading for machines that have it (num cores * 2). -1 should be used with caution depending upon the # of processors and RAM in your machine, as a single process can easily consume ~4GB of RAM by itself
+1. `<input csv>` location and name of csv file containing all stars you want to run
+1. `<output csv>` location and name of csv file, scraping all results from folders in <base output directory>
+1. `<base output directory>` location of individual stellar output folders (default = ./)
+1. `<plot mode>` tells isoclassify whether to save to a png `save-png` (default), save to a pdf `save-pdf`, or to not plot at all `none`. Does not use `show` as above due to issues with multiprocessing functionality.
+
+This will run all stars within the designated csv file and produce an output csv file, so there no need to use the scrape-output function detailed above in combination with this script.
 
 ## Testing the codebase
 

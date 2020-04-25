@@ -11,21 +11,18 @@ def binpdf(x,y,step,iname,dustmodel):
     xax = np.arange(np.min(x),np.max(x),step)
 
     if fnmatch.fnmatch(iname,'*age*'):
-    #xax = np.arange(0.,14.5,0.25)
-        xax = np.arange(0.125,14.125,0.25)
-        step=0.25
+        xax = 10.**(np.arange(71.)/(70./2.15) - 1.) # Exact grid ages (log + linear)
+        xax = np.concatenate((xax[:50],xax[50]+np.arange(67)*0.25))
 
-    if fnmatch.fnmatch(iname,'*feh*'):
-    #xax = np.arange(-2.05,0.55,0.051)
-        xax = np.arange(-2.025,0.525,0.05)
-        step=0.05
-
-    if ( (isinstance(dustmodel,pd.DataFrame) == False) & (fnmatch.fnmatch(iname,'*avs*'))):
+    elif ( (isinstance(dustmodel,pd.DataFrame) == False) & (fnmatch.fnmatch(iname,'*avs*'))):
         grid=np.unique(x)
         spacing=grid[1]-grid[0]
         xax = np.arange(grid[0]-spacing/4.,grid[len(grid)-1]+spacing/4.,spacing)
         step=spacing
-    
+
+    else:
+        xax= xax+step/2.
+
     yax = np.zeros(len(xax))
 
     digitized = np.digitize(x, xax)
@@ -42,14 +39,12 @@ def binpdf(x,y,step,iname,dustmodel):
     plt.plot(xax,yax/np.max(yax))
     pdb.set_trace()
     '''
-
-    xax= xax+step/2.
     #yax = gaussian_filter(yax,1.5)
     #if fnmatch.fnmatch(iname,'*avs*'):
     #         pdb.set_trace()
     #pdb.set_trace()
     yax = yax/np.sum(yax)
-    
+
     return xax,yax
 
 
@@ -61,13 +56,13 @@ def getstat(xax,yax):
     if (np.max(cdf) < 0.84):
         cdf[np.argmax(cdf)]=0.84
     #pdb.set_trace()
-    ppf = interp1d(cdf,xax) # percent point function 
+    ppf = interp1d(cdf,xax) # percent point function
     p16, med, p84 = ppf([0.16,0.50,0.84])
     emed1  = med - p16
     emed2  = p84 - med
     return med,emed2,emed1
 
-	
+
 def getpdf(x,y,step,fixed,name,dustmodel):
     if fixed == 0:
         pos=np.argmax(y)
@@ -109,5 +104,3 @@ def getpdf(x,y,step,fixed,name,dustmodel):
     #        plt.plot(xax,yax)
 
     return xax,yax,med,emed1,emed2
-
-        

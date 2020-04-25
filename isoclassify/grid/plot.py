@@ -4,12 +4,13 @@ import matplotlib.pyplot as plt
 import random
 from .priors import *
 import fnmatch
+import pdb
 
 def plotinit():
     fig1 = plt.figure('posteriors',figsize=(8,12))
-    fig2 = plt.figure('hrd',figsize=(8,12))
+    fig2 = plt.figure('hrd',figsize=(12,12))
     plt.figure('posteriors')
- 
+
 def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
     #fig = plt.figure(figsize=(8,12))
     plt.subplot(len(names),2,ix)
@@ -41,7 +42,7 @@ def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
         xt=np.arange(-2.,1.,0.01)
         yt=fehprior(xt)
         plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
-    
+
 def plotposterior_sec(x,y,res,err1,err2,names,j,ix,iy):
     fig3 = plt.figure('secondary',figsize=(8,12))
     plt.figure('secondary')
@@ -74,376 +75,121 @@ def plotposterior_sec(x,y,res,err1,err2,names,j,ix,iy):
         xt=np.arange(-2.,1.,0.01)
         yt=fehprior(xt)
         plt.plot(xt,yt*np.max(y)/np.max(yt),'--g')
-    
 
-def plothrd(model,input,mabs,mabse,ix,iy):
+def plotcc_auto(model,modelSel,input,ran,umran,d,g,mag1,mag2,mag3):
+    plt.plot(model[mag1][ran[d]]-model[mag2][ran[d]],\
+             model[mag2][ran[d]]-model[mag3][ran[d]],\
+    '.',color='blue',markersize=1,zorder=-32)
+    plt.plot(model[mag1][ran[g]]-model[mag2][ran[g]],\
+             model[mag2][ran[g]]-model[mag3][ran[g]],\
+    '.',color='red',markersize=1,zorder=-32)
+    plt.plot(modelSel[mag1][umran]-modelSel[mag2][umran],\
+             modelSel[mag2][umran]-modelSel[mag3][umran],\
+    '.',color='black',markersize=1,zorder=-32)
+
+    if ((vars(input)[mag1] > -99) & (vars(input)[mag2] > -99) & (vars(input)[mag3] > -99)):
+        plt.errorbar([vars(input)[mag1]-vars(input)[mag2]], [vars(input)[mag2]-vars(input)[mag3]], \
+                 xerr=np.sqrt(vars(input)[mag1+'e']**2+vars(input)[mag2+'e']**2), \
+                 yerr=np.sqrt(vars(input)[mag2+'e']**2+vars(input)[mag3+'e']**2),color='green',elinewidth=5)
+
+    plt.xlabel(mag1+'-'+mag2)
+    plt.ylabel(mag2+'-'+mag3)
+    plt.minorticks_on()
+    plt.autoscale()
+
+def plotcm_auto(model,modelSel,input,mabs,mabse,ran,umran,d,g,mag1,mag2,absmag):
+    plt.plot(model[mag1][ran[d]]-model[mag2][ran[d]],\
+             model[absmag][ran[d]],'.',color='blue',markersize=1,zorder=-32)
+    plt.plot(model[mag1][ran[g]]-model[mag2][ran[g]], \
+             model[absmag][ran[g]],'.',color='red',markersize=1,zorder=-32)
+    plt.plot(modelSel[mag1][umran]-modelSel[mag2][umran], \
+             modelSel[absmag][umran],'.',color='black',markersize=1,zorder=-32)
+
+    if ((vars(input)[mag1] > -99) & (vars(input)[mag2] > -99) & (vars(input)[absmag] > -99)):
+        col = vars(input)[mag1] - vars(input)[mag2]
+        cole = np.sqrt(vars(input)[mag1+'e']**2 + vars(input)[mag2+'e']**2)
+        plt.errorbar([col], [mabs], xerr=cole, yerr=mabse,color='green',elinewidth=5)
+
+    plt.xlabel(mag1+'-'+mag2)
+    plt.ylabel(absmag)
+    plt.gca().invert_yaxis()
+    plt.minorticks_on()
+    plt.autoscale()
+
+def plothrd_auto(model,modelSel,input,mabs,mabse,ran,umran,d,g):
+    if (input.numax == -99):
+        plt.plot(model['teff'][ran[d]],model['logg'][ran[d]],\
+                '.',color='blue',markersize=1,zorder=-32)
+        plt.plot(model['teff'][ran[g]],model['logg'][ran[g]],\
+                '.',color='red',markersize=1,zorder=-32)
+        plt.plot(modelSel['teff'][umran],modelSel['logg'][umran],\
+                '.',color='black',markersize=1,zorder=-32)
+        if (vars(input)['teff'] > -99 & (vars(input)['logg'] > -99)):
+            plt.errorbar([input.teff], [input.logg], xerr=input.teffe, yerr=input.logge,\
+                 color='green',elinewidth=5)
+
+        plt.xlabel('teff')
+        plt.ylabel('logg')
+        plt.xlim([10000,2800])
+        plt.ylim([5.5,0])
+
+    else:
+        mod_numax=3090*(10**model['logg']/27420.)*(model['teff']/5772.)**(-0.5)
+        plt.semilogy(model['teff'][ran[d]],mod_numax[ran[d]],\
+                 '.',color='blue',markersize=1,zorder=-32)
+        plt.plot(model['teff'][ran[g]],mod_numax[ran[g]],\
+                 '.',color='red',markersize=1,zorder=-32)
+        plt.plot(modelSel['teff'][umran],mod_numax[umran],\
+                 '.',color='black',markersize=1,zorder=-32)
+        if (vars(input)['teff'] > -99 & (vars(input)['numax'] > -99)):
+            plt.errorbar([input.teff], [input.numax], xerr=input.teffe, yerr=input.numaxe, \
+                 color='green',elinewidth=5)
+
+        plt.xlim([10000,2800])
+        plt.ylim([100000,0.1])
+
+    plt.minorticks_on()
+
+def plothrd(model,modelSel,um,input,mabs,mabse,ix,iy):
     plt.subplots_adjust(
         left=0.08, bottom=0.05, right=0.96, top=0.96, wspace=0.31, hspace=0.26
     )
 
     plt.figure('hrd')
-    plt.subplot(2,3,1)
     frac=0.01
 
+    # Select a fractional subset of models from the entire model array according to frac parameter:
     ran=np.array(random.sample(range(len(model['teff'])),\
     int(len(model['teff'])*frac)))
+    umran = np.array(random.sample(list(um),int(len(um)*frac)))
 
-    ### Sloan color-color
+    # Choose dwarf (d) and giant (g) models:
     d=np.where(model['logg'][ran] > 3.5)[0]
-    plt.plot(model['gmag'][ran[d]]-model['rmag'][ran[d]],\
-             model['rmag'][ran[d]]-model['imag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
     g=np.where(model['logg'][ran] < 3.5)[0]
-    plt.plot(model['gmag'][ran[g]]-model['rmag'][ran[g]],\
-             model['rmag'][ran[g]]-model['imag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
 
-    if ((input.gmag > -99) & (input.rmag > -99)):
-        plt.errorbar([input.gmag-input.rmag], [input.rmag-input.imag], \
-                 xerr=np.sqrt(input.gmage**2+input.rmage**2), \
-                 yerr=np.sqrt(input.rmage**2+input.image**2),color='green',elinewidth=5)
+    # Plot color-color diagrams on top, and change bands by editing the mag strings:
+    plt.subplot(2,4,1)
+    plotcc_auto(model=model,modelSel=modelSel,input=input,ran=ran,umran=umran,d=d,g=g,mag1='gmag',mag2='rmag',mag3='imag')
 
-    plt.xlabel('g-r')
-    plt.ylabel('r-i')
-    plt.xlim([-0.5,2.5])
-    plt.ylim([-0.5,2])
+    plt.subplot(2,4,2)
+    plotcc_auto(model=model,modelSel=modelSel,input=input,ran=ran,umran=umran,d=d,g=g,mag1='rmag',mag2='imag',mag3='zmag')
 
+    plt.subplot(2,4,3)
+    plotcc_auto(model=model,modelSel=modelSel,input=input,ran=ran,umran=umran,d=d,g=g,mag1='bpmag',mag2='gamag',mag3='rpmag')
 
-    ### Sloan color-color
-    plt.subplot(2,3,2)
-    d=np.where(model['logg'][ran] > 3.5)[0]
-    plt.plot(model['gmag'][ran[d]]-model['rmag'][ran[d]],\
-             model['imag'][ran[d]]-model['zmag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-    g=np.where(model['logg'][ran] < 3.5)[0]
-    plt.plot(model['gmag'][ran[g]]-model['rmag'][ran[g]],\
-             model['imag'][ran[g]]-model['zmag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
+    plt.subplot(2,4,4)
+    plotcc_auto(model=model,modelSel=modelSel,input=input,ran=ran,umran=umran,d=d,g=g,mag1='jmag',mag2='hmag',mag3='kmag')
 
-    if ((input.imag > -99) & (input.zmag > -99)):
-        plt.errorbar([input.gmag-input.rmag], [input.imag-input.zmag], \
-                 xerr=np.sqrt(input.gmage**2+input.rmage**2), \
-                 yerr=np.sqrt(input.image**2+input.zmage**2),color='green',elinewidth=5)
+    # Plot color-magnitude diagram on bottom row; change mags by editing the mag strings:
+    plt.subplot(2,4,5)
+    plotcm_auto(model=model,modelSel=modelSel,input=input,mabs=mabs,mabse=mabse,ran=ran,umran=umran,d=d,g=g,mag1='gmag',mag2='kmag',absmag='kmag')
 
-    plt.xlabel('g-r')
-    plt.ylabel('i-z')
-    plt.xlim([-0.5,2.5])
-    plt.ylim([-0.5,2])
-    
+    plt.subplot(2,4,6)
+    plotcm_auto(model=model,modelSel=modelSel,input=input,mabs=mabs,mabse=mabse,ran=ran,umran=umran,d=d,g=g,mag1='rmag',mag2='kmag',absmag='kmag')
 
-### Sloan color-color
-    plt.subplot(2,3,3)
-    d=np.where(model['logg'][ran] > 3.5)[0]
-    plt.plot(model['hmag'][ran[d]]-model['kmag'][ran[d]],\
-             model['jmag'][ran[d]]-model['hmag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-    g=np.where(model['logg'][ran] < 3.5)[0]
-    plt.plot(model['hmag'][ran[g]]-model['kmag'][ran[g]],\
-             model['jmag'][ran[g]]-model['hmag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
+    plt.subplot(2,4,7)
+    plotcm_auto(model=model,modelSel=modelSel,input=input,mabs=mabs,mabse=mabse,ran=ran,umran=umran,d=d,g=g,mag1='bpmag',mag2='rpmag',absmag='gamag')
 
-    if ((input.jmag > -99) & (input.hmag > -99)):
-        plt.errorbar([input.hmag-input.kmag], [input.jmag-input.hmag], \
-                 xerr=np.sqrt(input.hmage**2+input.kmage**2), \
-                 yerr=np.sqrt(input.jmage**2+input.hmage**2),color='green',elinewidth=5)
-
-    plt.xlabel('H-K')
-    plt.ylabel('J-H')
-    plt.xlim([-0.1,0.5])
-    plt.ylim([-0.3,1.3])
-    
-    ### 2MASS color-color
-    plt.subplot(2,3,4)
-    plt.plot(model['btmag'][ran[d]]-model['vtmag'][ran[d]],\
-             model['jmag'][ran[d]]-model['hmag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-    plt.xlim([-0.1,2.5])
-    plt.ylim([-0.2,1.2])
-    plt.plot(model['btmag'][ran[g]]-model['vtmag'][ran[g]],\
-             model['jmag'][ran[g]]-model['hmag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
-    
-    if ((input.vtmag > -99) & (input.btmag > -99)):
-        plt.errorbar([input.btmag-input.vtmag], [input.jmag-input.hmag], \
-                 xerr=np.sqrt(input.btmage**2+input.vtmage**2), \
-                 yerr=np.sqrt(input.jmage**2+input.hmage**2),color='green',elinewidth=5)
-
-    plt.xlabel('Bt-Vt')
-    plt.ylabel('J-H')
-    
-    # CMD
-    plt.subplot(2,3,5)
-    mag1='bmag'
-    mag2='vmag'
-    absmag='vmag'
-    col=0.
-    cole=0.
-    
-    if (input.vmag > 0):
-        mag1='bmag'
-        mag2='vmag'
-        absmag='vmag'
-        col=input.bmag-input.vmag
-        cole=np.sqrt(input.bmage**2+input.vmage**2)
-        
-    if (input.vtmag > 0):
-        mag1='btmag'
-        mag2='vtmag'
-        absmag='vtmag'
-        col=input.btmag-input.vtmag
-        cole=np.sqrt(input.btmage**2+input.vtmage**2)
-
-    if (input.gmag > 0):
-        mag1='gmag'
-        mag2='rmag'
-        absmag='gmag'
-        col=input.gmag-input.rmag
-        cole=np.sqrt(input.gmage**2+input.rmage**2)
-
-    if (input.jmag > 0):
-        mag1='jmag'
-        mag2='kmag'
-        absmag='jmag'
-        col=input.jmag-input.kmag
-        cole=np.sqrt(input.jmage**2+input.kmage**2)
-
-    plt.plot(model[mag1][ran[d]]-model[mag2][ran[d]],\
-             model[absmag][ran[d]],'.',color='blue',markersize=1,zorder=-32)
-
-    plt.plot(model[mag1][ran[g]]-model[mag2][ran[g]], \
-             model[absmag][ran[g]],'.',color='red',markersize=1,zorder=-32)
-
-    if (input.plx > 0.):
-        plt.errorbar([col], [mabs], xerr=cole, yerr=mabse,color='green',elinewidth=5)
-
-    plt.xlim([-0.5,2])
-    plt.ylim([np.max(model[absmag]),np.min(model[absmag])])
-    plt.xlabel(mag1+'-'+mag2)
-    plt.ylabel(absmag)
-
-    # HRD
-    plt.subplot(2,3,6)
-
-    if (input.numax == 0):
-        plt.plot(model['teff'][ran[d]],model['logg'][ran[d]],\
-                 '.',color='blue',markersize=1,zorder=-32)
-        plt.xlim([10000,2000])
-        plt.ylim([6,0])
-        plt.plot(model['teff'][ran[g]],model['logg'][ran[g]],\
-                 '.',color='red',markersize=1,zorder=-32)
-
-        plt.errorbar([input.teff], [input.logg], xerr=input.teffe, yerr=input.logge, \
-                 color='green',elinewidth=5)
-
-    else:
-        mod_numax=3090*(10**model['logg']/27420.)*(model['teff']/5777.)**(-0.5)
-        plt.semilogy(model['teff'][ran[d]],mod_numax[ran[d]],\
-                 '.',color='blue',markersize=1,zorder=-32)
-        plt.xlim([10000,2000])
-        plt.ylim([100000,0.1])
-        plt.plot(model['teff'][ran[g]],mod_numax[ran[g]],\
-                 '.',color='red',markersize=1,zorder=-32)
-
-        plt.errorbar([input.teff], [input.numax], xerr=input.teffe, yerr=input.numaxe, \
-                 color='green',elinewidth=5)
-
-def plothrdold(model,grcol,ricol,grcole,ricole,Mg,Mge,ix,iy):
-
-    plt.figure('hrd')
-    plt.subplot(3,1,1)
-    frac=0.01
-
-    ran=np.array(random.sample(range(len(model['teff'])),\
-    int(len(model['teff'])*frac)))
-
-    d=np.where(model['logg'][ran] > 3.5)[0]
-    plt.plot(model['gmag'][ran[d]]-model['rmag'][ran[d]],\
-             model['rmag'][ran[d]]-model['imag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-
-    g=np.where(model['logg'][ran] < 3.5)[0]
-    plt.plot(model['gmag'][ran[g]]-model['rmag'][ran[g]],\
-             model['rmag'][ran[g]]-model['imag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
-    plt.errorbar([grcol], [ricol], xerr=grcole, yerr=ricole,color='green',elinewidth=5)
-    plt.xlabel('g-r')
-    plt.ylabel('r-i')
-    plt.xlim([-0.5,2.5])
-    plt.ylim([-0.5,2])
-
-
-    plt.subplot(3,1,2)
-    plt.plot(model['hmag'][ran[d]]-model['kmag'][ran[d]],\
-             model['jmag'][ran[d]]-model['hmag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-    plt.xlim([-0.1,0.4])
-    plt.ylim([-0.2,1.2])
-
-    plt.plot(model['hmag'][ran[g]]-model['kmag'][ran[g]],\
-             model['jmag'][ran[g]]-model['hmag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
-
-    plt.xlabel('H-K')
-    plt.ylabel('J-H')
-    
-    #ran=np.array(random.sample(range(len(model_red['teff'])),\
-    #int(len(model_red['teff'])*frac)))
-
-    '''
-    plt.plot(model_red['gmag'][ran]-model_red['rmag'][ran],\
-    model_red['rmag'][ran]-model_red['imag'][ran]\
-    ,'.',color='red',markersize=3,zorder=-32)
-    '''
-    '''
-    um=np.where(model_red['avs'][ran] == np.max(avs))
-    plt.plot(model_red['gmag'][ran[um]]-model_red['rmag'][ran[um]],\
-    model_red['rmag'][ran[um]]-model_red['imag'][ran[um]]\
-    ,'.',color='blue',markersize=3,zorder=-32)
-
-    um=np.where(model_red['avs'][ran] == np.min(avs))
-    plt.plot(model_red['gmag'][ran[um]]-model_red['rmag'][ran[um]],\
-    model_red['rmag'][ran[um]]-model_red['imag'][ran[um]]\
-    ,'.',color='yellow',markersize=3,zorder=-32)
-   '''
-
-    plt.subplot(3,1,3)
-    #plt.errorbar([grcol], [Mg], xerr=grcole, yerr=Mge,color='green',elinewidth=15)
-
-    #ran=np.array(random.sample(range(len(model['teff'])),\
-    #int(len(model['teff'])*frac)))
-    
-    plt.plot(model['gmag'][ran[d]]-model['rmag'][ran[d]],\
-             model['gmag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-
-    plt.plot(model['gmag'][ran[g]]-model['rmag'][ran[g]],\
-             model['gmag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
-
-    '''
-    ran=np.array(random.sample(range(len(model_red['teff'])),\
-    int(len(model_red['teff'])*frac)))
-
-    plt.plot(model_red['gmag'][ran]-model_red['rmag'][ran],\
-    model_red['gmag'][ran]\
-    ,'.',color='red',markersize=3,zorder=-32)
-    '''
-    '''
-    um=np.where(model_red['avs'][ran] == np.max(avs))
-    plt.plot(model_red['gmag'][ran[um]]-model_red['rmag'][ran[um]],\
-    model_red['gmag'][ran[um]]\
-    ,'.',color='blue',markersize=3,zorder=-32)
-
-    um=np.where(model_red['avs'][ran] == np.min(avs))
-    plt.plot(model_red['gmag'][ran[um]]-model_red['rmag'][ran[um]],\
-    model_red['gmag'][ran[um]]\
-    ,'.',color='yellow',markersize=3,zorder=-32)
-    '''
-
-    plt.errorbar([grcol], [Mg], xerr=grcole, yerr=Mge,color='green',elinewidth=5)
-
-    plt.xlim([-0.5,2])
-    plt.ylim([15,-5])
-    plt.xlabel('g-r')
-    plt.ylabel('Mg')
-
-
-def plothrd2(x,y,res,err1,err2,avs,model,model_red,names,j,medav,stdav,grcol,ricol,grcole,ricole,plx,plxe,ix,iy,model_plx):
-
-    plt.figure('hrd')
-    plt.subplot(3,1,1)
-    frac=0.01
-
-    ran=np.array(random.sample(range(len(model['teff'])),\
-    int(len(model['teff'])*frac)))
-
-    d=np.where(model['logg'][ran] > 3.5)[0]
-    plt.plot(model['gmag'][ran[d]]-model['rmag'][ran[d]],\
-             model['rmag'][ran[d]]-model['imag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-
-    g=np.where(model['logg'][ran] < 3.5)[0]
-    plt.plot(model['gmag'][ran[g]]-model['rmag'][ran[g]],\
-             model['rmag'][ran[g]]-model['imag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
-    plt.errorbar([grcol], [ricol], xerr=grcole, yerr=ricole,color='green',elinewidth=5)
-    plt.xlabel('g-r')
-    plt.ylabel('r-i')
-    plt.xlim([-0.5,2.5])
-    plt.ylim([-0.5,2])
-
-
-    plt.subplot(3,1,2)
-    plt.plot(model['hmag'][ran[d]]-model['kmag'][ran[d]],\
-             model['jmag'][ran[d]]-model['hmag'][ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-    plt.xlim([-0.1,0.4])
-    plt.ylim([-0.2,1.2])
-
-    plt.plot(model['hmag'][ran[g]]-model['kmag'][ran[g]],\
-             model['jmag'][ran[g]]-model['hmag'][ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
-
-    plt.xlabel('H-K')
-    plt.ylabel('J-H')
-    
-    #ran=np.array(random.sample(range(len(model_red['teff'])),\
-    #int(len(model_red['teff'])*frac)))
-
-    '''
-    plt.plot(model_red['gmag'][ran]-model_red['rmag'][ran],\
-    model_red['rmag'][ran]-model_red['imag'][ran]\
-    ,'.',color='red',markersize=3,zorder=-32)
-    '''
-    '''
-    um=np.where(model_red['avs'][ran] == np.max(avs))
-    plt.plot(model_red['gmag'][ran[um]]-model_red['rmag'][ran[um]],\
-    model_red['rmag'][ran[um]]-model_red['imag'][ran[um]]\
-    ,'.',color='blue',markersize=3,zorder=-32)
-
-    um=np.where(model_red['avs'][ran] == np.min(avs))
-    plt.plot(model_red['gmag'][ran[um]]-model_red['rmag'][ran[um]],\
-    model_red['rmag'][ran[um]]-model_red['imag'][ran[um]]\
-    ,'.',color='yellow',markersize=3,zorder=-32)
-   '''
-
-    plt.subplot(3,1,3)
-    #plt.errorbar([grcol], [Mg], xerr=grcole, yerr=Mge,color='green',elinewidth=15)
-
-    #ran=np.array(random.sample(range(len(model['teff'])),\
-    #int(len(model['teff'])*frac)))
-    
-    plt.semilogy(model['gmag'][ran[d]]-model['rmag'][ran[d]],\
-             model_plx[ran[d]],\
-    '.',color='blue',markersize=1,zorder=-32)
-
-    plt.semilogy(model['gmag'][ran[g]]-model['rmag'][ran[g]],\
-             model_plx[ran[g]],\
-    '.',color='red',markersize=1,zorder=-32)
-
-    '''
-    ran=np.array(random.sample(range(len(model_red['teff'])),\
-    int(len(model_red['teff'])*frac)))
-
-    plt.plot(model_red['gmag'][ran]-model_red['rmag'][ran],\
-    model_red['gmag'][ran]\
-    ,'.',color='red',markersize=3,zorder=-32)
-    '''
-    '''
-    um=np.where(model_red['avs'][ran] == np.max(avs))
-    plt.plot(model_red['gmag'][ran[um]]-model_red['rmag'][ran[um]],\
-    model_red['gmag'][ran[um]]\
-    ,'.',color='blue',markersize=3,zorder=-32)
-
-    um=np.where(model_red['avs'][ran] == np.min(avs))
-    plt.plot(model_red['gmag'][ran[um]]-model_red['rmag'][ran[um]],\
-    model_red['gmag'][ran[um]]\
-    ,'.',color='yellow',markersize=3,zorder=-32)
-    '''
-
-    plt.errorbar([grcol], [plx], xerr=grcole, yerr=plxe,color='green',elinewidth=5)
-
-    plt.xlim([-0.5,2])
-    plt.ylim([np.max(model_plx),np.min(model_plx)])
-    plt.xlabel('g-r')
-    plt.ylabel('plx')
+    # Plot logg-teff diagram in last plot unless numax is constrained, then use it instead of logg:
+    plt.subplot(2,4,8)
+    plothrd_auto(model=model,modelSel=modelSel,input=input,mabs=mabs,mabse=mabse,ran=ran,umran=umran,d=d,g=g)

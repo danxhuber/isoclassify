@@ -1,20 +1,21 @@
-import os 
+import os
 import copy
 import glob
 import h5py
+import sys
 
 import numpy as np
 from matplotlib import pylab as plt
+from matplotlib import rcParams
 import pandas as pd
-#import ebf
 import astropy.units as units
 from astropy.coordinates import SkyCoord
-from dustmaps.bayestar import BayestarWebQuery
 import mwdust
 import pdb
 
 from isoclassify.direct import classify as classify_direct
 from isoclassify.grid import classify as classify_grid
+from isoclassify.extinction import *
 from isoclassify import DATADIR
 
 CONSTRAINTS = [
@@ -26,9 +27,9 @@ COORDS = ['ra','dec']
 
 def run(**kw):
     if kw['method']=='direct':
-        pipe = PipelineDirect(**kw)    
+        pipe = PipelineDirect(**kw)
     elif kw['method']=='grid':
-        pipe = PipelineGrid(**kw) 
+        pipe = PipelineGrid(**kw)
     else:
         assert False, "method {} not supported ".format(kw['method'])
 
@@ -36,39 +37,39 @@ def run(**kw):
     if pipe.plotmode=='show':
         plt.ion()
         plt.show()
+
+        # Set tight layout bounds to make shown figures clearer
+        fig1 = plt.figure('hrd')
+        fig1.set_tight_layout(True)
+        fig2 = plt.figure('posteriors')
+        fig2.set_tight_layout(True)
+
         input('[press return to continue]:')
     elif pipe.plotmode.count('save')==1:
         pipe.savefig()
 
     pipe.to_csv()
 
-def query_dustmodel_coords(ra,dec):
-    reddenMap = BayestarWebQuery(version='bayestar2017')
-    sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='icrs')
-    reddenContainer = reddenMap(sightLines,mode='best')
-    del reddenMap # To clear reddenMap from memory
-    distanceSamples = np.array([0.06309573,0.07943284,0.1,0.12589255,0.15848933,0.19952627,0.25118864,0.31622776,0.3981072,0.50118726,0.6309574,0.7943282 ,1.,1.2589258,1.5848933,1.9952621,2.511887,3.1622777,3.981073,5.011873,6.3095727,7.943284,10.,12.589258,15.848933,19.952621,25.11887,31.622776,39.81073,50.11873,63.095726])*1000. # In pc, from bayestar2017 map distance samples
-    
-    dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
+def runMulti(modelGridIn, **kw):
+    if not os.path.exists(kw['outdir']):
+        os.makedirs(kw['outdir'])
+    print('running',kw['id_starname'])
+    f = open(os.path.join(kw['outdir'], 'output.log'), 'w')
+    sys.stdout = f
 
-    for index in range(len(reddenContainer)):
-        dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
-        
-    return dustModelDF
-    
-def query_dustmodel_coords_allsky(ra,dec):
-    reddenMap = mwdust.Combined15()
-    sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='galactic')
-    distanceSamples = np.array([0.06309573,0.07943284,0.1,0.12589255,0.15848933,0.19952627,0.25118864,0.31622776,0.3981072,0.50118726,0.6309574,0.7943282 ,1.,1.2589258,1.5848933,1.9952621,2.511887,3.1622777,3.981073,5.011873,6.3095727,7.943284,10.,12.589258,15.848933,19.952621,25.11887,31.622776,39.81073,50.11873,63.095726])*1000. # In pc, from bayestar2017 map distance samples
-    reddenContainer=reddenMap(sightLines.l.value,sightLines.b.value,distanceSamples/1000.)
-    del reddenMap # To clear reddenMap from memory
-    
-    dustModelDF = pd.DataFrame({'ra': [ra], 'dec': [dec]})
-    
-    for index in range(len(reddenContainer)):
-        dustModelDF['av_'+str(round(distanceSamples[index],6))] = reddenContainer[index]
+    if kw['method']=='direct':
+        pipe = PipelineDirect(**kw)
+        pipe.run()
+    elif kw['method']=='grid':
+        pipe = PipelineGrid(**kw)
+        pipe.runMulti(modelGridIn)
+    else:
+        assert False, "method {} not supported ".format(kw['method'])
 
-    return dustModelDF
+    pipe.savefig()
+    pipe.to_csv()
+    sys.stdout = sys.__stdout__
+    f.close()
 
 class Pipeline(object):
     def __init__(self, **kw):
@@ -81,7 +82,7 @@ class Pipeline(object):
 
         # create plot (both interactive and save modes)
         if self.plotmode=='none':
-            self.plot = 0 
+            self.plot = 0
         else:
             self.plot = 1
 
@@ -90,13 +91,13 @@ class Pipeline(object):
 
         # Read in inputs
         df = pd.read_csv(kw['csv'])
-        
+
         if (len(df.id_starname.drop_duplicates())!=len(df)):
             print('dropping duplicates')
             df=df.drop_duplicates(subset='id_starname')
-            
+
         df.index = df.id_starname
-        star = df.ix[self.id_starname]
+        star = df.loc[self.id_starname]
 
         self.dust = star.dust
 
@@ -114,7 +115,7 @@ class Pipeline(object):
                 const[key] = star[key]
             else:
                 const[key] = -99
-        
+
         self.const = const
         self.const['ra'] = star['ra']
         self.const['dec'] = star['dec']
@@ -146,25 +147,25 @@ class Pipeline(object):
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addgriz(val,err)
-        
+
     def addgaia(self,x):
         keys = 'gamag bpmag rpmag'.split()
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addgaia(val,err)
-        
+
     def addbvt(self,x):
         keys = 'btmag vtmag'.split()
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addbvt(val,err)
-        
+
     def addseismo(self,x):
         keys = 'numax dnu'.split()
         val = [self.const[key] for key in keys]
         err = [self.const[key+'_err'] for key in keys]
         x.addseismo(val,err)
-    
+
     def addbv(self,x):
         keys = 'bmag vmag'.split()
         val = [self.const[key] for key in keys]
@@ -173,13 +174,13 @@ class Pipeline(object):
 
     def addplx(self,x):
         x.addplx(self.const['parallax'], self.const['parallax_err'])
-        
+
     def adddmag(self,x):
         x.adddmag(self.const['dmag'], self.const['dmag_err'])
 
     def addcoords(self,x):
         x.addcoords(self.const['ra'],self.const['dec'])
-    
+
     def addmag(self,x):
         x.addmag(
             [self.const[self.const['band']]],
@@ -197,7 +198,7 @@ class Pipeline(object):
 
         for key in COORDS:
             print(key, self.const[key])
-            
+
     def savefig(self):
         labels = plt.get_figlabels()
         _, ext = self.plotmode.split('-')
@@ -207,19 +208,20 @@ class Pipeline(object):
             fig.set_tight_layout(True)
             plt.savefig(fn)
             print("created {}".format(fn))
+            plt.close()
 
     def to_csv(self):
         out = {}
         out['id_starname'] = self.id_starname
         out = dict(out, **self.const)
-        
+
         for outcol,incol in self.outputcols.items():
             out[outcol] = getattr(self.paras, incol)
             out[outcol+'_err1'] = getattr(self.paras, incol+'ep')
             out[outcol+'_err2'] = -getattr(self.paras, incol+'em')
 
         out = pd.Series(out)
-        
+
         # Re-ordering series
         block1 = []
         block2 = []
@@ -235,10 +237,10 @@ class Pipeline(object):
             block2.append(col)
 
         out = out[block1 + block2 + block3]
-        out.to_csv(self.csvfn)
+        out.to_csv(self.csvfn, header=False)
         print("created {}".format(self.csvfn))
-        
-    
+
+
 
 class PipelineDirect(Pipeline):
     outputcols = {
@@ -251,30 +253,14 @@ class PipelineDirect(Pipeline):
         'dir_mass': 'mass',
         'dir_rho': 'rho'
     }
-    
+
     def run(self):
         self.print_constraints()
 
-        #pdb.set_trace()
-
         fn = os.path.join(DATADIR,'bcgrid.h5')
         bcmodel = h5py.File(fn,'r', driver='core', backing_store=False)
-        
-        if self.dust == 'allsky':
-            dustmodel = query_dustmodel_coords_allsky(
-                self.const['ra'],self.const['dec']
-            )
-            ext = extinction('cardelli')
 
-        if self.dust == 'green18':
-            dustmodel = query_dustmodel_coords(
-                self.const['ra'],self.const['dec']
-            )
-            ext = extinction('schlafly16')
-
-        if self.dust == 'none':
-            dustmodel = 0
-            ext = extinction('cardelli')
+        dustmodel,ext = query_dustmodel_coords(self.const['ra'],self.const['dec'],self.dust)
 
         x = classify_direct.obsdata()
         self.addspec(x)
@@ -288,7 +274,7 @@ class PipelineDirect(Pipeline):
         self.addcoords(x)
         self.addmag(x)
         self.paras = classify_direct.stparas(
-            input=x, bcmodel=bcmodel, dustmodel=dustmodel, 
+            input=x, bcmodel=bcmodel, dustmodel=dustmodel,
             band=self.const['band'], ext=ext, plot=1
         )
 
@@ -315,56 +301,47 @@ class PipelineGrid(Pipeline):
 
 #        model = ebf.read(os.path.join(DATADIR,'mesa.ebf'))
         fn = os.path.join(DATADIR,'mesa.h5')
-        file = h5py.File(fn,'r+', driver='core', backing_store=False)
-        model = {'age':np.array(file['age']),\
-        'mass':np.array(file['mass']),\
-        'feh':np.array(file['feh']),\
-        'teff':np.array(file['teff']),\
-        'logg':np.array(file['logg']),\
-        'rad':np.array(file['rad']),\
-        'lum':np.array(file['rad']),\
-        'rho':np.array(file['rho']),\
-        'dage':np.array(file['dage']),\
-        'dmass':np.array(file['dmass']),\
-        'dfeh':np.array(file['dfeh']),\
-        'eep':np.array(file['eep']),\
-        'bmag':np.array(file['bmag']),\
-        'vmag':np.array(file['vmag']),\
-        'btmag':np.array(file['btmag']),\
-        'vtmag':np.array(file['vtmag']),\
-        'gmag':np.array(file['gmag']),\
-        'rmag':np.array(file['rmag']),\
-        'imag':np.array(file['imag']),\
-        'zmag':np.array(file['zmag']),\
-        'jmag':np.array(file['jmag']),\
-        'hmag':np.array(file['hmag']),\
-        'kmag':np.array(file['kmag']),\
-        'd51mag':np.array(file['d51mag']),\
-        'gamag':np.array(file['gamag']),\
-        'fdnu':np.array(file['fdnu']),\
-        'avs':np.zeros(len(np.array(file['gamag']))),\
-        'dis':np.zeros(len(np.array(file['gamag'])))}
-        
-        #ebf.read(os.path.join(DATADIR,'mesa.ebf'))
-        # prelims to manipulate some model variables (to be automated soon ...)
-        #pdb.set_trace()
+        modfile = h5py.File(fn,'r', driver='core', backing_store=False)
+        model = {'age':np.array(modfile['age']),\
+        'mass':np.array(modfile['mass']),\
+        'feh_init':np.array(modfile['feh']),\
+        'feh':np.array(modfile['feh_act']),\
+        'teff':np.array(modfile['teff']),\
+        'logg':np.array(modfile['logg']),\
+        'rad':np.array(modfile['rad']),\
+        'lum':np.array(modfile['rad']),\
+        'rho':np.array(modfile['rho']),\
+        'dage':np.array(modfile['dage']),\
+        'dmass':np.array(modfile['dmass']),\
+        'dfeh':np.array(modfile['dfeh']),\
+        'eep':np.array(modfile['eep']),\
+        'bmag':np.array(modfile['bmag']),\
+        'vmag':np.array(modfile['vmag']),\
+        'btmag':np.array(modfile['btmag']),\
+        'vtmag':np.array(modfile['vtmag']),\
+        'gmag':np.array(modfile['gmag']),\
+        'rmag':np.array(modfile['rmag']),\
+        'imag':np.array(modfile['imag']),\
+        'zmag':np.array(modfile['zmag']),\
+        'jmag':np.array(modfile['jmag']),\
+        'hmag':np.array(modfile['hmag']),\
+        'kmag':np.array(modfile['kmag']),\
+        'bpmag':np.array(modfile['bpmag']),\
+        'gamag':np.array(modfile['gamag']),\
+        'rpmag':np.array(modfile['rpmag']),\
+        'fdnu':np.array(modfile['fdnu']),\
+        'avs':np.zeros(len(np.array(modfile['gamag']))),\
+        'dis':np.zeros(len(np.array(modfile['gamag'])))}
+
         model['rho'] = np.log10(model['rho'])
-        model['lum'] = model['rad']**2*(model['teff']/5777.)**4
+        model['lum'] = model['rad']**2*(model['teff']/5772.)**4
         # next line turns off Dnu scaling relation corrections
         # model['fdnu'][:]=1.
         model['avs']=np.zeros(len(model['teff']))
         model['dis']=np.zeros(len(model['teff']))
 
-        if self.dust == 'allsky':
-            dustmodel = query_dustmodel_coords_allsky(self.const['ra'],self.const['dec'])
-            ext = extinction('cardelli')
-        if self.dust == 'green18':
-            dustmodel = query_dustmodel_coords(self.const['ra'],self.const['dec'])
-            ext = extinction('schlafly16')
-        if self.dust == 'none':
-            dustmodel = 0
-            ext = extinction('cardelli')
-            
+        dustmodel,ext = query_dustmodel_coords(self.const['ra'],self.const['dec'],self.dust)
+
         # Instantiate model
         x = classify_grid.obsdata()
         self.addcoords(x)
@@ -379,7 +356,30 @@ class PipelineGrid(Pipeline):
         self.addplx(x)
         self.adddmag(x)
         self.paras = classify_grid.classify(
-            input=x, model=model, dustmodel=dustmodel,ext=ext, 
+            input=x, model=model, dustmodel=dustmodel,ext=ext,
+            plot=self.plot, useav=0, band=self.const['band']
+        )
+
+    def runMulti(self,modelGridIn):
+        self.print_constraints()
+
+        dustmodelIn,extIn = query_dustmodel_coords(self.const['ra'],self.const['dec'],self.dust)
+
+        # Instantiate model
+        x = classify_grid.obsdata()
+        self.addcoords(x)
+        self.addspec(x)
+        self.addlum(x)
+        self.addjhk(x)
+        self.addgriz(x)
+        self.addgaia(x)
+        self.addbv(x)
+        self.addbvt(x)
+        self.addseismo(x)
+        self.addplx(x)
+        self.adddmag(x)
+        self.paras = classify_grid.classify(
+            input=x, model=modelGridIn, dustmodel=dustmodelIn,ext=extIn,
             plot=self.plot, useav=0, band=self.const['band']
         )
 
@@ -389,7 +389,7 @@ def _csv_reader(f):
 
 def scrape_csv(path):
     """
-    Read in isochrones csvfiles 
+    Read in isochrones csvfiles
     Args:
         outdir (str): where to look for isochrones.csv files
     """
@@ -406,65 +406,4 @@ def scrape_csv(path):
 
 
     df = pd.DataFrame(df)
-    df = df.reset_index()
     return df
- 
-# R_lambda values to convert E(B-V) given by dustmaps to extinction in
-# a given passband.  The two main caveats with this are: - strictly
-# speaking only cardelli is consistent with the BC tables used in the
-# MIST grid, but using wrong R_lambda's for the newer Green et
-# al. dustmaps is (probably) worse.  - some values were interpolated
-# to passbands that aren't included in the Schlafly/Green tables.
-
-def extinction(law):
-    if (law == 'cardelli'):
-        out = {
-            "ab":4.1708789, 
-            "av":3.1071930, 
-            "abt":4.3358221, 
-            "avt":3.2867038, 
-            "ag":3.8281101, 
-            "ar":2.7386468, 
-            "ai":2.1109662, 
-            "az":1.4975613, 
-            "aj":0.89326176, 
-            "ah":0.56273418, 
-            "ak":0.35666104, 
-            "aga":2.4623915
-        }
-        
-    if (law == 'schlafly11'):
-        out = {
-            "ab":3.626, 
-            "av":2.742, 
-            "abt":4.5309214, 
-            "avt":3.1026801, 
-            "ag":3.303, 
-            "ar":2.285, 
-            "ai":1.698, 
-            "az":1.263, 
-            "aj":0.77510388, 
-            "ah":0.50818384, 
-            "ak":0.33957048, 
-            "aga":1.9139634
-        }
-
-    if (law == 'schlafly16'):
-        # see http://argonaut.skymaps.info/usage under "Gray Component". this is a lower limit.
-        grayoffset=0.063
-        out = {
-            "ab":3.6060565+grayoffset, 
-            "av":2.9197679+grayoffset, 
-            "abt":3.7204173+grayoffset, 
-            "avt":3.0353634+grayoffset, 
-            "ag":3.384+grayoffset, 
-            "ar":2.483+grayoffset, 
-            "ai":1.838+grayoffset, 
-            "az":1.414+grayoffset, 
-            "aj":0.650+grayoffset, 
-            "ah":0.327+grayoffset, 
-            "ak":0.161+grayoffset, 
-            "aga":2.2203186+grayoffset
-        }
-    return out
-
