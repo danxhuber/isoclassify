@@ -11,7 +11,7 @@ from scipy.interpolate import RegularGridInterpolator
 import pdb
 from astropy.io import ascii
 import os
-from isoclassify import DATADIR
+from isoclassify import PACKAGEDIR
 
 def distance_likelihood(plx, plxe, ds):
     """Distance Likelihood
@@ -737,13 +737,13 @@ def casagrande_bv(bv,feh):
 
     return teff
 
-fn = os.path.join(DATADIR,'isoclassify/direct/jk-solar-mist.txt')
+fn = os.path.join(PACKAGEDIR, 'direct/jk-solar-mist.txt')
 def mist_jk(jk):
     mist=ascii.read(fn)
     teff=np.interp(jk,mist['col1'],mist['col2'])
     return teff
 
-fn = os.path.join(DATADIR,'isoclassify/direct/bprp-solar-mist.txt')
+fn = os.path.join(PACKAGEDIR, 'direct/bprp-solar-mist.txt')
 def mist_bprp(bprp):
     mist=ascii.read(fn)
     teff=np.interp(bprp,mist['col1'],mist['col2'])
