@@ -6,6 +6,8 @@ from astropy.coordinates import SkyCoord
 #from dustmaps.bayestar import BayestarWebQuery
 import mwdust
 
+from . import PACKAGEDIR
+
 def query_dustmodel_coords(ra,dec,dust):
     if dust == 'allsky':
         reddenMap = mwdust.Combined19()
@@ -23,7 +25,7 @@ def query_dustmodel_coords(ra,dec,dust):
         return reddenMap,ext
 
     sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='galactic')
-    distanceSamples = np.loadtxt("isoclassify/data/distance-samples-green19.txt",delimiter=',')*1000.
+    distanceSamples = np.loadtxt(f"{PACKAGEDIR}/data/distance-samples-green19.txt",delimiter=',')*1000.
     reddenContainer = reddenMap(sightLines.l.value,sightLines.b.value,distanceSamples/1000.)
 
     del reddenMap # To clear reddenMap from memory
@@ -45,14 +47,14 @@ def query_dustmodel_coords(ra,dec,dust):
 def extinction(law):
     if (law == 'cardelli'):
         out = {}
-        with open("isoclassify/data/extinction-vector-cardelli-iso.txt") as f:
+        with open(f"{PACKAGEDIR}/data/extinction-vector-cardelli-iso.txt") as f:
             for line in f:
                 (key,val) = line.split(',')
                 out[key] = float(val)
 
     if (law == 'schlafly11'):
         out = {}
-        with open("isoclassify/data/extinction-vector-schlafly11-iso.txt") as f:
+        with open(f"{PACKAGEDIR}/data/extinction-vector-schlafly11-iso.txt") as f:
             for line in f:
                 (key,val) = line.split(',')
                 out[key] = float(val)
@@ -61,14 +63,14 @@ def extinction(law):
         # see http://argonaut.skymaps.info/usage under "Gray Component". this is a lower limit.
         grayoffset=0.063
         out = {}
-        with open("isoclassify/data/extinction-vector-schlafly16-iso.txt") as f:
+        with open(f"{PACKAGEDIR}/data/extinction-vector-schlafly16-iso.txt") as f:
             for line in f:
                 (key,val) = line.split(',')
                 out[key] = float(val)+grayoffset
 
     if (law == 'green19'):
         out = {}
-        with open("isoclassify/data/extinction-vector-green19-iso.txt") as f:
+        with open(f"{PACKAGEDIR}/data/extinction-vector-green19-iso.txt") as f:
             for line in f:
                 (key,val) = line.split(',')
                 out[key] = float(val)
