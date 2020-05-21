@@ -6,22 +6,34 @@ Python codes to perform stellar classifications given any set of input observabl
 
 ## Installation
 
-```bash
-# Clone repo
-git clone https://github.com/danxhuber/isoclassify
+1. Download `mwdust` (see https://github.com/jobovy/mwdust).
 
-# Download dependencies (see requirements.txt)
+2. Clone the repo,
 
-# Download MESA models into isoclassify directory
-cd isoclassify
-wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5
-wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5
+    ```bash
+    git clone https://github.com/danxhuber/isoclassify
+    ```
 
-# Set environment variables
-export ISOCLASSIFY=yourpath/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
-export PYTHONPATH=yourpath/isoclassify:$PYTHONPATH
-export PATH=yourpath/isoclassify/bin:$PATH # This adds isoclassify executable to your path
-```
+3. Install `isoclassify`,
+
+    ```bash
+    cd isoclassify
+    pip install --user .
+    ```
+
+4. **(optional)** Set environment variable for data location, otherwise the default data location is `~/.isoclassify`.
+
+    ```bash
+    export ISOCLASSIFY=/path/to/data/dir
+    ```
+
+5. Download MESA models into `isoclassify` data directory
+
+    ```bash
+    cd ~/.isoclassify  # or $ISOCLASSIFY if step 4
+    wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5
+    wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5
+    ```
 
 ## Grid Modeling:
 
