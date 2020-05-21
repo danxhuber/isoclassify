@@ -1,3 +1,4 @@
+import os
 from setuptools import setup
 
 # Load version
@@ -11,6 +12,18 @@ with open('requirements.txt') as file:
 
 # mwdust requires manual install to download maps
 requirements.remove('mwdust')
+
+# Configure data directory
+if 'ISOCLASSIFY' in os.environ:
+    # For those who've already configured environment variables
+    datadir = os.environ['ISOCLASSIFY']
+else:
+    # Create isoclassify directory in user home
+    datadir = os.path.join(os.path.expanduser('~'), '.isoclassify')
+
+if not os.path.isdir(datadir):
+    # If datadir doesn't exist, make a new one upon install
+    os.mkdir(datadir)
 
 setup(
     name='isoclassify',
