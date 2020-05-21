@@ -14,8 +14,8 @@ git clone https://github.com/danxhuber/isoclassify
 
 # Download MESA models into isoclassify directory
 cd isoclassify
-wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5?dl=0
-wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5?dl=0 
+wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5
+wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5
 
 # Set environment variables
 export ISOCLASSIFY=yourpath/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
