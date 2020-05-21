@@ -8,26 +8,45 @@ Python codes to perform stellar classifications given any set of input observabl
 
 1. Download `mwdust` (see https://github.com/jobovy/mwdust).
 
-2. Clone the repo,
+2. Clone and `cd` to the repo,
 
     ```bash
     git clone https://github.com/danxhuber/isoclassify
+    cd isoclassify
     ```
 
 3. Install `isoclassify`,
 
     ```bash
-    cd isoclassify
-    pip install --user .
+    pip install .  # Or `pip install -e .` for editable mode
     ```
 
-4. **(optional)** Set environment variable for data location, otherwise the default data location is `~/.isoclassify`.
+4. If the install succeeded,
+
+    ```bash
+    isoclassify -h
+    ```
+
+    should output
+
+    ```none
+    usage: isoclassify [-h] {run,batch,multiproc,scrape-output} ...
+
+    optional arguments:
+      -h, --help            show this help message and exit
+
+    subcommands:
+      {run,batch,multiproc,scrape-output}
+        run                 run isoclassify
+    ```
+
+5. **Optional:** Set environment variable for data location, otherwise the default data location is `~/.isoclassify`.
 
     ```bash
     export ISOCLASSIFY=/path/to/data/dir
     ```
 
-5. Download MESA models into `isoclassify` data directory
+6. Download MESA models into `isoclassify` data directory
 
     ```bash
     cd ~/.isoclassify  # or $ISOCLASSIFY if step 4
