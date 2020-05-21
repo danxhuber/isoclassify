@@ -40,16 +40,16 @@ Python codes to perform stellar classifications given any set of input observabl
         run                 run isoclassify
     ```
 
-5. **Optional:** Set environment variable for data location, otherwise the default data location is `~/.isoclassify`.
+5. **Optional:** Set an environment variable for a custom path to the MESA models, otherwise the default data location is `~/.isoclassify`, created upon install.
 
     ```bash
     export ISOCLASSIFY=/path/to/data/dir
     ```
 
-6. Download MESA models into `isoclassify` data directory
+6. Download MESA models into the `isoclassify` data directory,
 
     ```bash
-    cd ~/.isoclassify  # or $ISOCLASSIFY if step 4
+    cd ~/.isoclassify  # or $ISOCLASSIFY if step 5 is used
     wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5
     wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5
     ```
