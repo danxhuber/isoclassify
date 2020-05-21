@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Depreciated in favour of using entry_points in setup.py. 
+# Please remove this from your path.
 import os
 import glob
 from argparse import ArgumentParser
