@@ -15,10 +15,10 @@ Python codes to perform stellar classifications given any set of input observabl
     cd isoclassify
     ```
 
-3. Install `isoclassify`,
+3. Install `isoclassify` (use the `-e` option for editable mode if making changes to the code)
 
     ```bash
-    pip install .  # Or `pip install -e .` for editable mode
+    pip install .
     ```
 
 4. If the install succeeded,
@@ -40,13 +40,13 @@ Python codes to perform stellar classifications given any set of input observabl
         run                 run isoclassify
     ```
 
-5. **Optional:** Set an environment variable for a custom path to the MESA models, otherwise the default data location is `~/.isoclassify`, created upon install.
+5. **Optional:** Set an environment variable for a path to store the MESA models downloaded in step 6. Otherwise, skip this step and use the default location.
 
     ```bash
     export ISOCLASSIFY=/path/to/data/dir
     ```
 
-6. Download MESA models into the `isoclassify` data directory,
+6. Download MESA models into the `isoclassify` data directory created upon installation or specified in step 5,
 
     ```bash
     cd ~/.isoclassify  # or $ISOCLASSIFY if step 5 is used
