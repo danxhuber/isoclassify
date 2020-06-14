@@ -11,6 +11,7 @@ with open('requirements.txt') as file:
     requirements = file.read().splitlines()
 
 # mwdust requires manual install to download maps
+# TODO: add warning if `mwdust` is not installed
 requirements.remove('mwdust')
 
 # Configure data directory
@@ -25,11 +26,20 @@ if not os.path.isdir(datadir):
     # If datadir doesn't exist, make a new one upon install
     os.mkdir(datadir)
 
+# Package description
+desc = 'Python codes to perform stellar classifications given any set of input observables.'
+
 setup(
     name='isoclassify',
     version=__version__,
-    description='Isoclassify',
-    packages=['isoclassify'],
+    description=desc,
+    package_dir={
+        'isoclassify': 'isoclassify', 
+        'isoclassify.direct': 'isoclassify/direct', 
+        'isoclassify.grid': 'isoclassify/grid',
+        },
+    packages=['isoclassify', 'isoclassify.direct', 'isoclassify.grid'],
+    include_package_data=True,  # <-- includes 'isoclassify/data'
     author='Daniel Huber',
     install_requires=requirements,
     entry_points={
