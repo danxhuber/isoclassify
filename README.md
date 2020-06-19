@@ -6,22 +6,53 @@ Python codes to perform stellar classifications given any set of input observabl
 
 ## Installation
 
-```bash
-# Clone repo
-git clone https://github.com/danxhuber/isoclassify
+1. Download `mwdust` (see https://github.com/jobovy/mwdust).
 
-# Download dependencies (see requirements.txt)
+2. Clone and `cd` to the repo,
 
-# Download MESA models into isoclassify directory
-cd isoclassify
-wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5?dl=0
-wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5?dl=0 
+    ```bash
+    git clone https://github.com/danxhuber/isoclassify
+    cd isoclassify
+    ```
 
-# Set environment variables
-export ISOCLASSIFY=yourpath/isoclassify # access mesa models via ${ISOCLASSIFY}/mesa.ebf 
-export PYTHONPATH=yourpath/isoclassify:$PYTHONPATH
-export PATH=yourpath/isoclassify/bin:$PATH # This adds isoclassify executable to your path
-```
+3. Install `isoclassify` (use the `-e` option for editable mode if making changes to the code)
+
+    ```bash
+    pip install .
+    ```
+
+4. If the install succeeded,
+
+    ```bash
+    isoclassify -h
+    ```
+
+    should output
+
+    ```none
+    usage: isoclassify [-h] {run,batch,multiproc,scrape-output} ...
+
+    optional arguments:
+      -h, --help            show this help message and exit
+
+    subcommands:
+      {run,batch,multiproc,scrape-output}
+        run                 run isoclassify
+    ```
+
+5. **Optional:** Set an environment variable for a path to store the MESA models downloaded in step 6. Otherwise, skip this step and use the default location.
+
+    ```bash
+    export ISOCLASSIFY=/path/to/data/dir
+    ```
+
+6. Download MESA models into the `isoclassify` data directory created upon installation or specified in step 5,
+
+    ```bash
+    cd ~/.isoclassify  # or $ISOCLASSIFY if step 5 is used
+    wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5
+    wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5
+    ```
 
 ## Grid Modeling:
 
