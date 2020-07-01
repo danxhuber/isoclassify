@@ -113,7 +113,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         maxds = tempdis + 5.0*tempdise
         minds = tempdis - 5.0*tempdise
 
-        ds = np.arange(1.0, maxdis, 1.0)
+        ds = np.arange(0.1, maxdis, 0.1)
         lh = distance_likelihood(input.plx, input.plxe, ds)
         prior = distance_prior(ds, L)
         dis = lh*prior
@@ -842,6 +842,10 @@ class obsdata():
 
         self.gamag = -99.
         self.gamage = -99.
+        self.bpmag = -99.
+        self.bpmage = -99.
+        self.rpmag = -99.
+        self.rpmage = -99.
 
         self.numax = -99.
         self.numaxe = -99.
