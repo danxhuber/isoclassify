@@ -156,12 +156,12 @@ def plothrd(model,modelSel,um,input,mabs,mabse,ix,iy):
     )
 
     plt.figure('hrd')
-    frac=0.01
+    frac = 0.01
 
     # Select a fractional subset of models from the entire model array according to frac parameter:
     ran=np.array(random.sample(range(len(model['teff'])),\
     int(len(model['teff'])*frac)))
-    umran = np.array(random.sample(list(um),int(len(um)*frac)))
+    umran = np.array(random.sample(list(um),int(max(len(um)*frac,1))))
 
     # Choose dwarf (d) and giant (g) models:
     d=np.where(model['logg'][ran] > 3.5)[0]

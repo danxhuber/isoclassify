@@ -25,7 +25,8 @@ def query_dustmodel_coords(ra,dec,dust):
         print('Fitting for reddening.')
         return reddenMap,ext
 
-    sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='galactic')
+    sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='icrs')
+    sightLines = sightLines.transform_to('galactic')
 
     distanceSamples = np.loadtxt(f"{PACKAGEDIR}/data/distance-samples-green19.txt",delimiter=',')*1000.
 
