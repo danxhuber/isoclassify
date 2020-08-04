@@ -1,0 +1,33 @@
+#!/bin/csh
+
+if ($1 == h) then
+    echo "isoclassify-script starid feh feh_err band dustmap"
+    exit
+endif
+
+echo "running isoclassify-script on" $1 "with [Fe/H]=" $2 $3 $4 $5
+read -p "continue?" -n1 -s
+set dir=/Users/daniel/science/github/isoclassify/scripts/singlestar/
+
+# setup output directories
+mkdir output_direct
+mkdir output_grid
+
+# grab photometry and parallax, make input file for direct mode
+python "$dir""makeinput.py" $1 $2 $3 $4 $5
+
+# run direct mode, scrape output, and generate grid input file 
+isoclassify run direct $1 --csv input_direct.csv --outdir 'output_direct'
+isoclassify scrape-output 'output_direct/output.csv' output_direct.csv
+python "$dir""out-direct.py"
+
+# run grid mode, re-generate direct mode input with logg
+isoclassify run grid $1 --csv input_grid.csv --outdir 'output_grid'
+isoclassify scrape-output 'output_grid/output.csv' output_grid.csv
+python "$dir""out-grid.py"
+
+# iterate
+isoclassify run direct $1 --csv input_direct.csv --outdir 'output_direct'
+isoclassify scrape-output 'output_direct/output.csv' output_direct.csv
+python "$dir""out-direct.py"
+isoclassify run grid $1 --csv input_grid.csv --outdir 'output_grid'

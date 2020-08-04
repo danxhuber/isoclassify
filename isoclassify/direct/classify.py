@@ -11,7 +11,7 @@ from scipy.interpolate import RegularGridInterpolator
 import pdb
 from astropy.io import ascii
 import os
-from isoclassify import DATADIR
+from isoclassify import PACKAGEDIR
 
 def distance_likelihood(plx, plxe, ds):
     """Distance Likelihood
@@ -113,7 +113,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         maxds = tempdis + 5.0*tempdise
         minds = tempdis - 5.0*tempdise
 
-        ds = np.arange(1.0, maxdis, 1.0)
+        ds = np.arange(0.1, maxdis, 0.1)
         lh = distance_likelihood(input.plx, input.plxe, ds)
         prior = distance_prior(ds, L)
         dis = lh*prior
@@ -204,6 +204,22 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         ### M dwarfs: Mann et al. 2015
         if (input.teff == -99.0):
 
+            if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
+                bprpmag = ((input.bpmag-np.median(ebvs*extfactors['abp']))
+                         - (input.rpmag-np.median(ebvs*extfactors['arp'])))
+                input.teff=mist_bprp(bprpmag)
+                print('using MIST BP-RP for Teff')
+
+            if ((input.jmag > -99.0) & (input.kmag > -99.0)):
+                jkmag = ((input.jmag-np.median(ebvs*extfactors['aj']))
+                         - (input.kmag-np.median(ebvs*extfactors['ak'])))
+                if ((jkmag >= 0.07) & (jkmag <= 0.8)):
+                    input.teff=casagrande_jk(jkmag,feh)
+                    print('using Casagrande J-K for Teff')
+                if (jkmag > 0.8):
+                    input.teff=mist_jk(jkmag)
+                    print('using MIST J-K for Teff')
+
             if ((input.bmag > -99.0) & (input.vmag > -99.0)):
                 bvmag = ((input.bmag-np.median(ebvs*extfactors['ab']))
                          - (input.vmag-np.median(ebvs*extfactors['av'])))
@@ -221,25 +237,10 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             if ((input.btmag > -99.0) & (input.vtmag > -99.0)):
                 bvtmag = ((input.btmag-np.median(ebvs*extfactors['abt']))
                           - (input.vtmag-np.median(ebvs*extfactors['avt'])))
-                if ((bvmag >= 0.19) & (bvmag <= 1.49)):
+                if ((bvtmag >= 0.19) & (bvtmag <= 1.49)):
                     input.teff = casagrande_bvt(bvtmag, feh)
                     print('using Casagrande Bt-Vt for Teff')
 
-            if ((input.jmag > -99.0) & (input.kmag > -99.0)):
-                jkmag = ((input.jmag-np.median(ebvs*extfactors['aj']))
-                         - (input.kmag-np.median(ebvs*extfactors['ak'])))
-                if ((jkmag >= 0.07) & (jkmag <= 0.8)):
-                    input.teff=casagrande_jk(jkmag,feh)
-                    print('using Casagrande J-K for Teff')
-                if (jkmag > 0.8):
-                    input.teff=mist_jk(jkmag)
-                    print('using MIST J-K for Teff')
-
-            if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
-                bprpmag = ((input.bpmag-np.median(ebvs*extfactors['abp']))
-                         - (input.rpmag-np.median(ebvs*extfactors['arp'])))
-                input.teff=mist_bprp(bprpmag)
-                print('using MIST BP-RP for Teff')
 
             input.teffe = input.teff*0.02
 
@@ -737,13 +738,13 @@ def casagrande_bv(bv,feh):
 
     return teff
 
-fn = os.path.join(DATADIR,'isoclassify/direct/jk-solar-mist.txt')
+fn = os.path.join(PACKAGEDIR, 'direct/jk-solar-mist.txt')
 def mist_jk(jk):
     mist=ascii.read(fn)
     teff=np.interp(jk,mist['col1'],mist['col2'])
     return teff
 
-fn = os.path.join(DATADIR,'isoclassify/direct/bprp-solar-mist.txt')
+fn = os.path.join(PACKAGEDIR, 'direct/bprp-solar-mist.txt')
 def mist_bprp(bprp):
     mist=ascii.read(fn)
     teff=np.interp(bprp,mist['col1'],mist['col2'])
@@ -841,6 +842,10 @@ class obsdata():
 
         self.gamag = -99.
         self.gamage = -99.
+        self.bpmag = -99.
+        self.bpmage = -99.
+        self.rpmag = -99.
+        self.rpmage = -99.
 
         self.numax = -99.
         self.numaxe = -99.

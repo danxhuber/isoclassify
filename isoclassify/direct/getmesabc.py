@@ -15,6 +15,7 @@
 # In [19]: getbc(5777.,4.4,0.0,0.0,'bc_gs')
 # Out[19]: -0.34045390880000004
 
+import os
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 import h5py
@@ -29,12 +30,12 @@ def getbc(teff,logg,feh,av,band):
     logggrid = np.array(bcmodel['logggrid'])
     fehgrid = np.array(bcmodel['fehgrid'])
     avgrid = np.array(bcmodel['avgrid'])
-    bcgrid = np.array(bcmodel[band]))
+    bcgrid = np.array(bcmodel[band])
 
-    points = (teffgrid,logggrid, fehgrid, avhgrid)
+    points = (teffgrid, logggrid, fehgrid, avgrid)
     values = bcgrid
     interp = RegularGridInterpolator(points, values) 
 
     xi = np.array([teff,logg,feh,av])
-    bc = interp(x)[0]
+    bc = interp(xi)[0]
     return bc
