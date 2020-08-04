@@ -8,6 +8,10 @@ from scipy.interpolate import interp1d
 import pandas as pd
 
 def binpdf(x,y,step,iname,dustmodel):
+    if np.max(x) - np.min(x) < step: # Ensure step sizes are smaller than the input array value differences
+        step = (np.max(x) - np.min(x))/10.
+        print(iname+' step size too small. Treat results with caution.')
+
     xax = np.arange(np.min(x),np.max(x),step)
 
     if fnmatch.fnmatch(iname,'*age*'):
