@@ -51,7 +51,7 @@ Python codes to perform stellar classifications given any set of input observabl
     ```bash
     cd ~/.isoclassify  # or $ISOCLASSIFY if step 5 is used
     wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5
-    wget https://www.dropbox.com/s/921jc0ojlz6c6ar/bcgrid.h5
+    wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=1u2CQ65UBHDDn_J4ipg2Bayv7i88R5wua' -O bcgrid.h5
     ```
 
 ## Grid Modeling:
