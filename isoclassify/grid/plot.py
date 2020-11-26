@@ -12,6 +12,7 @@ def plotinit():
     plt.figure('posteriors')
 
 def plotposterior(x,y,res,err1,err2,names,j,ix,iy):
+    plt.rcParams['font.size']=8
     #fig = plt.figure(figsize=(8,12))
     plt.subplot(len(names),2,ix)
     plt.plot(x,np.cumsum(y))

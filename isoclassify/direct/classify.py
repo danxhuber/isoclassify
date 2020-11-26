@@ -198,9 +198,29 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         else:
             feh = input.feh
 
+        # if no logg is provided, take guess from absolute mag-logg
+        # fit to solar-metallicity MIST isochrones NB these coeffs are
+        # dodgy in Mv, but pretty good in Mk
+        if (input.logg == -99.):
+            if ((band == 'vmag') | (band == 'vtmag')):
+                fitv = np.poly1d(
+                    [ 0.00255731, -0.07991211,  0.85140418,  1.82465197]
+                )
+                input.logg = fitv(np.median(absmag-ext))
+                print('no input logg provided, guessing (using Mv):', input.logg)
+                #pdb.set_trace()
+            # should really be done filter by filter with a dictionary; TODO
+            else:
+                fitk = np.poly1d([-0.01234736,  0.36684517,  3.1477089 ])
+                input.logg = fitk(np.median(absmag-ext))
+                msg = 'no input logg provided, guessing (using Mk): {}'.format(
+                    input.logg
+                )
+                print(msg)
+
         # if no Teff is provided, use color-Teff relations:
         ### A and earlier: Flower et al.
-        ### FGK dwarfs: Casagrande et al. 2010
+        ### FGK: Casagrande et al. 2010 (Dwarfs) and GHB09 (Giants)
         ### M dwarfs: Mann et al. 2015
         if (input.teff == -99.0):
 
@@ -214,8 +234,12 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 jkmag = ((input.jmag-np.median(ebvs*extfactors['aj']))
                          - (input.kmag-np.median(ebvs*extfactors['ak'])))
                 if ((jkmag >= 0.07) & (jkmag <= 0.8)):
-                    input.teff=casagrande_jk(jkmag,feh)
-                    print('using Casagrande J-K for Teff')
+                    if (input.logg > 3.5):
+                        input.teff=casagrande_jk(jkmag,feh)
+                        print('using Dwarf Casagrande J-K for Teff')
+                    else:
+                        input.teff=ghb09_jk(jkmag,feh)
+                        print('using Giant GHB09 J-K for Teff')
                 if (jkmag > 0.8):
                     input.teff=mist_jk(jkmag)
                     print('using MIST J-K for Teff')
@@ -285,27 +309,6 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
 
         # hack to avoid crazy Teff samples
         teffsamp[teffsamp < 1000.0] = 1000.0
-
-        # if no logg is provided, take guess from absolute mag-logg
-        # fit to solar-metallicity MIST isochrones NB these coeffs are
-        # dodgy in Mv, but pretty good in Mk
-
-        if (input.logg == -99.):
-            if ((band == 'vmag') | (band == 'vtmag')):
-                fitv = np.poly1d(
-                    [ 0.00255731, -0.07991211,  0.85140418,  1.82465197]
-                )
-                input.logg = fitv(np.median(absmag-ext))
-                print('no input logg provided, guessing (using Mv):', input.logg)
-                #pdb.set_trace()
-            # should really be done filter by filter with a dictionary; TODO
-            else:
-                fitk = np.poly1d([-0.01234736,  0.36684517,  3.1477089 ])
-                input.logg = fitk(np.median(absmag-ext))
-                msg = 'no input logg provided, guessing (using Mk): {}'.format(
-                    input.logg
-                )
-                print(msg)
 
         # ATLAS BCs are inaccurate for M dwarfs; use Mann et al. 2015
         # Mks-R relation instead
@@ -736,6 +739,19 @@ def casagrande_bv(bv,feh):
                - 0.0042*feh
                - 0.0055*feh**2))
 
+    return teff
+
+# GHB09 J-K for giants (https://ui.adsabs.harvard.edu/abs/2009A%26A...497..497G/abstract)
+# J-K [0.1,0.8]
+# [Fe/H] [-3.5,0.5]
+def ghb09_jk(jk,feh):
+    teff = (5040.0
+            / (0.6517
+               + 0.6312*jk
+               + 0.0168*jk**2
+               - 0.0381*jk*feh
+               + 0.0256*feh
+               + 0.0013*feh**2))
     return teff
 
 fn = os.path.join(PACKAGEDIR, 'direct/jk-solar-mist.txt')

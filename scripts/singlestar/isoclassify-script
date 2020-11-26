@@ -7,7 +7,7 @@ endif
 
 echo "running isoclassify-script on" $1 "with [Fe/H]=" $2 $3 $4 $5
 read -p "continue?" -n1 -s
-set dir=/Users/daniel/science/github/isoclassify/scripts/singlestar/
+set dir=/Users/daniel/science/research/codes/github/isoclassify/scripts/singlestar/
 
 # setup output directories
 mkdir output_direct
