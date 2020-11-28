@@ -54,12 +54,15 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
     m_sun = gm/gconst
     rho_sun = m_sun/(4./3.*np.pi*r_sun**3)
     g_sun = gconst*m_sun/r_sun**2.
-
+    l_sun=3.828e33 
+    
     # solar constants
     numaxsun = 3090.
     dnusun = 135.1
     teffsun = 5777.
     Msun = 4.74 # NB this is fixed to MESA BCs!
+    
+    pctocm=3.08567758128e18
 
     # assumed uncertainty in bolometric corrections
     err_bc=0.02
@@ -383,6 +386,9 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
                 lum = 10**((Mvbol-Msun)/(-2.5))
                 t = teffsamp/teffsun
                 rad = (lum*t**(-4.))**0.5
+                
+        fbol=(l_sun*lum)/((dsamp*pctocm)**2*4.*np.pi)
+
 
 
         #pdb.set_trace()
@@ -410,6 +416,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         out.lum,out.lumep,out.lumem = getstat(lum)
         out.dis,out.disep,out.disem = getstat(dsamp)
         out.avs,out.avsep,out.avsem = getstat(avs)
+        out.fbol,out.fbolep,out.fbolem = getstat(fbol)
 
         #pdb.set_trace()
         out.teff = input.teff
@@ -498,6 +505,7 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
         print('rad(rsun):',out.rad,'+',out.radep,'-',out.radem)
         print('lum(lsun):',out.lum,'+',out.lumep,'-',out.lumem)
         print('mabs(',band,'):',out.mabs,'+',out.mabsep,'-',out.mabsem)
+        print('fbol(cgs):',out.fbol,'+',out.fbolep,'-',out.fbolem)
         print('mass(msun):',out.mass,'+',out.massep,'-',out.massem)
         print('density(rhosun):',out.rho,'+',out.rhoep,'-',out.rhoem)
         print('-----')
@@ -981,3 +989,7 @@ class resdata():
         self.mabse = 0.
         self.mabsep = 0.
         self.mabsem = 0.
+        self.fbol = 0.
+        self.fbole = 0.
+        self.fbolep = 0.
+        self.fbolem = 0.
