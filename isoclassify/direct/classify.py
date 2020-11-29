@@ -230,8 +230,9 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             if ((input.bpmag > -99.0) & (input.rpmag > -99.0)):
                 bprpmag = ((input.bpmag-np.median(ebvs*extfactors['abp']))
                          - (input.rpmag-np.median(ebvs*extfactors['arp'])))
-                input.teff=mist_bprp(bprpmag)
-                print('using MIST BP-RP for Teff')
+                if (((bprpmag > 0.15) & (bprpmag < 2.0) & (input.logg > 3.5)) | ((bprpmag > 0.15) & (bprpmag < 2.55) & (input.logg < 3.5))):   
+                	input.teff=casagrande_bprp(bprpmag,input.logg,input.feh)
+                	print('using Casagrande BP-RP for Teff')
 
             if ((input.jmag > -99.0) & (input.kmag > -99.0)):
                 jkmag = ((input.jmag-np.median(ebvs*extfactors['aj']))
@@ -250,7 +251,6 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             if ((input.bmag > -99.0) & (input.vmag > -99.0)):
                 bvmag = ((input.bmag-np.median(ebvs*extfactors['ab']))
                          - (input.vmag-np.median(ebvs*extfactors['av'])))
-                print(bvmag)
                 col=((input.bmag-ebvs*extfactors['ab'])-(input.vmag-ebvs*extfactors['av']))
                 #pdb.set_trace()
                 if ((bvmag >= 0.18) & (bvmag <= 1.29)):
@@ -746,7 +746,22 @@ def casagrande_bv(bv,feh):
                - 0.0613*bv*feh
                - 0.0042*feh
                - 0.0055*feh**2))
-
+    return teff
+    
+def casagrande_bprp(bprp,logg,feh):
+    teff = (7928.0 
+           - 3663.114*bprp
+           + 803.3017*bprp**2
+           - 9.3727*bprp**3
+           + 325.1324*logg
+           - 500.116*logg*bprp 
+           + 279.4832*logg*bprp**2
+           - 53.5062*logg*bprp**3
+           - 2.4205*feh
+           - 128.0354*feh*bprp
+           + 49.4933*feh*bprp**2
+           + 5.9146*feh*bprp**3
+           + 41.3650*feh*logg*bprp)
     return teff
 
 # GHB09 J-K for giants (https://ui.adsabs.harvard.edu/abs/2009A%26A...497..497G/abstract)
