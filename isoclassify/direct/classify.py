@@ -749,6 +749,8 @@ def casagrande_bv(bv,feh):
     return teff
     
 def casagrande_bprp(bprp,logg,feh):
+    if (feh == -99.):
+           feh = 0.
     teff = (7928.0 
            - 3663.114*bprp
            + 803.3017*bprp**2
