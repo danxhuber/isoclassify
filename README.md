@@ -52,11 +52,13 @@ Python codes to perform stellar classifications given any set of input observabl
     cd ~/.isoclassify  # or $ISOCLASSIFY if step 5 is used
     wget https://www.dropbox.com/s/dt1ts56gc9f7lzl/mesa.h5
     wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=1u2CQ65UBHDDn_J4ipg2Bayv7i88R5wua' -O bcgrid.h5
+    wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=1vXJY6giU6AHTad_PUjrNJmRdjkkvZRho' -O mesa.h5
     ```
 
 Models updated for Gaia EDR3:
 
-    wget --no-check-certificate -r ‘https://docs.google.com/uc?export=download&id=1i4Ekfv7tTuLPTFpl1rc2aXdbpLsNK1G0’ -O bcgrid.h5
+    wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=1i4Ekfv7tTuLPTFpl1rc2aXdbpLsNK1G0' -O bcgrid.h5
+    wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=15iSFta1YHs8WiTX6MCS4pLyIPX-b3fpA' -O mesa.h5
 
 ## Grid Modeling:
 
