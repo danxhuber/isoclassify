@@ -49,15 +49,15 @@ Python codes to perform stellar classifications given any set of input observabl
 6. Download MESA models into the `isoclassify` data directory created upon installation or specified in step 5. For Gaia DR2 use:
 
     ```bash
-    cd ~/.isoclassify  # or $ISOCLASSIFY if step 5 is used
-    wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=1u2CQ65UBHDDn_J4ipg2Bayv7i88R5wua' -O bcgrid.h5
-    wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=1vXJY6giU6AHTad_PUjrNJmRdjkkvZRho' -O mesa.h5
+   https://drive.google.com/drive/folders/1zjI8c-2FHpf_HiB5Rl6QDvcccKhw1-Z_?usp=sharing
     ```
 
 Models updated for Gaia EDR3:
 
-    wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=1i4Ekfv7tTuLPTFpl1rc2aXdbpLsNK1G0' -O bcgrid.h5
-    wget --no-check-certificate -r 'https://docs.google.com/uc?export=download&id=15iSFta1YHs8WiTX6MCS4pLyIPX-b3fpA' -O mesa.h5
+ ```bash
+   https://drive.google.com/drive/folders/1GC81YxBvMF2wu4TdL0vItvdYv-zsaLI1?usp=sharing
+ ```
+
 
 ## Grid Modeling:
 
