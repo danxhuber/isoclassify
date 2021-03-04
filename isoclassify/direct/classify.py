@@ -237,16 +237,18 @@ def stparas(input, dnumodel=-99, bcmodel=-99, dustmodel=-99, dnucor=-99,
             if ((input.jmag > -99.0) & (input.kmag > -99.0)):
                 jkmag = ((input.jmag-np.median(ebvs*extfactors['aj']))
                          - (input.kmag-np.median(ebvs*extfactors['ak'])))
-                if ((jkmag >= 0.07) & (jkmag <= 0.8)):
-                    if (input.logg > 3.5):
+                
+                if (input.logg > 3.5):
+                    if ((jkmag >= 0.07) & (jkmag <= 0.8)):
                         input.teff=casagrande_jk(jkmag,feh)
                         print('using Dwarf Casagrande J-K for Teff')
-                    else:
+                if (input.logg < 3.5):
+                    if ((jkmag >= 0.1) & (jkmag <= 0.9)):                        
                         input.teff=ghb09_jk(jkmag,feh)
                         print('using Giant GHB09 J-K for Teff')
-                if (jkmag > 0.8):
-                    input.teff=mist_jk(jkmag)
-                    print('using MIST J-K for Teff')
+                #if (input.teff == -99.0):
+                #    input.teff=mist_jk(jkmag)
+                #    print('using MIST J-K for Teff')
 
             if ((input.bmag > -99.0) & (input.vmag > -99.0)):
                 bvmag = ((input.bmag-np.median(ebvs*extfactors['ab']))
