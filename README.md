@@ -76,6 +76,39 @@ Uses bolometric corrections and extinction maps to derive stellar parameters usi
 Bolometric corrections are interpolated in (Teff, logg, FeH, Av) from the MIST grid (http://waps.cfa.harvard.edu/MIST/model_grids.html)
 
 
+## List of Input Parameters:
+
+#### Parameters without uncertainties: 
+ra    ... Right Ascension (degrees) <br />
+dec   ... Declination (degrees) <br />
+band  ... Photometric band to use for absolute magnitude (see nomenclature below) <br />
+dust  ... Extinction map to use (none,allsky,green19) <br />
+dmag  ... Contrast for secondary star (mag). Must be in same bandpass as "band" <br />
+
+#### Parameters with uncertainties (e.g. plx_err): 
+plx   ... Parallax (arcseconds) <br />
+teff  ... Effective Temperature (K) <br />
+logg  ... Surface Gravity (cgs) <br />
+feh   ... Metallicity (dex) <br />
+lum   ... Luminosity (solar) <br />
+bmag  ... Johnson B (mag) <br />
+vmag  ... Johnson V (mag) <br />
+btmag ... Tycho B (mag) <br />
+vtmag ... Tycho V (mag) <br />
+gmag  ... Sloan g (mag) <br />
+rmag  ... Sloan r (mag) <br />
+imag  ... Sloan i (mag) <br />
+zmag  ... Sloan z (mag) <br />
+gamag ... Gaia G (mag) <br />
+bpmag ... Gaia Bp (mag) <br />
+rpmag ... Gaia Rp (mag) <br />
+jmag  ... 2MASS J (mag) <br />
+hmag  ... 2MASS H (mag) <br />
+kmag  ... 2MASS Ks (mag) <br />
+numax ... Frequency of maximum power (muHz) <br />
+dnu   ... Asteroseismic frequency of maximum power (muHz) <br />
+
+
 ## Command line interface
 
 isoclassify includes a command line interface (CLI) for convenient single star processing, as well as batch processing of many stars.
