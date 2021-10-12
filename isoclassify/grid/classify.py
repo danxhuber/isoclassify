@@ -1066,7 +1066,7 @@ def reddening(model,um,avs,extfactors):
         model3['avs'][ix] = avs[i]
         start = start + len(um)
         end = end + len(um)
-        print(i)
+        #print(i)
 
     return model3
 
