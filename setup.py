@@ -1,9 +1,8 @@
 import os
 from setuptools import setup
 
-# Load version
-__version__ = None
-# exec(open('isoclassify/version.py').read())
+# Set version (increment this when making a new release)
+version = "1.2.1"
 
 # Load requirements
 requirements = None
@@ -31,7 +30,7 @@ desc = 'Python codes to perform stellar classifications given any set of input o
 
 setup(
     name='isoclassify',
-    version=__version__,
+    version=version,
     description=desc,
     package_dir={
         'isoclassify': 'isoclassify', 
