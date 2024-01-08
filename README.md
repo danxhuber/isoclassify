@@ -8,19 +8,11 @@ Python codes to perform stellar classifications given any set of input observabl
 
 1. Download `mwdust` (see https://github.com/jobovy/mwdust).
 
-2. Clone and `cd` to the repo (do this outside of your python `site-packages` directory, e.g. your home directory),
-
+2. pip install the code:
     ```bash
-    git clone https://github.com/danxhuber/isoclassify
-    cd isoclassify
+    pip install isoclassify
     ```
-
-3. Install `isoclassify` (use the `-e` option for editable mode if making changes to the code)
-
-    ```bash
-    pip install .
-    ```
-
+    
 4. If the install succeeded,
 
     ```bash
