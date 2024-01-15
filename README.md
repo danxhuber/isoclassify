@@ -43,12 +43,10 @@ Python codes to perform stellar classifications given any set of input observabl
     ```bash
    https://drive.google.com/drive/folders/1zjI8c-2FHpf_HiB5Rl6QDvcccKhw1-Z_?usp=sharing
     ```
-
-Models updated for Gaia EDR3:
-
- ```bash
+    For Gaia DR3 use:
+   ```bash
    https://drive.google.com/drive/folders/1GC81YxBvMF2wu4TdL0vItvdYv-zsaLI1?usp=sharing
- ```
+   ```
 
 
 ## Grid Modeling:
