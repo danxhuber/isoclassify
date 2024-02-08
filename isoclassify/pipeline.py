@@ -91,6 +91,7 @@ class Pipeline(object):
 
         # Read in inputs
         df = pd.read_csv(kw['csv'])
+        df['id_starname'] = df['id_starname'].astype(str)
 
         if (len(df.id_starname.drop_duplicates())!=len(df)):
             print('dropping duplicates')
@@ -100,6 +101,7 @@ class Pipeline(object):
         star = df.loc[self.id_starname]
 
         self.dust = star.dust
+        self.grid = star.grid
 
         const = {}
         for key in CONSTRAINTS:
@@ -191,12 +193,27 @@ class Pipeline(object):
         x.addcoords(self.const['ra'], self.const['dec'])
 
     def print_constraints(self):
+        #pdb.set_trace()
         print("id_starname {}".format(self.id_starname))
         print("dust:", self.dust)
+        print("grid:", self.grid)
+        print("band:", self.const['band'])
+        
+        if pd.isnull(self.dust):
+            self.dust=-99
+
+        if pd.isnull(self.grid):
+            self.grid=-99
+
         for key in CONSTRAINTS:
+            if np.isnan(self.const[key]):
+                self.const[key]=-99
+                self.const[key+'_err']=-99
             print(key, self.const[key], self.const[key+'_err'])
 
         for key in COORDS:
+            if np.isnan(self.const[key]):
+                self.const[key]=-99
             print(key, self.const[key])
 
     def savefig(self):
@@ -301,7 +318,7 @@ class PipelineGrid(Pipeline):
         self.print_constraints()
 
 #        model = ebf.read(os.path.join(DATADIR,'mesa.ebf'))
-        fn = os.path.join(DATADIR,'mesa.h5')
+        fn = os.path.join(DATADIR,self.grid+'.h5')
         modfile = h5py.File(fn,'r', driver='core', backing_store=False)
         model = {'age':np.array(modfile['age']),\
         'mass':np.array(modfile['mass']),\
@@ -385,7 +402,7 @@ class PipelineGrid(Pipeline):
         )
 
 def _csv_reader(f):
-    row = pd.read_csv(f,header=None,squeeze=True, index_col=0)
+    row = pd.read_csv(f,header=None, index_col=0).squeeze()
     return row
 
 def scrape_csv(path):

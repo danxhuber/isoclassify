@@ -16,8 +16,6 @@ import pdb
 from joblib import Parallel, delayed, load, dump
 import gc
 
-#test
-
 def main():
     p = ArgumentParser()
     subp = p.add_subparsers(title="subcommands", dest='subcommand')
@@ -93,8 +91,9 @@ def scrape_output(args):
     df = isoclassify.pipeline.scrape_csv(path)
     df.to_csv(args.csvfn,index=False)
 
+'''
 def read_modelGrid():
-    fn = os.path.join(DATADIR,'mesa.h5')
+    fn = os.path.join(DATADIR,'parsec.h5')
     modfile = h5py.File(fn,'r', driver='core', backing_store=False)
     model = {'age':np.array(modfile['age']),\
     'mass':np.array(modfile['mass']),\
@@ -133,6 +132,7 @@ def read_modelGrid():
     model['dis']=np.zeros(len(model['teff']))
 
     return model
+'''
 
 def memmap_grid():
     # Now define tempfiles to load into memory for multiple child processes:
@@ -165,7 +165,7 @@ def scrape_csv_multi(i,f,dfOut):
     if i%100==0:
         print(i)
     try:
-        dfOut.append(pd.read_csv(f,header=None,squeeze=True,index_col=0))
+        dfOut.append(pd.read_csv(f,header=None,index_col=0).squeeze())
     except ValueError:
         print("{} failed".format(f))
 

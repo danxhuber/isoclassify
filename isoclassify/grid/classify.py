@@ -321,8 +321,9 @@ def classify(input, model, dustmodel=0, plot=1, useav=-99.0, ext=-99.0, band='')
         print("Using g - K error: ",gkcole)
 
     # apparent mag to use for distance estimation. set by "band" input
-    redmap = -99.0
-    if (getattr(input,band) > -99.):
+    redmap = -99.0 
+    #if (getattr(input,band) > -99.):
+    if pd.notnull(band):
         redmap = getattr(input,band)
         redmape = getattr(input,band+'e')
         model_mabs = model[band]

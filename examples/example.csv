@@ -1,7 +1,9 @@
-id_starname,teff,teff_err,logg,logg_err,feh,feh_err,parallax,parallax_err,vmag,vmag_err,kmag,kmag_err,ra,dec,band,dust,comments,dmag,dmag_err
-sol,5772,70,4.44,0.07,0,0.04,0.1,0.001,-99,-99,3.302,0.01,,,kmag,none,"should return 1 solar radius; ra,dec not needed because no dust map ",-99.,-99.
-K2-3,3825,70,4.7,1,-0.27,0.09,0.022661,5.53E-05,-99,-99,8.561,0.023,172.334955,-1.454787,kmag,allsky,using very loose logg constraints,-99.,-99.
-K2-24,5625,100,4.29,0.08,0.34,0.04,0.005835,0.000046,-99,-99,9.18,0.021,242.573715,-24.990331,kmag,allsky,-99.,-99.
-18sco,5770,70,4.44,0.07,0,0.04,0.07,0.0007,5.505,0.014,4,0.03,290.1122,44.6,kmag,allsky,18sco with colors,-99.,-99.
-18scobin,5770,70,4.44,0.07,0,0.04,-99.,-99.,-99.,-99.,-99.,-99.,290.1122,44.6,kmag,allsky,18sco with binary,2.0,0.05
-18scobinphot,5770,70,4.44,0.07,0,0.04,0.07,0.007,5.505,0.014,4.0,0.03,290.1122,44.6,kmag,allsky,18sco with binary + parallax + kmag,2.0,0.05
+id_starname,teff,teff_err,logg,logg_err,feh,feh_err,lum,lum_err,parallax,parallax_err,vmag,vmag_err,bpmag,bpmag_err,rpmag,rpmag_err,jmag,jmag_err,kmag,kmag_err,dmag,dmag_err,ra,dec,band,dust,grid,comments
+sol,5772,70,4.44,0.07,0,0.04,,,,,,,,,,,,,,,,,,,,none,parsec,"The Sun with spectroscopic parameters, using Parsec grid"
+18sco,5770,70,,,0,0.04,,,0.07,0.0007,5.505,0.014,,,,,,,,,,,290.1122,44.6,vmag,allsky,mesa,"18sco with Vmag photometry and parallax, using MESA grid"
+18scobin,5770,70,,,0,0.04,,,0.07,0.0007,5.505,0.014,,,,,,,,,2.0,0.05,290.1122,44.6,vmag,allsky,mesa,"18sco with Vmag photometry and parallax, using MESA grid, with binary companion"
+K2-3,3825,70,4.7,1.0,-0.27,0.09,,,0.022661,5.53E-05,,,,,,,,,8.561,0.023,,,172.334955,-1.454787,kmag,allsky,parsec,"M dwarf with parallax and K-band"
+K2-3spec,3825,70,4.7,1.0,-0.27,0.09,,,,,,,,,,,,,,,,,,,,none,parsec,"M dwarf with spectroscopy only"
+221416,5080,90,,,-0.08,0.08,,,0.01047,3.24e-05,,,8.37,0.01,7.31,0.01,6.57,0.02,6.04,0.02,,,353.0,-21.8,kmag,none,mesa,"toi197 with spectroscopic teff+feh, parallax and photometry; since no dustmap is specified, this fits for extinction"
+piMendirect,5980,130,4.3,0.1,0.07,0.07,,,0.054683,3.5e-5,,,,,,,,,4.24,0.03,,,84.3,-80.5,kmag,allsky,mesa,"piMen direct mode to get luminosity constraint"
+piMengrid,5980,130,,,0.07,0.07,1.54,0.05,,,,,,,,,,,,,,,,,,none,mesa,"piMen grid mode with luminosity constraint from direct mode"
