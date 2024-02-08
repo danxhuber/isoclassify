@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.573372.svg)](https://doi.org/10.5281/zenodo.573372)
 
-Python codes to perform stellar classifications given any set of input observables. Details are described in [Huber et al. 2017](http://adsabs.harvard.edu/abs/2017ApJ...844..102H) and [Berger et al. 2020](https://ui.adsabs.harvard.edu/abs/2020arXiv200107737B/abstract) - please cite these papers when using the code.
+Python codes to perform simple stellar classifications given any set of input observables. Details are described in [Huber et al. 2017](http://adsabs.harvard.edu/abs/2017ApJ...844..102H), [Berger et al. 2020](https://ui.adsabs.harvard.edu/abs/2020arXiv200107737B/abstract) and [Berger et al. 2023](https://ui.adsabs.harvard.edu/abs/2023arXiv230111338B/abstract) - please cite these papers when using the code.
 
 ## Installation
 
@@ -32,47 +32,54 @@ Python codes to perform stellar classifications given any set of input observabl
         run                 run isoclassify
     ```
 
-5. **Optional:** Set an environment variable for a path to store the MESA models downloaded in step 6. Otherwise, skip this step and use the default location.
+5. **Optional:** Set an environment variable for a path to store the MESA models downloaded in step 4. Otherwise, skip this step and use the default location.
 
     ```bash
     export ISOCLASSIFY=/path/to/data/dir
     ```
 
-6. Download MESA models into the `isoclassify` data directory created upon installation or specified in step 5. For Gaia DR2 use:
+6. Download models into the `isoclassify` data directory created upon installation or specified in step 5.
 
-    ```bash
-   https://drive.google.com/drive/folders/1zjI8c-2FHpf_HiB5Rl6QDvcccKhw1-Z_?usp=sharing
-    ```
-    For Gaia DR3 use:
+   Bolometric correction grid:
    ```bash
+   https://drive.google.com/file/d/1vbgKqrghAWJrDJnRBLMlv--J8VSVUOpi/view?usp=sharing
+    ```
+   MESA models:
+    ```bash
    https://drive.google.com/drive/folders/1GC81YxBvMF2wu4TdL0vItvdYv-zsaLI1?usp=sharing
+    ```
+   Parsec models:
+   ```bash
+   https://drive.google.com/file/d/1gURKVsL5jPxWZ08ipzALXiUnX7lsjoGe/view?usp=sharing
    ```
 
 
-## Grid Modeling:
+## Usage
 
-Derives posterior distributions for stellar parameters (teff, logg, feh, rad, mass, rho, lum, age, distance, av) through direct intregration of isochrones, given any set of observables (photometry, spectroscopy, parallax, asteroseismology) and priors. Can fit for extinction or use reddening map, includes (optionally) a correction to the Dnu scaling relation corrections by Sharma et al. (2016). <br />
+### Grid Modeling:
 
-See example/grid.ipynb for an application.
+Derives posterior distributions for stellar parameters (teff, logg, feh, rad, mass, rho, lum, age, distance, av) through direct intregration of isochrones, given any set of observables (photometry, spectroscopy, parallax, asteroseismology) and priors. Can fit for extinction or use reddening map, depending on input parameters. The Parsec grid has been amended for M dwarfs using empirical relations by [Mann et al. 2019](https://ui.adsabs.harvard.edu/abs/2019ApJ...871...63M/abstract); see [Berger et al. 2023](https://ui.adsabs.harvard.edu/abs/2023arXiv230111338B/abstract) for details. <br />
 
-## Direct Method:
+
+### Direct Method:
 
 Uses bolometric corrections and extinction maps to derive stellar parameters using direct physical relations. Masses and densities are only calculated for cool stars within the empirical relations by [Mann et al. 2019](https://ui.adsabs.harvard.edu/abs/2019ApJ...871...63M/abstract) (to derive masses for any star, use grid modeling mode described above). Options are: <br />
 
 1.  RA/DEC + Photometry + (Spectroscopy) + Parallax -> Teff, R, L, distance, Av (+ M & rho for cool stars). Uses Monte-Carlo method to implement exponentially decreasing volume density prior with a length scale of 1.35 kpc (Astraatmadja & Bailer-Jones 2016)
 
-1. RA/DEC + Asteroseismology + Spectroscopy -> logg, rho, rad, mass, lum, distance, Av. Uses Dnu scaling relation corrections by Sharma et al. (2016) [not yet implemented]
+1. RA/DEC + Asteroseismology + Spectroscopy -> logg, rho, rad, mass, lum, distance, Av. 
 
 Bolometric corrections are interpolated in (Teff, logg, FeH, Av) from the MIST grid (http://waps.cfa.harvard.edu/MIST/model_grids.html)
 
 
-## List of Input Parameters:
+### List of Input Parameters:
 
 #### Parameters without uncertainties: 
 ra    ... Right Ascension (degrees) <br />
 dec   ... Declination (degrees) <br />
 band  ... Photometric band to use for absolute magnitude (see nomenclature below) <br />
 dust  ... Extinction map to use (none,allsky,green19) <br />
+grid  ... Stellar evolution grid to use (mesa,parsec) <br />
 dmag  ... Contrast for secondary star (mag). Must be in same bandpass as "band" <br />
 
 #### Parameters with uncertainties (e.g. plx_err): 
@@ -99,9 +106,9 @@ numax ... Frequency of maximum power (muHz) <br />
 dnu   ... Asteroseismic frequency of maximum power (muHz) <br />
 
 
-## Command line interface
+### Command line interface
 
-isoclassify includes a command line interface (CLI) for convenient single star processing, as well as batch processing of many stars.
+The preferred mode to run isoclassify is through a command line interface (CLI), which allows single star processing as well as batch processing of many stars.
 
 ```bash
 isoclassify run <mode> <star name> --csv <csv file> --outdir <output directory> --plot <plotmode> 
@@ -113,7 +120,7 @@ isoclassify run <mode> <star name> --csv <csv file> --outdir <output directory> 
 1. `<csv file>` contains as columns parameters that are passed to isoclassify
 1. `<plotmode>` tells isoclassify whether pop interactive plots `show`, save to a png `save-png`, or to not plot at all `none`.
 
-We've included `examples/example.csv` with a few stars as an example
+The file `examples/example.csv` inclides a few example stars that cover various use cases, e.g.:
 
 ```bash
 mkdir -p output/sol # make sure output directory exists
@@ -130,7 +137,7 @@ isoclassify batch direct examples/example.csv -o output > isoclassify.tot
 parallel :::: isoclassify.tot
 
 # Combine outputs into one CSV file
-bin/isoclassify scrape-output 'output/*/output.csv' output.csv
+isoclassify scrape-output 'output/*/output.csv' output.csv
 ```
 
 You can also run python-based multiprocessing through joblib and memory-mapping to reduce RAM overhead.
@@ -148,15 +155,20 @@ isoclassify multiproc <mode> <num processes> <input csv> <output csv> --baseoutd
 
 This will run all stars within the designated csv file and produce an output csv file, so there no need to use the scrape-output function detailed above in combination with this script.
 
-## Testing the codebase
+Note: isoclassify is not natively setup to run in ipython notebooks or be imported with other scripts. The example directory includes notebooks constructed by hacking  pre-defining functions that allows direct interaction with posteriors. These are provided for guidance only and are not supported.
 
-When making changes, if you haven't changed the core algorithm then run the following command
 
+### Default Use Case Example
+
+In the Gaia era, a typical use-case for isoclassify is to derive the mass, radius, luminosity, density and age for a star with existing constraints on Teff and metallicity from spectroscopy, parallax from Gaia, and photometry from various surveys (e.g. Gaia and 2MASS). The recommended procedure is to first use direct-mode to determine the luminosity directly through the bolometric flux and distance:
+
+```bash
+mkdir -p output/piMen # make sure output directory exists
+isoclassify run direct piMendirect --csv examples/example.csv --outdir output/piMendirect --plot show
 ```
-isoclassify batch direct examples/example.csv -o output/direct > isoclassify-test-direct.tot 
-isoclassify batch grid examples/example.csv -o output/grid > isoclassify-test-grid.tot 
-cat isoclassify-test-direct.tot isoclassify-test-grid.tot  > isoclassify-test.tot
-parallel :::: isoclassify-test.tot 
-```
+In this example, the bolometric flux is estimated through 2MASS K-band (less sensitive to extinction) and the bolometric correction grid. 
 
-and compare the output with a previous version.
+Once the luminosity is known, we can provide it as an input to grid-mode, together with the spectroscopic Teff and metallicity:
+```bash
+isoclassify run grid piMengrid --csv examples/example.csv --outdir output/piMengrid --plot show
+```
