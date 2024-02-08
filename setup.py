@@ -2,7 +2,7 @@ import os
 from setuptools import setup
 
 # Set version (increment this when making a new release)
-version = "1.3"
+version = "1.4"
 
 # Load requirements
 requirements = None
