@@ -163,12 +163,13 @@ Note: isoclassify is not natively setup to run in ipython notebooks or be import
 In the Gaia era, a typical use-case for isoclassify is to derive the mass, radius, luminosity, density and age for a star with existing constraints on Teff and metallicity from spectroscopy, parallax from Gaia, and photometry from various surveys (e.g. Gaia and 2MASS). The recommended procedure is to first use direct-mode to determine the luminosity directly through the bolometric flux and distance:
 
 ```bash
-mkdir -p output/piMen # make sure output directory exists
+mkdir -p output/piMendirect # make sure output directory exists
 isoclassify run direct piMendirect --csv examples/example.csv --outdir output/piMendirect --plot show
 ```
 In this example, the bolometric flux is estimated through 2MASS K-band (less sensitive to extinction) and the bolometric correction grid. 
 
 Once the luminosity is known, we can provide it as an input to grid-mode, together with the spectroscopic Teff and metallicity:
 ```bash
+mkdir -p output/piMengrid # make sure output directory exists
 isoclassify run grid piMengrid --csv examples/example.csv --outdir output/piMengrid --plot show
 ```
