@@ -164,7 +164,7 @@ Note: isoclassify is not natively setup to run in ipython notebooks or be import
 
 ### Typical Use Case 
 
-In the Gaia era, a typical use-case for isoclassify is to derive the mass, radius, luminosity, density and age for a single star that has existing constraints on Teff, log(g) metallicity from spectroscopy, a parallax from Gaia, and photometry from various surveys (e.g. Gaia and 2MASS). The recommended procedure is to first use direct-mode to determine the luminosity directly through the bolometric flux and distance. Using pi Men in the example.csv file, this would look like:
+In the Gaia era, a typical use-case for isoclassify is the derivation of mass, radius, luminosity, density and age for a single star with existing constraints on Teff, log(g) metallicity from spectroscopy, a parallax from Gaia, and photometry from various surveys (Gaia, 2MASS, etc). The recommended procedure is to first use direct-mode to determine the luminosity directly through the bolometric flux and distance. Using pi Men in the example.csv file, this would look like:
 
 ```bash
 # make sure output directory exists
@@ -173,9 +173,11 @@ isoclassify run direct piMendirect --csv examples/example.csv --outdir output/pi
 ```
 Here, the bolometric flux is estimated through 2MASS K-band (less sensitive to extinction) and the bolometric correction grid. 
 
-Using the luminosity calculated from the direct method, we can use it as an input to grid-mode, together with the spectroscopic Teff and metallicity (log(g) is not needed, since spectroscopic constraints are less reliable than the evolutionary state constraint from the Gaia luminosity):
+Using the luminosity from the direct method as an input to grid-mode, together with the spectroscopic Teff and metallicity, we can then derive the remaining parameters (log(g) is not needed as input, since spectroscopic constraints are less reliable than the evolutionary state constraint from the Gaia luminosity):
 ```bash
 # make sure output directory exists
 mkdir -p output/piMengrid 
 isoclassify run grid piMengrid --csv examples/example.csv --outdir output/piMengrid --plot show
 ```
+
+Note that the uncertainties reported by isoclassify are precisions intrinsic to the grid that is used. When comparing these values to other methods, systematic errors should be considered. These can be estimated by running the same star through both grids (mesa and parsec) or following the guidance described in [Tayar et al. 2022](https://ui.adsabs.harvard.edu/abs/2022ApJ...927...31T/abstract).
