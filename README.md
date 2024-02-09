@@ -13,7 +13,7 @@ Python codes to perform simple stellar classifications given a set of input obse
     pip install isoclassify
     ```
     
-4. If the install succeeded,
+3. If the install succeeded,
 
     ```bash
     isoclassify -h
@@ -32,13 +32,13 @@ Python codes to perform simple stellar classifications given a set of input obse
         run                 run isoclassify
     ```
 
-5. **Optional:** Set an environment variable for a path to store the MESA models downloaded in step 4. Otherwise, skip this step and use the default location (`~/.isoclassify`).
+4. **Optional:** Set an environment variable for a path to store the MESA models downloaded in step 5. Otherwise, skip this step and use the default location (`~/.isoclassify`).
 
     ```bash
     export ISOCLASSIFY=/path/to/data/dir
     ```
 
-6. Download models into the `~/.isoclassify` directory created upon installation or the directory specified in step 5.
+5. Download models into the `~/.isoclassify` directory created upon installation or the directory specified in step 4.
 
    Bolometric correction grid:
    ```bash
