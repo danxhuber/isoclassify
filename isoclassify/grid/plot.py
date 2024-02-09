@@ -126,7 +126,7 @@ def plothrd_auto(model,modelSel,input,mabs,mabse,ran,umran,d,g):
         plt.plot(modelSel['teff'][umran],modelSel['logg'][umran],\
                 '.',color='black',markersize=1,zorder=-32)
         if (vars(input)['teff'] > -99 & (vars(input)['logg'] > -99)):
-            plt.errorbar([input.teff], [input.logg], xerr=input.teffe, yerr=input.logge,\
+            plt.errorbar([input.teff], [input.logg], xerr=np.abs(input.teffe), yerr=np.abs(input.logge),\
                  color='green',elinewidth=5)
 
         plt.xlabel('teff')
@@ -143,7 +143,7 @@ def plothrd_auto(model,modelSel,input,mabs,mabse,ran,umran,d,g):
         plt.plot(modelSel['teff'][umran],mod_numax[umran],\
                  '.',color='black',markersize=1,zorder=-32)
         if (vars(input)['teff'] > -99 & (vars(input)['numax'] > -99)):
-            plt.errorbar([input.teff], [input.numax], xerr=input.teffe, yerr=input.numaxe, \
+            plt.errorbar([input.teff], [input.numax], xerr=np.abs(input.teffe), yerr=np.abs(input.numaxe), \
                  color='green',elinewidth=5)
 
         plt.xlim([10000,2800])
