@@ -32,13 +32,13 @@ Python codes to perform simple stellar classifications given any set of input ob
         run                 run isoclassify
     ```
 
-5. **Optional:** Set an environment variable for a path to store the MESA models downloaded in step 4. Otherwise, skip this step and use the default location.
+5. **Optional:** Set an environment variable for a path to store the MESA models downloaded in step 4. Otherwise, skip this step and use the default location (`~/.isoclassify`).
 
     ```bash
     export ISOCLASSIFY=/path/to/data/dir
     ```
 
-6. Download models into the `isoclassify` data directory created upon installation or specified in step 5.
+6. Download models into the `~/.isoclassify` directory created upon installation or the directory specified in step 5.
 
    Bolometric correction grid:
    ```bash
@@ -124,16 +124,20 @@ The file `examples/example.csv` inclides a few example stars that cover various 
 
 ```bash
 mkdir -p output/sol # make sure output directory exists
-isoclassify run direct sol --csv examples/example.csv --outdir output/sol --plot show
+isoclassify run grid sol --csv examples/example.csv --outdir output/sol --plot show
 ```
 
-The CLI also makes parallel processing easy.
+The CLI also makes parallel processing easy. To run all stars in the example.csv file:
 
 ```bash
 # generate batch scripts
 isoclassify batch direct examples/example.csv -o output > isoclassify.tot 
 
-# Run with GNU parallel
+# make executable and run script
+chmod +x isoclassify.tot
+./isoclassify.tot
+
+# Alternatively, run with GNU parallel to use multiple cores
 parallel :::: isoclassify.tot
 
 # Combine outputs into one CSV file
@@ -155,21 +159,23 @@ isoclassify multiproc <mode> <num processes> <input csv> <output csv> --baseoutd
 
 This will run all stars within the designated csv file and produce an output csv file, so there no need to use the scrape-output function detailed above in combination with this script.
 
-Note: isoclassify is not natively setup to run in ipython notebooks or be imported with other scripts. The example directory includes notebooks constructed by hacking  pre-defining functions that allows direct interaction with posteriors. These are provided for guidance only and are not supported.
+Note: isoclassify is not natively setup to run in ipython notebooks or be imported with other scripts. The example directory includes notebooks constructed by hacking pre-defined functions that allows direct interaction with posteriors. The notebooks are provided for guidance only and are not supported with the latest version of the code.
 
 
-### Default Use Case Example
+### Typical Use Case 
 
 In the Gaia era, a typical use-case for isoclassify is to derive the mass, radius, luminosity, density and age for a single star that has existing constraints on Teff, log(g) metallicity from spectroscopy, a parallax from Gaia, and photometry from various surveys (e.g. Gaia and 2MASS). The recommended procedure is to first use direct-mode to determine the luminosity directly through the bolometric flux and distance. Using pi Men in the example.csv file, this would look like:
 
 ```bash
-mkdir -p output/piMendirect # make sure output directory exists
+# make sure output directory exists
+mkdir -p output/piMendirect 
 isoclassify run direct piMendirect --csv examples/example.csv --outdir output/piMendirect --plot show
 ```
 Here, the bolometric flux is estimated through 2MASS K-band (less sensitive to extinction) and the bolometric correction grid. 
 
 Using the luminosity calculated from the direct method, we can use it as an input to grid-mode, together with the spectroscopic Teff and metallicity (log(g) is not needed, since spectroscopic constraints are less reliable than the evolutionary state constraint from the Gaia luminosity):
 ```bash
-mkdir -p output/piMengrid # make sure output directory exists
+# make sure output directory exists
+mkdir -p output/piMengrid 
 isoclassify run grid piMengrid --csv examples/example.csv --outdir output/piMengrid --plot show
 ```
