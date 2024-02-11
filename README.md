@@ -2,7 +2,10 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.573372.svg)](https://doi.org/10.5281/zenodo.573372)
 
-Python codes to perform simple stellar classifications given a set of input observables. The code is based on the work described in [Huber et al. 2017](http://adsabs.harvard.edu/abs/2017ApJ...844..102H), [Berger et al. 2020](https://ui.adsabs.harvard.edu/abs/2020arXiv200107737B/abstract) and [Berger et al. 2023](https://ui.adsabs.harvard.edu/abs/2023arXiv230111338B/abstract) - please cite these papers when using the code.
+Python codes to perform simple stellar classifications given a set of input observables. The code is based on the work described in [Huber et al. 2017](http://adsabs.harvard.edu/abs/2017ApJ...844..102H), [Berger et al. 2020](https://ui.adsabs.harvard.edu/abs/2020arXiv200107737B/abstract) and [Berger et al. 2023](https://ui.adsabs.harvard.edu/abs/2023arXiv230111338B/abstract) - please cite these papers when using the code. Additional references to be cited depending on the use-case:
+- MESA grid: [Choi et al. 2016](https://ui.adsabs.harvard.edu/abs/2016ApJ...823..102C/exportcitation)
+- PARSEC grid: [Bressan et al. 2012](https://ui.adsabs.harvard.edu/abs/2012MNRAS.427..127B/abstract)
+- Extinction map: [Bovy et al. 2016](https://ui.adsabs.harvard.edu/abs/2016ApJ...818..130B/abstract) and [mwdust dependencies](https://github.com/jobovy/mwdust?tab=readme-ov-file#acknowledging-mwdust-and-its-data)
 
 ## Installation
 
