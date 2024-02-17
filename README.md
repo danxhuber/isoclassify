@@ -123,7 +123,7 @@ isoclassify run <mode> <star name> --csv <csv file> --outdir <output directory> 
 1. `<csv file>` contains as columns parameters that are passed to isoclassify
 1. `<plotmode>` tells isoclassify whether pop interactive plots `show`, save to a png `save-png`, or to not plot at all `none`.
 
-The file `examples/example.csv` inclides a few example stars that cover various use cases, e.g.:
+The file `examples/example.csv` includes a few example stars that cover various use cases, e.g.:
 
 ```bash
 mkdir -p output/sol # make sure output directory exists
