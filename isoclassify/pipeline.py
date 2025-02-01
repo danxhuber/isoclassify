@@ -117,6 +117,8 @@ class Pipeline(object):
                 const[key] = star[key]
             else:
                 const[key] = -99
+                print('invalid coordinates, setting dustmap to none')
+                self.dust = 'none'
 
         self.const = const
         self.const['ra'] = star['ra']
@@ -214,6 +216,8 @@ class Pipeline(object):
         for key in COORDS:
             if np.isnan(self.const[key]):
                 self.const[key]=-99
+                print('invalid coordinates, setting dustmap to none')
+                self.dust = 'none'
             print(key, self.const[key])
 
     def savefig(self):
@@ -357,7 +361,7 @@ class PipelineGrid(Pipeline):
         # model['fdnu'][:]=1.
         model['avs']=np.zeros(len(model['teff']))
         model['dis']=np.zeros(len(model['teff']))
-
+        
         dustmodel,ext = query_dustmodel_coords(self.const['ra'],self.const['dec'],self.dust)
 
         # Instantiate model

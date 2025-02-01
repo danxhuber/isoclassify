@@ -22,7 +22,7 @@ def query_dustmodel_coords(ra,dec,dust):
     if dust == 'none':
         reddenMap = 0
         ext = extinction('cardelli')
-        print('not dustmap, fitting for reddening if multiple photometric bands are provided.')
+        print('no dustmap, fitting for reddening if multiple photometric bands are provided.')
         return reddenMap,ext
 
     sightLines = SkyCoord(ra*units.deg,dec*units.deg,frame='icrs')
